@@ -3,6 +3,10 @@ export interface Company {
     name: string;
     financialYear: string;
     path: string; // Folder name or ID in storage
+    gstin?: string;
+    address?: string;
+    state?: string;
+    registrationType?: 'Regular' | 'Composition' | 'Unregistered';
 }
 
 export interface StorageProvider {
@@ -19,7 +23,7 @@ export interface StorageProvider {
     /**
      * Create a new company
      */
-    createCompany(name: string, financialYear: string): Promise<Company>;
+    createCompany(data: Omit<Company, 'id' | 'path'>): Promise<Company>;
 
     /**
      * Read a file and return its content as JSON

@@ -11,6 +11,9 @@ import LedgerForm from './features/accounting/masters/LedgerForm';
 import VoucherEntry from './features/accounting/vouchers/VoucherEntry';
 import BalanceSheet from './features/reports/BalanceSheet';
 import ProfitAndLoss from './features/reports/ProfitAndLoss';
+import GstReport from './features/reports/GstReport';
+import CashFlow from './features/reports/CashFlow';
+import FundFlow from './features/reports/FundFlow';
 import Daybook from './features/accounting/reports/Daybook';
 import { PersistenceProvider } from './services/persistence/PersistenceContext';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
@@ -57,6 +60,9 @@ function AppContent() {
         <Route path="vouchers" element={<VoucherEntry />} />
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="reports/profit-loss" element={<ProfitAndLoss />} />
+        <Route path="reports/gst" element={<GstReport />} />
+        <Route path="reports/cash-flow" element={<CashFlow />} />
+        <Route path="reports/fund-flow" element={<FundFlow />} />
         <Route path="reports/daybook" element={<Daybook />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>

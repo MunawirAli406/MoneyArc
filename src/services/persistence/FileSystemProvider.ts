@@ -52,19 +52,18 @@ export class FileSystemProvider implements StorageProvider {
         return companies;
     }
 
-    async createCompany(name: string, financialYear: string): Promise<Company> {
+    async createCompany(data: Omit<Company, 'id' | 'path'>): Promise<Company> {
         if (!this.dirHandle) throw new Error('Storage not initialized');
 
         const id = Math.random().toString(36).substr(2, 9);
-        const folderName = `${name.replace(/\s+/g, '_')}_${id}`;
+        const folderName = `${data.name.replace(/\s+/g, '_')}_${id}`;
 
         // Create directory
         const companyDir = await this.dirHandle.getDirectoryHandle(folderName, { create: true });
 
         const companyData: Company = {
             id,
-            name,
-            financialYear,
+            ...data,
             path: folderName
         };
 

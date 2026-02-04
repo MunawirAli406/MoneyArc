@@ -10,6 +10,9 @@ const navItems = [
     { icon: BookOpen, label: 'Daybook', path: '/reports/daybook' },
     { icon: FileText, label: 'Balance Sheet', path: '/reports/balance-sheet' },
     { icon: TrendingUp, label: 'Profit & Loss', path: '/reports/profit-loss' },
+    { icon: FileText, label: 'GST Reports', path: '/reports/gst' },
+    { icon: Wallet, label: 'Cash Flow', path: '/reports/cash-flow' },
+    { icon: TrendingUp, label: 'Fund Flow', path: '/reports/fund-flow' },
     { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
