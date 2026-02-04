@@ -39,11 +39,11 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppContent() {
+  console.log('AppContent: Rendering routes...');
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
-      {/* Onboarding routes that might not require full layout or protection */}
       <Route path="/select-source" element={<DataSourceSelect />} />
       <Route path="/select-company" element={<CompanySelect />} />
 
@@ -53,7 +53,6 @@ function AppContent() {
         </ProtectedRoute>
       }>
         <Route index element={<Navigate to="/dashboard" replace />} />
-        {/* The select-source route was moved out of this protected layout */}
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="ledgers" element={<LedgerList />} />
         <Route path="ledgers/new" element={<LedgerForm />} />
@@ -66,6 +65,8 @@ function AppContent() {
         <Route path="reports/daybook" element={<Daybook />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
+
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
@@ -73,13 +74,13 @@ function AppContent() {
 function App() {
   return (
     <ThemeProvider>
-      <AuthProvider>
-        <PersistenceProvider>
+      <PersistenceProvider>
+        <AuthProvider>
           <BrowserRouter>
             <AppContent />
           </BrowserRouter>
-        </PersistenceProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </PersistenceProvider>
     </ThemeProvider>
   );
 }

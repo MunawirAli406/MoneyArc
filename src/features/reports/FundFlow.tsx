@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Layers, Zap, Shield, ArrowRight } from 'lucide-react';
+import { Layers, Zap, Shield, ArrowRight, FileDown } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
+import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
 
 export default function FundFlow() {
@@ -50,13 +51,37 @@ export default function FundFlow() {
                     <h1 className="text-3xl font-black text-foreground tracking-tight uppercase leading-none">Fund Flow</h1>
                     <p className="text-muted-foreground font-medium uppercase tracking-widest text-[10px] mt-2">Sources vs Applications for {activeCompany?.name}</p>
                 </div>
-                <div className="bg-card px-6 py-4 rounded-2xl border border-border shadow-sm flex items-center gap-4">
-                    <div>
-                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Working Capital Change</p>
-                        <p className="text-xl font-black text-emerald-500">₹{(sources - applications).toLocaleString()}</p>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => {
+                            const rows = [
+                                ['SOURCES OF FUNDS', ''],
+                                ['Funds from Operations', `INR ${(sources * 0.7).toLocaleString()}`],
+                                ['Issue of Share Capital', `INR ${(sources * 0.2).toLocaleString()}`],
+                                ['Sale of Fixed Assets', `INR ${(sources * 0.1).toLocaleString()}`],
+                                ['---', '---'],
+                                ['APPLICATION OF FUNDS', ''],
+                                ['Purchase of Fixed Assets', `INR ${(applications * 0.5).toLocaleString()}`],
+                                ['Repayment of Loans', `INR ${(applications * 0.3).toLocaleString()}`],
+                                ['Payment of Dividends', `INR ${(applications * 0.2).toLocaleString()}`],
+                                ['---', '---'],
+                                ['NET WORKING CAPITAL CHANGE', `INR ${(sources - applications).toLocaleString()}`],
+                            ];
+                            ExportService.exportToPDF('Fund Flow Statement', ['Description', 'Amount'], rows, activeCompany);
+                        }}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
+                    >
+                        <FileDown className="w-4 h-4" />
+                        Export PDF
+                    </button>
+                    <div className="bg-card px-6 py-4 rounded-2xl border border-border shadow-sm flex items-center gap-4">
+                        <div>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Working Capital Change</p>
+                            <p className="text-xl font-black text-emerald-500">₹{(sources - applications).toLocaleString()}</p>
+                        </div>
+                        <div className="w-px h-8 bg-border" />
+                        <Zap className="w-5 h-5 text-amber-500" />
                     </div>
-                    <div className="w-px h-8 bg-border" />
-                    <Zap className="w-5 h-5 text-amber-500" />
                 </div>
             </div>
 

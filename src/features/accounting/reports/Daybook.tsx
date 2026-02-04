@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
+import { ExportService } from '../../../services/reports/ExportService';
 import type { Voucher } from '../../../services/accounting/VoucherService';
-import { Calendar } from 'lucide-react';
+import { Calendar, FileDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Daybook() {
@@ -18,7 +19,6 @@ export default function Daybook() {
             }
 
             const allVouchers = await provider.read<Voucher[]>('vouchers.json', activeCompany.path) || [];
-            // Filter by date if needed, for now show all sorted by date desc
             const sorted = allVouchers.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
             setVouchers(sorted);
@@ -26,6 +26,20 @@ export default function Daybook() {
         };
         loadData();
     }, [provider, activeCompany]);
+
+    const handleExport = () => {
+        const rows = vouchers.map(v => {
+            const amount = v.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0);
+            return [
+                new Date(v.date).toLocaleDateString(),
+                v.rows[0]?.account || 'Journal Entry',
+                `${v.type} #${v.voucherNo}`,
+                amount.toFixed(2),
+                amount.toFixed(2)
+            ];
+        });
+        ExportService.exportToPDF('Daybook', ['Date', 'Particulars', 'Voucher', 'Debit', 'Credit'], rows, activeCompany);
+    };
 
     if (loading) return (
         <div className="flex items-center justify-center p-12">
@@ -45,6 +59,13 @@ export default function Daybook() {
                     <p className="text-muted-foreground font-medium">Chronological record of transactions for {activeCompany?.name}</p>
                 </div>
                 <div className="flex items-center gap-4">
+                    <button
+                        onClick={handleExport}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
+                    >
+                        <FileDown className="w-4 h-4" />
+                        Export PDF
+                    </button>
                     <div className="relative group">
                         <Calendar className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 group-focus-within:text-primary transition-colors" />
                         <input

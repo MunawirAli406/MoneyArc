@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, Download, ArrowUpRight, ArrowDownRight, IndianRupee } from 'lucide-react';
+import { FileText, ArrowUpRight, ArrowDownRight, IndianRupee, FileDown } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
+import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import clsx from 'clsx';
 
@@ -54,9 +55,21 @@ export default function GstReport() {
                     <p className="text-muted-foreground font-medium uppercase tracking-widest text-[10px] mt-1">GSTR-3B Summary for {activeCompany?.name}</p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="flex items-center gap-2 px-5 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all">
-                        <Download className="w-4 h-4" />
-                        Export GSTR-1
+                    <button
+                        onClick={() => {
+                            const rows = [
+                                ['Total Output Tax', `INR ${totalOutput.toLocaleString()}`],
+                                ['Eligible ITC', `INR ${totalInput.toLocaleString()}`],
+                                ['Net Tax Payable', `INR ${Math.max(0, totalOutput - totalInput).toLocaleString()}`],
+                                ['CGST (Central)', `INR ${(totalOutput * 0.5).toLocaleString()}`],
+                                ['SGST (State)', `INR ${(totalOutput * 0.5).toLocaleString()}`],
+                            ];
+                            ExportService.exportToPDF('GST Overview', ['Component', 'Value'], rows, activeCompany);
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
+                    >
+                        <FileDown className="w-4 h-4" />
+                        Export PDF
                     </button>
                     <button className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10">
                         <FileText className="w-4 h-4" />

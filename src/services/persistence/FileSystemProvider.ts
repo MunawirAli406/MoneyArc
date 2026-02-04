@@ -1,4 +1,7 @@
+import { get, set } from 'idb-keyval';
 import type { StorageProvider, Company } from './types';
+
+const HANDLE_KEY = 'moneyarc_dir_handle';
 
 export class FileSystemProvider implements StorageProvider {
     private dirHandle: FileSystemDirectoryHandle | null = null;
@@ -15,6 +18,11 @@ export class FileSystemProvider implements StorageProvider {
                     mode: 'readwrite',
                     startIn: 'documents',
                 });
+
+                // Persist the handle for next session
+                if (this.dirHandle) {
+                    await set(HANDLE_KEY, this.dirHandle);
+                }
             } else {
                 console.error("File System Access API not supported");
             }
@@ -24,6 +32,28 @@ export class FileSystemProvider implements StorageProvider {
                 throw err;
             }
         }
+    }
+
+    async restore(): Promise<boolean> {
+        try {
+            const savedHandle = await get<FileSystemDirectoryHandle>(HANDLE_KEY);
+            if (savedHandle) {
+                // Verify permissions
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const options = { mode: 'readwrite' };
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                if (await (savedHandle as any).queryPermission(options) === 'granted') {
+                    this.dirHandle = savedHandle;
+                    return true;
+                }
+
+                // If permission is not granted, we might need to request it, 
+                // but that requires a user gesture. We'll return false and let the context handle it.
+            }
+        } catch (err) {
+            console.warn('Failed to restore directory handle:', err);
+        }
+        return false;
     }
 
     async listCompanies(): Promise<Company[]> {

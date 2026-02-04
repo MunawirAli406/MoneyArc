@@ -52,7 +52,6 @@ export default function LedgerForm() {
             const updatedLedgers = [...existingLedgers, newLedger];
             await provider.write('ledgers.json', updatedLedgers);
 
-            console.log('Ledger saved:', newLedger);
             navigate('/ledgers');
         } catch (error) {
             console.error('Failed to save ledger:', error);
