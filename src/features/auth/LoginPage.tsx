@@ -1,12 +1,30 @@
 import { useState } from 'react';
-import { Mail } from 'lucide-react';
+import { Mail, ArrowRight, Loader2 } from 'lucide-react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
+    const [isLoadingLocal, setIsLoadingLocal] = useState(false);
+    const [error, setError] = useState('');
+    const { login } = useAuth();
+    const navigate = useNavigate();
+    const location = useLocation();
 
-    const handleLogin = (e: React.FormEvent) => {
+    const from = (location.state as any)?.from?.pathname || "/dashboard";
+
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('Login with email:', email);
+        setError('');
+        setIsLoadingLocal(true);
+        try {
+            await login(email);
+            navigate(from, { replace: true });
+        } catch (err) {
+            setError('Failed to sign in. Please check your credentials.');
+        } finally {
+            setIsLoadingLocal(false);
+        }
     };
 
     return (
@@ -18,12 +36,12 @@ export default function LoginPage() {
                 </div>
 
                 <div className="space-y-4">
-                    <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors bg-white text-gray-700 font-medium">
+                    <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors bg-white text-gray-700 font-medium disabled:opacity-50" disabled={isLoadingLocal}>
                         <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google" className="w-5 h-5" />
                         Continue with Google
                     </button>
 
-                    <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors bg-white text-gray-700 font-medium">
+                    <button className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors bg-white text-gray-700 font-medium disabled:opacity-50" disabled={isLoadingLocal}>
                         <img src="https://www.svgrepo.com/show/452263/microsoft.svg" alt="Microsoft" className="w-5 h-5" />
                         Continue with Microsoft
                     </button>
@@ -38,6 +56,11 @@ export default function LoginPage() {
                     </div>
 
                     <form onSubmit={handleLogin} className="space-y-4">
+                        {error && (
+                            <div className="p-3 text-sm text-red-600 bg-red-50 rounded-lg border border-red-100 italic">
+                                {error}
+                            </div>
+                        )}
                         <div>
                             <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email address</label>
                             <div className="relative">
@@ -50,23 +73,33 @@ export default function LoginPage() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent outline-none transition-all"
                                     placeholder="name@company.com"
+                                    disabled={isLoadingLocal}
                                 />
                             </div>
                         </div>
 
                         <button
                             type="submit"
-                            className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 focus:ring-4 focus:ring-primary-100 transition-all"
+                            disabled={isLoadingLocal}
+                            className="w-full bg-primary-600 text-white py-2.5 rounded-lg font-medium hover:bg-primary-700 focus:ring-4 focus:ring-primary-100 transition-all flex items-center justify-center gap-2"
                         >
-                            Sign in with Email
+                            {isLoadingLocal ? (
+                                <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : (
+                                <>
+                                    Sign in with Email
+                                    <ArrowRight className="w-5 h-5" />
+                                </>
+                            )}
                         </button>
                     </form>
                 </div>
 
                 <p className="text-center mt-6 text-sm text-gray-600">
-                    Don't have an account? <a href="#" className="text-primary-600 font-medium hover:underline">Sign up</a>
+                    Don't have an account? <Link to="/signup" className="text-primary-600 font-medium hover:underline">Sign up</Link>
                 </p>
             </div>
         </div>
     );
 }
+
