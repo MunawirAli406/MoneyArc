@@ -5,16 +5,19 @@ import { Calendar } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function Daybook() {
-    const { provider } = usePersistence();
+    const { provider, activeCompany } = usePersistence();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
         const loadData = async () => {
-            if (!provider) return;
+            if (!provider || !activeCompany) {
+                setLoading(false);
+                return;
+            }
 
-            const allVouchers = await provider.read<Voucher[]>('vouchers.json') || [];
+            const allVouchers = await provider.read<Voucher[]>('vouchers.json', activeCompany.path) || [];
             // Filter by date if needed, for now show all sorted by date desc
             const sorted = allVouchers.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
@@ -22,74 +25,84 @@ export default function Daybook() {
             setLoading(false);
         };
         loadData();
-    }, [provider]);
+    }, [provider, activeCompany]);
 
-    if (loading) return <div className="p-8">Loading Daybook...</div>;
+    if (loading) return (
+        <div className="flex items-center justify-center p-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+    );
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6"
+            className="space-y-8 max-w-7xl mx-auto pb-12"
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Daybook</h1>
-                    <p className="text-gray-500">Chronological record of transactions</p>
+                    <h1 className="text-3xl font-black text-foreground tracking-tight">Daybook</h1>
+                    <p className="text-muted-foreground font-medium">Chronological record of transactions for {activeCompany?.name}</p>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="relative">
+                    <div className="relative group">
+                        <Calendar className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 group-focus-within:text-primary transition-colors" />
                         <input
                             type="date"
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="pl-9 pr-3 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-primary-500 outline-none"
+                            className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary outline-none transition-all"
                         />
-                        <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                     </div>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="w-full text-left text-sm">
-                        <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200">
+                        <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
                             <tr>
-                                <th className="px-6 py-3">Date</th>
-                                <th className="px-6 py-3">Particulars</th>
-                                <th className="px-6 py-3">Voucher Type</th>
-                                <th className="px-6 py-3">Voucher No</th>
-                                <th className="px-6 py-3 text-right">Debit Amount</th>
-                                <th className="px-6 py-3 text-right">Credit Amount</th>
+                                <th className="px-8 py-4">Date / Period</th>
+                                <th className="px-8 py-4">Particulars & Narration</th>
+                                <th className="px-8 py-4">Voucher Info</th>
+                                <th className="px-8 py-4 text-right">Debit Balance</th>
+                                <th className="px-8 py-4 text-right">Credit Balance</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-200">
+                        <tbody className="divide-y divide-border/50">
                             {vouchers.map((v) => {
-                                // Calculate total amount for display (sum of debits)
                                 const amount = v.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0);
 
                                 return (
-                                    <tr key={v.id} className="hover:bg-gray-50 transition-colors cursor-pointer">
-                                        <td className="px-6 py-4 text-gray-900 font-medium whitespace-nowrap">{v.date}</td>
-                                        <td className="px-6 py-4">
-                                            <div className="font-medium text-gray-900">{v.rows[0]?.account || 'Unknown'}</div>
-                                            <div className="text-xs text-gray-500 italic">{v.narration}</div>
+                                    <tr key={v.id} className="hover:bg-muted/10 transition-colors cursor-pointer group">
+                                        <td className="px-8 py-5">
+                                            <div className="text-foreground font-bold">{new Date(v.date).toLocaleDateString()}</div>
+                                            <div className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-0.5">Authorized</div>
                                         </td>
-                                        <td className="px-6 py-4">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                                {v.type}
+                                        <td className="px-8 py-5">
+                                            <div className="font-bold text-foreground group-hover:text-primary transition-colors">{v.rows[0]?.account || 'Journal Entry'}</div>
+                                            <div className="text-xs text-muted-foreground font-medium mt-1 line-clamp-1">{v.narration || 'No narrative provided'}</div>
+                                        </td>
+                                        <td className="px-8 py-5">
+                                            <span className="px-2.5 py-1 rounded-lg bg-muted text-[10px] font-black uppercase tracking-wider text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                                                {v.type} #{v.voucherNo}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-gray-500">{v.voucherNo}</td>
-                                        <td className="px-6 py-4 text-right font-mono text-gray-900">{amount.toFixed(2)}</td>
-                                        <td className="px-6 py-4 text-right font-mono text-gray-900">{amount.toFixed(2)}</td>
+                                        <td className="px-8 py-5 text-right font-mono font-bold text-foreground">{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td className="px-8 py-5 text-right font-mono font-bold text-foreground">{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                                     </tr>
                                 );
                             })}
                             {vouchers.length === 0 && (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
-                                        No transactions found for the selected period.
+                                    <td colSpan={5} className="px-8 py-20 text-center space-y-4">
+                                        <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto text-muted-foreground">
+                                            <Calendar className="w-8 h-8" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-bold">No transactions found</h3>
+                                            <p className="text-muted-foreground text-sm">We couldn't find any vouchers for the selected period.</p>
+                                        </div>
                                     </td>
                                 </tr>
                             )}

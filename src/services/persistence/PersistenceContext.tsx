@@ -1,11 +1,13 @@
 import { createContext, useContext, useState, type ReactNode } from 'react';
-import type { StorageProvider, StorageType } from './types';
+import type { StorageProvider, StorageType, Company } from './types';
 import { FileSystemProvider } from './FileSystemProvider';
 
 interface PersistenceContextType {
     provider: StorageProvider | null;
     storageType: StorageType;
+    activeCompany: Company | null;
     initializeStorage: (type: StorageType) => Promise<void>;
+    selectCompany: (company: Company | null) => void;
 }
 
 const PersistenceContext = createContext<PersistenceContextType | null>(null);
@@ -13,6 +15,7 @@ const PersistenceContext = createContext<PersistenceContextType | null>(null);
 export function PersistenceProvider({ children }: { children: ReactNode }) {
     const [provider, setProvider] = useState<StorageProvider | null>(null);
     const [storageType, setStorageType] = useState<StorageType>(null);
+    const [activeCompany, setActiveCompany] = useState<Company | null>(null);
 
     const initializeStorage = async (type: StorageType) => {
         let newProvider: StorageProvider | null = null;
@@ -31,8 +34,18 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const selectCompany = (company: Company | null) => {
+        setActiveCompany(company);
+    };
+
     return (
-        <PersistenceContext.Provider value={{ provider, storageType, initializeStorage }}>
+        <PersistenceContext.Provider value={{
+            provider,
+            storageType,
+            activeCompany,
+            initializeStorage,
+            selectCompany
+        }}>
             {children}
         </PersistenceContext.Provider>
     );

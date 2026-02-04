@@ -11,7 +11,7 @@ export default function DataSourceSelect() {
             await initializeStorage('local');
             // If successful, navigate to dashboard
             // Note: We might want to check provider.isReady, but init() waits for user selection
-            navigate('/dashboard');
+            navigate('/select-company');
         } catch (error) {
             console.error("Failed to init storage", error);
         }

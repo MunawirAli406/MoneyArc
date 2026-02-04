@@ -20,16 +20,16 @@ export interface Voucher {
 }
 
 export class VoucherService {
-    static async saveVoucher(provider: StorageProvider, voucher: Voucher): Promise<void> {
+    static async saveVoucher(provider: StorageProvider, voucher: Voucher, companyPath?: string): Promise<void> {
         if (!provider) throw new Error("Storage provider not initialized");
 
         // 1. Save the Voucher
-        const vouchers = await provider.read<Voucher[]>('vouchers.json') || [];
+        const vouchers = await provider.read<Voucher[]>('vouchers.json', companyPath) || [];
         vouchers.push(voucher);
-        await provider.write('vouchers.json', vouchers);
+        await provider.write('vouchers.json', vouchers, companyPath);
 
         // 2. Update Ledger Balances
-        const ledgers = await provider.read<Ledger[]>('ledgers.json') || [];
+        const ledgers = await provider.read<Ledger[]>('ledgers.json', companyPath) || [];
 
         // Create a map for fast lookup
         const ledgerMap = new Map(ledgers.map(l => [l.name, l]));
@@ -64,6 +64,6 @@ export class VoucherService {
 
         // Reconstruct the ledgers list
         // (This is a simplified approach; in production, use IDs and transactional safety)
-        await provider.write('ledgers.json', ledgers);
+        await provider.write('ledgers.json', ledgers, companyPath);
     }
 }

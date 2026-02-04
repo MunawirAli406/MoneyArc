@@ -3,7 +3,9 @@ import Layout from './components/layout/Layout';
 import LoginPage from './features/auth/LoginPage';
 import SignUpPage from './features/auth/SignUpPage';
 import DataSourceSelect from './features/onboarding/DataSourceSelect';
+import CompanySelect from './features/onboarding/CompanySelect';
 import Dashboard from './features/dashboard/Dashboard';
+import SettingsPage from './features/settings/SettingsPage';
 import LedgerList from './features/accounting/masters/LedgerList';
 import LedgerForm from './features/accounting/masters/LedgerForm';
 import VoucherEntry from './features/accounting/vouchers/VoucherEntry';
@@ -12,6 +14,7 @@ import ProfitAndLoss from './features/reports/ProfitAndLoss';
 import Daybook from './features/accounting/reports/Daybook';
 import { PersistenceProvider } from './services/persistence/PersistenceContext';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
+import { ThemeProvider } from './features/settings/ThemeContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -37,6 +40,9 @@ function AppContent() {
     <Routes>
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
+      {/* Onboarding routes that might not require full layout or protection */}
+      <Route path="/select-source" element={<DataSourceSelect />} />
+      <Route path="/select-company" element={<CompanySelect />} />
 
       <Route path="/" element={
         <ProtectedRoute>
@@ -44,7 +50,7 @@ function AppContent() {
         </ProtectedRoute>
       }>
         <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="select-source" element={<DataSourceSelect />} />
+        {/* The select-source route was moved out of this protected layout */}
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="ledgers" element={<LedgerList />} />
         <Route path="ledgers/new" element={<LedgerForm />} />
@@ -52,6 +58,7 @@ function AppContent() {
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="reports/profit-loss" element={<ProfitAndLoss />} />
         <Route path="reports/daybook" element={<Daybook />} />
+        <Route path="settings" element={<SettingsPage />} />
       </Route>
     </Routes>
   );
@@ -59,13 +66,15 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
-      <PersistenceProvider>
-        <BrowserRouter>
-          <AppContent />
-        </BrowserRouter>
-      </PersistenceProvider>
-    </AuthProvider>
+    <ThemeProvider>
+      <AuthProvider>
+        <PersistenceProvider>
+          <BrowserRouter>
+            <AppContent />
+          </BrowserRouter>
+        </PersistenceProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 
