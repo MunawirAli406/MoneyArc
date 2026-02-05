@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, ArrowUpRight, ArrowDownRight, IndianRupee, FileDown, Calculator } from 'lucide-react';
+import { FileText, ArrowUpRight, IndianRupee, FileDown, Calculator } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
@@ -24,26 +24,21 @@ export default function GstReport() {
         loadData();
     }, [provider, activeCompany]);
 
-    // Last updated: 2026-02-05 (Force Sync)
+    // Last updated: 2026-02-06 (Logic Refinement)
     // Detailed GST Logic
     let totalTaxable = 0;
-    // Unused variables commented out to fix build error
-    // let totalIGST = 0;
-    // let totalCGST = 0;
-    // let totalSGST = 0;
-    let totalCess = 0;
 
-    // We only care about Sales (Output) for GSTR-1 and GSTR-3B liability
-    // For Input Tax Credit (ITC), we look at Purchases.
-    // This report seems to be a Summary of Liability vs Input Credit.
-
+    // Output Liability (Sales)
     let outputCGST = 0;
     let outputSGST = 0;
     let outputIGST = 0;
 
+    // Input Credit (Purchases)
     let inputCGST = 0;
     let inputSGST = 0;
     let inputIGST = 0;
+
+    let totalCess = 0;
 
     vouchers.forEach(v => {
         v.rows.forEach(r => {
@@ -69,13 +64,17 @@ export default function GstReport() {
                 }
             } else {
                 // If it's a Sales voucher and a Credit row (that isn't tax), it's likely the Sales Income (Taxable Value)
-                // Logic preserved for future use
+                if (v.type === 'Sales' && r.type === 'Cr') {
+                    // Accumulate Taxable Value
+                    totalTaxable += amount;
+                }
             }
         });
     });
 
-    const totalOutput = outputCGST + outputSGST + outputIGST;
-    const totalInput = inputCGST + inputSGST + inputIGST;
+    const totalOutputTax = outputCGST + outputSGST + outputIGST;
+    const totalInputTax = inputCGST + inputSGST + inputIGST;
+    const totalInvoiceValue = totalTaxable + totalOutputTax;
 
     if (loading) return <div className="p-8">Loading GST Data...</div>;
 
@@ -94,11 +93,11 @@ export default function GstReport() {
                     <button
                         onClick={() => {
                             const rows = [
-                                ['Total Output Tax', `INR ${totalOutput.toLocaleString()}`],
-                                ['Eligible ITC', `INR ${totalInput.toLocaleString()}`],
-                                ['Net Tax Payable', `INR ${Math.max(0, totalOutput - totalInput).toLocaleString()}`],
-                                ['CGST (Central)', `INR ${(totalOutput * 0.5).toLocaleString()}`],
-                                ['SGST (State)', `INR ${(totalOutput * 0.5).toLocaleString()}`],
+                                ['Total Output Tax', `INR ${totalOutputTax.toLocaleString()}`],
+                                ['Eligible ITC', `INR ${totalInputTax.toLocaleString()}`],
+                                ['Net Tax Payable', `INR ${Math.max(0, totalOutputTax - totalInputTax).toLocaleString()}`],
+                                ['CGST (Central)', `INR ${(totalOutputTax * 0.5).toLocaleString()}`],
+                                ['SGST (State)', `INR ${(totalOutputTax * 0.5).toLocaleString()}`],
                             ];
                             ExportService.exportToPDF('GST Overview', ['Component', 'Value'], rows, activeCompany);
                         }}
@@ -111,10 +110,10 @@ export default function GstReport() {
                         onClick={() => {
                             const columns = ['Tax Head', 'Output Tax', 'Input Credit (ITC)', 'Net Payable'];
                             const rows = [
-                                ['CGST (Central Tax)', totalOutput * 0.5, totalInput * 0.5, (totalOutput * 0.5) - (totalInput * 0.5)],
-                                ['SGST (State Tax)', totalOutput * 0.5, totalInput * 0.5, (totalOutput * 0.5) - (totalInput * 0.5)],
+                                ['CGST (Central Tax)', totalOutputTax * 0.5, totalInputTax * 0.5, (totalOutputTax * 0.5) - (totalInputTax * 0.5)],
+                                ['SGST (State Tax)', totalOutputTax * 0.5, totalInputTax * 0.5, (totalOutputTax * 0.5) - (totalInputTax * 0.5)],
                                 ['IGST (Integrated Tax)', 0, 0, 0],
-                                ['GRAND TOTAL', totalOutput, totalInput, totalOutput - totalInput]
+                                ['GRAND TOTAL', totalOutputTax, totalInputTax, totalOutputTax - totalInputTax]
                             ];
                             ExportService.exportToExcel('GST Report Summary', columns, rows);
                         }}
@@ -139,9 +138,9 @@ export default function GstReport() {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
-                    { label: 'Total Output Tax', value: totalOutput, icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                    { label: 'Eligible ITC', value: totalInput, icon: ArrowDownRight, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
-                    { label: 'Net Tax Payable', value: Math.max(0, totalOutput - totalInput), icon: IndianRupee, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { label: 'Total Output Tax', value: totalOutputTax, icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                    { label: 'Total Taxable Value', value: totalTaxable, icon: IndianRupee, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { label: 'Total Invoice Value', value: totalInvoiceValue, icon: IndianRupee, color: 'text-blue-500', bg: 'bg-blue-500/10' },
                 ].map((stat, i) => (
                     <div key={i} className="bg-card p-6 rounded-3xl border border-border flex items-center justify-between shadow-sm">
                         <div>
@@ -205,7 +204,7 @@ export default function GstReport() {
                                     igst: outputIGST,
                                     cgst: outputCGST,
                                     sgst: outputSGST,
-                                    total: totalOutput
+                                    total: totalOutputTax
                                 },
                                 {
                                     head: 'Input Credit (Purchases)',
@@ -213,7 +212,7 @@ export default function GstReport() {
                                     igst: inputIGST,
                                     cgst: inputCGST,
                                     sgst: inputSGST,
-                                    total: totalInput
+                                    total: totalInputTax
                                 },
                             ].map((row, i) => (
                                 <tr key={i} className="group hover:bg-muted/10 transition-colors">
@@ -233,7 +232,7 @@ export default function GstReport() {
                                 <td className="py-6 font-mono text-right">₹{Math.max(0, outputIGST - inputIGST).toLocaleString()}</td>
                                 <td className="py-6 font-mono text-right">₹{Math.max(0, outputCGST - inputCGST).toLocaleString()}</td>
                                 <td className="py-6 font-mono text-right">₹{Math.max(0, outputSGST - inputSGST).toLocaleString()}</td>
-                                <td className="py-6 text-right text-lg text-emerald-500">₹{Math.max(0, totalOutput - totalInput).toLocaleString()}</td>
+                                <td className="py-6 text-right text-lg text-emerald-500">₹{Math.max(0, totalOutputTax - totalInputTax).toLocaleString()}</td>
                             </tr>
                         </tfoot>
                     </table>
