@@ -260,7 +260,7 @@ export default function CompanySelect() {
                                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Registration Type</label>
                                     <select
                                         value={newCompany.registrationType}
-                                        onChange={(e) => setNewCompany({ ...newCompany, registrationType: e.target.value as any })}
+                                        onChange={(e) => setNewCompany({ ...newCompany, registrationType: e.target.value as Company['registrationType'] })}
                                         className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground appearance-none"
                                     >
                                         <option value="Regular">Regular</option>

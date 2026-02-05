@@ -27,7 +27,7 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
     const restoreStorage = async () => {
         try {
             const localProvider = new FileSystemProvider();
-            const restored = await (localProvider as any).restore?.();
+            const restored = await localProvider.restore?.();
             if (restored) {
                 console.log('PersistenceProvider: Storage restored successfully.');
                 setProvider(localProvider);

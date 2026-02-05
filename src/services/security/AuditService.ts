@@ -1,3 +1,4 @@
+import type { StorageProvider } from '../persistence/types';
 
 export interface AuditLog {
     id: string;
@@ -7,17 +8,17 @@ export interface AuditLog {
     entityType: 'VOUCHER' | 'LEDGER' | 'STOCK_ITEM';
     entityId: string;
     details: string; // e.g. "Voucher Sales #101 created"
-    changes?: Record<string, { old: any, new: any }>;
+    changes?: Record<string, { old: unknown, new: unknown }>;
 }
 
 export class AuditService {
     static async log(
-        provider: any,
+        provider: StorageProvider,
         companyPath: string,
         log: Omit<AuditLog, 'id' | 'timestamp' | 'userId'> & { userId?: string }
     ) {
         try {
-            const logs = await provider.read('audit_logs.json', companyPath) || [];
+            const logs = await provider.read<AuditLog[]>('audit_logs.json', companyPath) || [];
             const newLog: AuditLog = {
                 userId: 'System', // Default
                 ...log,
@@ -32,7 +33,7 @@ export class AuditService {
         }
     }
 
-    static async getLogs(provider: PersistenceProvider, companyPath: string): Promise<AuditLog[]> {
+    static async getLogs(provider: StorageProvider, companyPath: string): Promise<AuditLog[]> {
         return await provider.read<AuditLog[]>('audit_logs.json', companyPath) || [];
     }
 }

@@ -54,6 +54,7 @@ export default function GoToSearch() {
             if ((e.metaKey || e.ctrlKey) && e.key === 'g') {
                 e.preventDefault();
                 setIsOpen(true);
+                setSelectedIndex(0);
             }
             if (e.key === 'Escape') {
                 setIsOpen(false);
@@ -66,7 +67,6 @@ export default function GoToSearch() {
     useEffect(() => {
         if (isOpen) {
             inputRef.current?.focus();
-            setSelectedIndex(0);
         }
     }, [isOpen]);
 
@@ -115,7 +115,10 @@ export default function GoToSearch() {
                 <input
                     type="text"
                     placeholder="Go To... (Ctrl+G)"
-                    onFocus={() => setIsOpen(true)}
+                    onFocus={() => {
+                        setIsOpen(true);
+                        setSelectedIndex(0);
+                    }}
                     className="w-full pl-9 pr-4 py-2 text-sm bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
                     readOnly
                 />
