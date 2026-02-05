@@ -5,14 +5,15 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useTheme } from '../../features/settings/ThemeContext';
 import { useState, useEffect } from 'react';
 import type { Voucher } from '../../services/accounting/VoucherService';
+import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
 
 export default function Dashboard() {
     const { provider, activeCompany } = usePersistence();
     const { theme } = useTheme();
     const [stats, setStats] = useState([
-        { label: 'Total Revenue', value: '$0.00', change: '0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
-        { label: 'Total Expenses', value: '$0.00', change: '0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-        { label: 'Net Profit', value: '$0.00', change: '0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+        { label: 'Total Revenue', value: '₹0.00', change: '0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
+        { label: 'Total Expenses', value: '₹0.00', change: '0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+        { label: 'Net Profit', value: '₹0.00', change: '0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
         { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10' },
     ]);
     const [chartData, setChartData] = useState<any[]>([]);
@@ -22,35 +23,59 @@ export default function Dashboard() {
             if (!provider || !activeCompany) return;
 
             const vouchers = await provider.read<Voucher[]>('vouchers.json', activeCompany.path) || [];
+            const ledgers = await provider.read<Ledger[]>('ledgers.json', activeCompany.path) || [];
+
+            // Map ledger name to group
+            const ledgerGroupMap = new Map(ledgers.map(l => [l.name, l.group]));
 
             // Calculate stats
             let revenue = 0;
             let expenses = 0;
+
+            // Build month-based aggregation
+            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthlyData = months.reduce((acc, month) => {
+                acc[month] = { name: month, revenue: 0, expenses: 0 };
+                return acc;
+            }, {} as Record<string, any>);
+
             vouchers.forEach(v => {
+                const date = new Date(v.date);
+                const month = months[date.getMonth()];
+
                 v.rows.forEach(r => {
-                    if (r.type === 'Cr' && r.account.toLowerCase().includes('sales')) revenue += r.credit;
-                    if (r.type === 'Dr' && r.account.toLowerCase().includes('expense')) expenses += r.debit;
+                    const group = ledgerGroupMap.get(r.account);
+                    if (group && ACCT_GROUPS.INCOME.includes(group)) {
+                        if (r.type === 'Cr') {
+                            revenue += r.credit;
+                            monthlyData[month].revenue += r.credit;
+                        }
+                    }
+                    if (group && ACCT_GROUPS.EXPENSES.includes(group)) {
+                        if (r.type === 'Dr') {
+                            expenses += r.debit;
+                            monthlyData[month].expenses += r.debit;
+                        }
+                    }
                 });
             });
 
             setStats([
-                { label: 'Total Revenue', value: `$${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
-                { label: 'Total Expenses', value: `$${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                { label: 'Net Profit', value: `$${(revenue - expenses).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                { label: 'Total Revenue', value: `₹${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
+                { label: 'Total Expenses', value: `₹${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                { label: 'Net Profit', value: `₹${(revenue - expenses).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
                 { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10' },
             ]);
 
-            // Simple mock data for chart based on real vouchers if any
-            const mockData = [
-                { name: 'Jan', revenue: 4000, expenses: 2400 },
-                { name: 'Feb', revenue: 3000, expenses: 1398 },
-                { name: 'Mar', revenue: 2000, expenses: 9800 },
-                { name: 'Apr', revenue: 2780, expenses: 3908 },
-                { name: 'May', revenue: 1890, expenses: 4800 },
-                { name: 'Jun', revenue: 2390, expenses: 3800 },
-                { name: 'Jul', revenue: revenue || 3490, expenses: expenses || 4300 },
-            ];
-            setChartData(mockData);
+            // Filter out months with no data for a cleaner chart, or just show last 6 months
+            const currentMonth = new Date().getMonth();
+            const last6Months = [];
+            for (let i = 5; i >= 0; i--) {
+                const mIdx = (currentMonth - i + 12) % 12;
+                last6Months.push(monthlyData[months[mIdx]]);
+            }
+
+            setChartData(last6Months);
         };
         loadDashboardData();
     }, [provider, activeCompany]);

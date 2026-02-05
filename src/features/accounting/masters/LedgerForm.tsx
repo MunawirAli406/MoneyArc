@@ -18,7 +18,7 @@ interface Ledger {
 
 export default function LedgerForm() {
     const navigate = useNavigate();
-    const { provider } = usePersistence();
+    const { provider, activeCompany } = usePersistence();
 
     const [formData, setFormData] = useState({
         name: '',
@@ -30,14 +30,14 @@ export default function LedgerForm() {
     });
 
     const handleSave = async () => {
-        if (!provider) {
-            alert("Storage not initialized! Please select a data source first.");
+        if (!provider || !activeCompany) {
+            alert("Storage not initialized or company not selected!");
             return;
         }
 
         try {
             // 1. Read existing ledgers
-            const existingLedgers = (await provider.read<Ledger[]>('ledgers.json')) || [];
+            const existingLedgers = (await provider.read<Ledger[]>('ledgers.json', activeCompany.path)) || [];
 
             // 2. Create new ledger object
             const newLedger: Ledger = {
@@ -50,7 +50,7 @@ export default function LedgerForm() {
 
             // 3. Append and write back
             const updatedLedgers = [...existingLedgers, newLedger];
-            await provider.write('ledgers.json', updatedLedgers);
+            await provider.write('ledgers.json', updatedLedgers, activeCompany.path);
 
             navigate('/ledgers');
         } catch (error) {

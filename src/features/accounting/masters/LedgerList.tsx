@@ -35,6 +35,20 @@ export default function LedgerList() {
         fetchLedgers();
     }, [provider, activeCompany]);
 
+    const handleDelete = async (id: string) => {
+        if (!provider || !activeCompany) return;
+        if (!confirm('Are you sure you want to delete this ledger?')) return;
+
+        try {
+            const updatedLedgers = ledgers.filter(l => l.id !== id);
+            await provider.write('ledgers.json', updatedLedgers, activeCompany.path);
+            setLedgers(updatedLedgers);
+        } catch (error) {
+            console.error('Failed to delete ledger:', error);
+            alert('Failed to delete ledger.');
+        }
+    };
+
     if (loading) return (
         <div className="flex items-center justify-center p-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -119,7 +133,10 @@ export default function LedgerList() {
                                                 <button className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
                                                     <Edit2 className="w-4 h-4" />
                                                 </button>
-                                                <button className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors">
+                                                <button
+                                                    onClick={() => handleDelete(ledger.id)}
+                                                    className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                                >
                                                     <Trash2 className="w-4 h-4" />
                                                 </button>
                                             </div>

@@ -1,7 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, FileText, Settings, Wallet, TrendingUp, PieChart, Building2 } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, Settings, Wallet, TrendingUp, PieChart, Building2, LogOut } from 'lucide-react';
 import clsx from 'clsx';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
+import { useAuth } from '../../features/auth/AuthContext';
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -19,6 +20,7 @@ const navItems = [
 export default function Sidebar() {
     const location = useLocation();
     const { activeCompany } = usePersistence();
+    const { user, logout } = useAuth();
 
     return (
         <div className="w-64 bg-card border-r border-border flex flex-col transition-colors duration-300">
@@ -61,14 +63,23 @@ export default function Sidebar() {
             </nav>
 
             <div className="p-4 border-t border-border bg-muted/10">
-                <div className="flex items-center gap-3 p-2 rounded-xl border border-transparent hover:border-border hover:bg-card transition-all cursor-pointer group">
-                    <div className="w-10 h-10 rounded-xl cyan-gradient flex items-center justify-center text-white font-bold shadow-md shadow-primary/10 group-hover:scale-105 transition-transform">
-                        U
+                <div className="flex items-center justify-between p-2 rounded-xl border border-transparent hover:border-border hover:bg-card transition-all group">
+                    <div className="flex items-center gap-3 overflow-hidden">
+                        <div className="w-10 h-10 rounded-xl cyan-gradient flex items-center justify-center text-white font-bold shadow-md shadow-primary/10 group-hover:scale-105 transition-transform flex-shrink-0">
+                            {user?.name?.[0] || user?.email?.[0] || 'U'}
+                        </div>
+                        <div className="overflow-hidden">
+                            <p className="text-sm font-bold truncate">{user?.name || 'User'}</p>
+                            <p className="text-xs text-muted-foreground truncate font-mono">{user?.email || 'user@example.com'}</p>
+                        </div>
                     </div>
-                    <div className="overflow-hidden">
-                        <p className="text-sm font-bold truncate">User</p>
-                        <p className="text-xs text-muted-foreground truncate font-mono">user@example.com</p>
-                    </div>
+                    <button
+                        onClick={logout}
+                        title="Logout"
+                        className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all"
+                    >
+                        <LogOut className="w-4 h-4" />
+                    </button>
                 </div>
             </div>
         </div>

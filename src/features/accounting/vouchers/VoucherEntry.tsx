@@ -22,7 +22,6 @@ export default function VoucherEntry() {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [narration, setNarration] = useState('');
     const [voucherNo, setVoucherNo] = useState('1');
-    const [simpleMode, setSimpleMode] = useState(true);
 
     const tableRef = useRef<HTMLTableElement>(null);
 
@@ -72,16 +71,7 @@ export default function VoucherEntry() {
         setRows(rows.map(r => {
             if (r.id === id) {
                 const updated = { ...r, [field]: value };
-                // Basic Tally logic: if typing in particulars, detect Dr/Cr
-                if (field === 'account' && typeof value === 'string') {
-                    if (value.toLowerCase().startsWith('dr ')) {
-                        updated.type = 'Dr';
-                        updated.account = value.substring(3);
-                    } else if (value.toLowerCase().startsWith('cr ')) {
-                        updated.type = 'Cr';
-                        updated.account = value.substring(3);
-                    }
-                }
+                // Basic logic: if typing in particulars, you can add more advanced detection here if needed
                 return updated;
             }
             return r;
@@ -154,15 +144,6 @@ export default function VoucherEntry() {
                             </button>
                         ))}
                     </div>
-                    <button
-                        onClick={() => setSimpleMode(!simpleMode)}
-                        className={clsx(
-                            "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all",
-                            simpleMode ? "bg-primary/10 border-primary/20 text-primary" : "border-border text-muted-foreground"
-                        )}
-                    >
-                        Tally Mode: {simpleMode ? 'ON' : 'OFF'}
-                    </button>
                 </div>
             </div>
 
@@ -237,7 +218,7 @@ export default function VoucherEntry() {
                                             onChange={(e) => updateRow(row.id, 'account', e.target.value)}
                                             onKeyDown={(e) => handleKeyDown(e, row.id, 'account')}
                                             className="w-full outline-none border-b border-transparent focus:border-primary transition-all font-bold text-sm bg-transparent placeholder-muted-foreground/20 py-1"
-                                            placeholder={simpleMode ? "Type 'Dr' or 'Cr' or select ledger..." : "Select Ledger..."}
+                                            placeholder="Select Ledger..."
                                         />
                                         <datalist id={`ledgers-${row.id}`}>
                                             {ledgers.map(l => (
