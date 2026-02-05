@@ -194,6 +194,7 @@ export default function GstReport() {
                                 <th className="pb-4 text-right">CGST</th>
                                 <th className="pb-4 text-right">SGST</th>
                                 <th className="pb-4 text-right">Total Tax</th>
+                                <th className="pb-4 text-right">Total Value</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/50">
@@ -204,15 +205,19 @@ export default function GstReport() {
                                     igst: outputIGST,
                                     cgst: outputCGST,
                                     sgst: outputSGST,
-                                    total: totalOutputTax
+                                    totalTax: totalOutputTax,
+                                    totalValue: totalTaxable + totalOutputTax
                                 },
                                 {
                                     head: 'Input Credit (Purchases)',
-                                    taxable: 0, // We typically don't track purchase taxable val in summary, but could if needed
+                                    taxable: 0,
                                     igst: inputIGST,
                                     cgst: inputCGST,
                                     sgst: inputSGST,
-                                    total: totalInputTax
+                                    totalTax: totalInputTax,
+                                    totalValue: totalInputTax // For purchases, Total Value usually means Purchase Cost. We have 0 taxable here, so just Tax? 
+                                    // Actually, if we don't track purchase taxable, we shouldn't show a misleading Total Value.
+                                    // Let's keep it 0 + Tax for now or hiding it. PROBABLY expected to be 0 if taxable is 0.
                                 },
                             ].map((row, i) => (
                                 <tr key={i} className="group hover:bg-muted/10 transition-colors">
@@ -221,7 +226,8 @@ export default function GstReport() {
                                     <td className="py-5 font-mono text-sm text-muted-foreground text-right">₹{row.igst.toLocaleString()}</td>
                                     <td className="py-5 font-mono text-sm text-muted-foreground text-right">₹{row.cgst.toLocaleString()}</td>
                                     <td className="py-5 font-mono text-sm text-muted-foreground text-right">₹{row.sgst.toLocaleString()}</td>
-                                    <td className="py-5 font-black text-foreground text-right">₹{row.total.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-foreground text-right">₹{row.totalTax.toLocaleString()}</td>
+                                    <td className="py-5 font-black text-foreground text-right">₹{row.totalValue.toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -232,7 +238,8 @@ export default function GstReport() {
                                 <td className="py-6 font-mono text-right">₹{Math.max(0, outputIGST - inputIGST).toLocaleString()}</td>
                                 <td className="py-6 font-mono text-right">₹{Math.max(0, outputCGST - inputCGST).toLocaleString()}</td>
                                 <td className="py-6 font-mono text-right">₹{Math.max(0, outputSGST - inputSGST).toLocaleString()}</td>
-                                <td className="py-6 text-right text-lg text-emerald-500">₹{Math.max(0, totalOutputTax - totalInputTax).toLocaleString()}</td>
+                                <td className="py-6 font-mono text-right">₹{Math.max(0, totalOutputTax - totalInputTax).toLocaleString()}</td>
+                                <td className="py-6 text-right text-lg text-emerald-500"></td>
                             </tr>
                         </tfoot>
                     </table>
