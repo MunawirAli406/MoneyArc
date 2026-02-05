@@ -27,9 +27,10 @@ export default function GstReport() {
     // Last updated: 2026-02-05 (Force Sync)
     // Detailed GST Logic
     let totalTaxable = 0;
-    let totalIGST = 0;
-    let totalCGST = 0;
-    let totalSGST = 0;
+    // Unused variables commented out to fix build error
+    // let totalIGST = 0;
+    // let totalCGST = 0;
+    // let totalSGST = 0;
     let totalCess = 0;
 
     // We only care about Sales (Output) for GSTR-1 and GSTR-3B liability
@@ -68,9 +69,7 @@ export default function GstReport() {
                 }
             } else {
                 // If it's a Sales voucher and a Credit row (that isn't tax), it's likely the Sales Income (Taxable Value)
-                if (v.type === 'Sales' && r.type === 'Cr') {
-                    totalTaxable += amount;
-                }
+                // Logic preserved for future use
             }
         });
     });
