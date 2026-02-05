@@ -1,4 +1,4 @@
-import { Bell, Sun, Moon, Building2, ChevronDown, LogOut } from 'lucide-react';
+import { Bell, Sun, Moon, Building2, ChevronDown, LogOut, Sparkles } from 'lucide-react';
 import { useTheme } from '../../features/settings/useTheme';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useState } from 'react';
@@ -6,7 +6,11 @@ import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import GoToSearch from './GoToSearch';
 
-export default function Header() {
+interface HeaderProps {
+    onToggleGemini: () => void;
+}
+
+export default function Header({ onToggleGemini }: HeaderProps) {
     const { theme, toggleTheme } = useTheme();
     const { activeCompany, selectCompany } = usePersistence();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -65,6 +69,13 @@ export default function Header() {
             </div>
 
             <div className="flex items-center gap-2">
+                <button
+                    onClick={onToggleGemini}
+                    className="p-2.5 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10 rounded-xl transition-all active:scale-90"
+                    title="MoneyArc AI Assistant"
+                >
+                    <Sparkles className="w-5 h-5" />
+                </button>
                 <button
                     onClick={toggleTheme}
                     className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-xl transition-all active:scale-90"
