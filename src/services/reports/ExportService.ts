@@ -1,9 +1,11 @@
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import type { Company } from '../persistence/types';
 
 export class ExportService {
     static exportToPDF(title: string, columns: string[], rows: (string | number)[][], company: Company | null) {
+        // ... existing PDF logic ...
         const doc = new jsPDF();
         const timestamp = new Date().toLocaleString();
 
@@ -57,5 +59,14 @@ export class ExportService {
         }
 
         doc.save(`${title.toLowerCase().replace(/\s+/g, '_')}_${new Date().getTime()}.pdf`);
+    }
+
+    static exportToExcel(title: string, columns: string[], rows: any[][]) {
+        const worksheetData = [columns, ...rows];
+        const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, title);
+
+        XLSX.writeFile(workbook, `${title.toLowerCase().replace(/\s+/g, '_')}_${new Date().getTime()}.xlsx`);
     }
 }

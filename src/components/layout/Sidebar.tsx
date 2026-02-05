@@ -1,12 +1,12 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, FileText, Settings, Wallet, TrendingUp, PieChart, Building2, LogOut } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, Settings, Wallet, TrendingUp, PieChart, Building2, LogOut, Package } from 'lucide-react';
 import clsx from 'clsx';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useAuth } from '../../features/auth/AuthContext';
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
-    { icon: Wallet, label: 'Vouchers', path: '/vouchers' },
+    { icon: Wallet, label: 'Vouchers', path: '/vouchers/new' },
     { icon: BookOpen, label: 'Ledgers', path: '/ledgers' },
     { icon: BookOpen, label: 'Daybook', path: '/reports/daybook' },
     { icon: FileText, label: 'Balance Sheet', path: '/reports/balance-sheet' },
@@ -15,6 +15,10 @@ const navItems = [
     { icon: Wallet, label: 'Cash Flow', path: '/reports/cash-flow' },
     { icon: TrendingUp, label: 'Fund Flow', path: '/reports/fund-flow' },
     { icon: Settings, label: 'Settings', path: '/settings' },
+    { icon: Package, label: 'Stock Items', path: '/inventory/items' },
+    { icon: Package, label: 'Stock Groups', path: '/inventory/groups' },
+    { icon: Package, label: 'Units', path: '/inventory/units' },
+    { icon: TrendingUp, label: 'Stock Summary', path: '/inventory/stock-summary' },
 ];
 
 export default function Sidebar() {

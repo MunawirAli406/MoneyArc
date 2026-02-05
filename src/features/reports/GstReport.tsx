@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, ArrowUpRight, ArrowDownRight, IndianRupee, FileDown } from 'lucide-react';
+import { FileText, ArrowUpRight, ArrowDownRight, IndianRupee, FileDown, Calculator } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
+import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 
 export default function GstReport() {
+    const navigate = useNavigate();
     const { provider, activeCompany } = usePersistence();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
@@ -71,6 +73,29 @@ export default function GstReport() {
                         <FileDown className="w-4 h-4" />
                         Export PDF
                     </button>
+                    <button
+                        onClick={() => {
+                            const columns = ['Tax Head', 'Output Tax', 'Input Credit (ITC)', 'Net Payable'];
+                            const rows = [
+                                ['CGST (Central Tax)', totalOutput * 0.5, totalInput * 0.5, (totalOutput * 0.5) - (totalInput * 0.5)],
+                                ['SGST (State Tax)', totalOutput * 0.5, totalInput * 0.5, (totalOutput * 0.5) - (totalInput * 0.5)],
+                                ['IGST (Integrated Tax)', 0, 0, 0],
+                                ['GRAND TOTAL', totalOutput, totalInput, totalOutput - totalInput]
+                            ];
+                            ExportService.exportToExcel('GST Report Summary', columns, rows);
+                        }}
+                        className="flex items-center gap-2 px-5 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
+                    >
+                        <IndianRupee className="w-4 h-4 text-emerald-500" />
+                        Export Excel
+                    </button>
+                    <button
+                        onClick={() => navigate('/reports/gst/r1')}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
+                    >
+                        <FileText className="w-4 h-4" />
+                        GSTR-1 Details
+                    </button>
                     <button className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10">
                         <FileText className="w-4 h-4" />
                         File Return
@@ -94,6 +119,29 @@ export default function GstReport() {
                         </div>
                     </div>
                 ))}
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-4">
+                <button
+                    onClick={() => navigate('/reports/gst/r1')}
+                    className="flex-1 p-8 bg-card rounded-[2.5rem] border border-border hover:border-primary transition-all text-left group shadow-sm hover:shadow-xl"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
+                        <FileText className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xs font-black uppercase tracking-widest mb-1">GSTR-1 Details</h3>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Outward Supplies Detail</p>
+                </button>
+                <button
+                    onClick={() => navigate('/reports/gst/r3b')}
+                    className="flex-1 p-8 bg-card rounded-[2.5rem] border border-border hover:border-indigo-500 transition-all text-left group shadow-sm hover:shadow-xl"
+                >
+                    <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 mb-4 group-hover:scale-110 transition-transform">
+                        <Calculator className="w-6 h-6" />
+                    </div>
+                    <h3 className="text-xs font-black uppercase tracking-widest mb-1">GSTR-3B Summary</h3>
+                    <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Self-Assessment Summary</p>
+                </button>
             </div>
 
             <div className="bg-card rounded-[2.5rem] border border-border overflow-hidden shadow-sm">

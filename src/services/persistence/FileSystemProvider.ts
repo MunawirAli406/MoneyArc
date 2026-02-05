@@ -106,6 +106,32 @@ export class FileSystemProvider implements StorageProvider {
         return companyData;
     }
 
+    async updateCompany(id: string, path: string, data: Partial<Omit<Company, 'id' | 'path'>>): Promise<Company> {
+        if (!this.dirHandle) throw new Error('Storage not initialized');
+
+        const companyDir = await this.dirHandle.getDirectoryHandle(path);
+        const compFile = await companyDir.getFileHandle('company.json');
+
+        // Read existing
+        const file = await compFile.getFile();
+        const text = await file.text();
+        const existingData = JSON.parse(text) as Company;
+
+        const updatedData: Company = {
+            ...existingData,
+            ...data,
+            id, // Ensure ID and path remain same
+            path
+        };
+
+        // Write back
+        const writable = await compFile.createWritable();
+        await writable.write(JSON.stringify(updatedData, null, 2));
+        await writable.close();
+
+        return updatedData;
+    }
+
     async read<T>(filename: string, companyPath?: string): Promise<T | null> {
         if (!this.dirHandle) throw new Error('Storage not initialized');
 

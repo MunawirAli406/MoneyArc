@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import { ExportService } from '../../../services/reports/ExportService';
-import type { Voucher } from '../../../services/accounting/VoucherService';
-import { Calendar, FileDown } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { VoucherService, type Voucher } from '../../../services/accounting/VoucherService';
+import { Calendar, FileDown, Printer, Edit, Trash2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import InvoiceModal from '../vouchers/InvoiceModal';
+import type { Ledger } from '../../../services/accounting/ReportService';
+import { useNavigate } from 'react-router-dom';
 
 export default function Daybook() {
     const { provider, activeCompany } = usePersistence();
+    const navigate = useNavigate();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
+    const [ledgers, setLedgers] = useState<Ledger[]>([]);
+    const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
     const [loading, setLoading] = useState(true);
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
 
@@ -18,11 +24,21 @@ export default function Daybook() {
                 return;
             }
 
-            const allVouchers = await provider.read<Voucher[]>('vouchers.json', activeCompany.path) || [];
-            const sorted = allVouchers.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            try {
+                const [vData, lData] = await Promise.all([
+                    provider.read<Voucher[]>('vouchers.json', activeCompany.path),
+                    provider.read<Ledger[]>('ledgers.json', activeCompany.path)
+                ]);
 
-            setVouchers(sorted);
-            setLoading(false);
+                const sorted = (vData || []).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+                setVouchers(sorted);
+                setLedgers(lData || []);
+            } catch (err) {
+                console.error("Failed to load Daybook data", err);
+            } finally {
+                setLoading(false);
+            }
         };
         loadData();
     }, [provider, activeCompany]);
@@ -110,7 +126,52 @@ export default function Daybook() {
                                             </span>
                                         </td>
                                         <td className="px-8 py-5 text-right font-mono font-bold text-foreground">{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
-                                        <td className="px-8 py-5 text-right font-mono font-bold text-foreground">{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+                                        <td className="px-8 py-5 text-right font-mono font-bold text-foreground">
+                                            <div className="flex items-center justify-end gap-2">
+                                                <span>{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-4">
+                                                    {v.type === 'Sales' && (
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setSelectedVoucher(v);
+                                                            }}
+                                                            className="p-2 hover:bg-primary/10 text-primary rounded-lg"
+                                                            title="Print Invoice"
+                                                        >
+                                                            <Printer className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            navigate(`/vouchers/edit/${v.id}`);
+                                                        }}
+                                                        className="p-2 hover:bg-indigo-500/10 text-indigo-500 rounded-lg"
+                                                        title="Edit Voucher"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={async (e) => {
+                                                            e.stopPropagation();
+                                                            if (confirm("Are you sure you want to delete this voucher? This will reverse all ledger and inventory impacts.")) {
+                                                                try {
+                                                                    await VoucherService.deleteVoucher(provider!, v.id, activeCompany!.path);
+                                                                    setVouchers(prev => prev.filter(item => item.id !== v.id));
+                                                                } catch (err) {
+                                                                    alert("Failed to delete voucher.");
+                                                                }
+                                                            }
+                                                        }}
+                                                        className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-lg"
+                                                        title="Delete Voucher"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </td>
                                     </tr>
                                 );
                             })}
@@ -131,6 +192,17 @@ export default function Daybook() {
                     </table>
                 </div>
             </div>
+
+            <AnimatePresence>
+                {selectedVoucher && activeCompany && (
+                    <InvoiceModal
+                        voucher={selectedVoucher}
+                        company={activeCompany}
+                        customer={ledgers.find(l => l.name === selectedVoucher.rows.find(r => r.type === 'Dr')?.account) || { name: 'Cash', gstin: '', address: '', balance: 0, type: 'Dr', id: 'cash', group: 'Cash-in-hand', isGstEnabled: false }}
+                        onClose={() => setSelectedVoucher(null)}
+                    />
+                )}
+            </AnimatePresence>
         </motion.div>
     );
 }

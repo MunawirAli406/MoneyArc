@@ -10,12 +10,19 @@ export default function CompanySelect() {
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [showCreateForm, setShowCreateForm] = useState(false);
+    const [editingCompanyId, setEditingCompanyId] = useState<string | null>(null);
     const [newCompany, setNewCompany] = useState<Omit<Company, 'id' | 'path'>>({
         name: '',
         financialYear: '2025-26',
         gstin: '',
         address: '',
         state: 'Maharashtra',
+        country: 'India',
+        phone: '',
+        email: '',
+        website: '',
+        currency: 'INR',
+        symbol: '₹',
         registrationType: 'Regular'
     });
     const navigate = useNavigate();
@@ -46,15 +53,62 @@ export default function CompanySelect() {
         navigate('/dashboard');
     };
 
+    const handleEdit = (company: Company) => {
+        setNewCompany({
+            name: company.name,
+            financialYear: company.financialYear,
+            gstin: company.gstin || '',
+            address: company.address || '',
+            state: company.state || '',
+            country: company.country || 'India',
+            phone: company.phone || '',
+            email: company.email || '',
+            website: company.website || '',
+            currency: company.currency || 'INR',
+            symbol: company.symbol || '₹',
+            registrationType: company.registrationType || 'Regular'
+        });
+        setEditingCompanyId(company.id);
+        setShowCreateForm(true);
+    };
+
+    const resetForm = () => {
+        setNewCompany({
+            name: '',
+            financialYear: '2025-26',
+            gstin: '',
+            address: '',
+            state: 'Maharashtra',
+            country: 'India',
+            phone: '',
+            email: '',
+            website: '',
+            currency: 'INR',
+            symbol: '₹',
+            registrationType: 'Regular'
+        });
+        setEditingCompanyId(null);
+        setShowCreateForm(false);
+    };
+
     const handleCreate = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!provider) return;
         setIsLoading(true);
         try {
-            const created = await provider.createCompany(newCompany);
-            handleSelect(created);
+            if (editingCompanyId) {
+                const companyToEdit = companies.find(c => c.id === editingCompanyId);
+                if (companyToEdit) {
+                    await provider.updateCompany(editingCompanyId, companyToEdit.path, newCompany);
+                    await loadCompanies();
+                    resetForm();
+                }
+            } else {
+                const created = await provider.createCompany(newCompany);
+                handleSelect(created);
+            }
         } catch (error) {
-            console.error("Failed to create company", error);
+            console.error("Failed to save company", error);
         } finally {
             setIsLoading(false);
         }
@@ -129,6 +183,15 @@ export default function CompanySelect() {
                                             <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Active State</p>
                                             <p className="text-sm font-bold text-foreground">{company.state || 'N/A'}</p>
                                         </div>
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleEdit(company);
+                                            }}
+                                            className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                                        >
+                                            <Building2 className="w-5 h-5" />
+                                        </button>
                                         <ChevronRight className="w-8 h-8 text-border group-hover:text-primary group-hover:translate-x-1 transition-all" />
                                     </div>
                                 </button>
@@ -148,11 +211,15 @@ export default function CompanySelect() {
 
             {/* Create Company Modal */}
             {showCreateForm && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center p-4 z-50">
-                    <div className="bg-card rounded-[2.5rem] shadow-2xl w-full max-w-2xl overflow-hidden animate-in fade-in zoom-in duration-300 border border-border">
+                <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
+                    <div className="bg-card rounded-[2.5rem] shadow-2xl w-full max-w-2xl my-8 overflow-hidden animate-in fade-in zoom-in duration-300 border border-border">
                         <div className="p-10 border-b border-border bg-muted/30">
-                            <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">Establish Company</h2>
-                            <p className="font-medium text-muted-foreground mt-1">Define your organization's core financial identity.</p>
+                            <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">
+                                {editingCompanyId ? 'Alter Company' : 'Establish Company'}
+                            </h2>
+                            <p className="font-medium text-muted-foreground mt-1">
+                                {editingCompanyId ? 'Modify your organization details.' : "Define your organization's core financial identity."}
+                            </p>
                         </div>
                         <form onSubmit={handleCreate} className="p-10 space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -201,6 +268,48 @@ export default function CompanySelect() {
                                         <option value="Unregistered">Unregistered</option>
                                     </select>
                                 </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Country</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        value={newCompany.country}
+                                        onChange={(e) => setNewCompany({ ...newCompany, country: e.target.value })}
+                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
+                                        placeholder="e.g., India"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">State</label>
+                                    <input
+                                        required
+                                        type="text"
+                                        value={newCompany.state}
+                                        onChange={(e) => setNewCompany({ ...newCompany, state: e.target.value })}
+                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
+                                        placeholder="e.g., Maharashtra"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Phone</label>
+                                    <input
+                                        type="text"
+                                        value={newCompany.phone}
+                                        onChange={(e) => setNewCompany({ ...newCompany, phone: e.target.value })}
+                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
+                                        placeholder="+91 98765 43210"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Email</label>
+                                    <input
+                                        type="email"
+                                        value={newCompany.email}
+                                        onChange={(e) => setNewCompany({ ...newCompany, email: e.target.value })}
+                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
+                                        placeholder="contact@company.com"
+                                    />
+                                </div>
                                 <div className="md:col-span-2 space-y-2">
                                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Business Address</label>
                                     <textarea
@@ -211,12 +320,31 @@ export default function CompanySelect() {
                                         placeholder="Enter full registered address..."
                                     />
                                 </div>
+                                <div className="md:col-span-2 space-y-2">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Currency & Symbol</label>
+                                    <div className="flex gap-4">
+                                        <input
+                                            type="text"
+                                            value={newCompany.currency}
+                                            onChange={(e) => setNewCompany({ ...newCompany, currency: e.target.value })}
+                                            className="flex-1 px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
+                                            placeholder="Currency (e.g., INR)"
+                                        />
+                                        <input
+                                            type="text"
+                                            value={newCompany.symbol}
+                                            onChange={(e) => setNewCompany({ ...newCompany, symbol: e.target.value })}
+                                            className="w-24 px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
+                                            placeholder="Symbol (₹)"
+                                        />
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="flex gap-4 pt-6">
                                 <button
                                     type="button"
-                                    onClick={() => setShowCreateForm(false)}
+                                    onClick={resetForm}
                                     className="flex-1 px-8 py-4 border border-border rounded-2xl font-black uppercase tracking-widest text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
                                 >
                                     Cancel
@@ -226,7 +354,7 @@ export default function CompanySelect() {
                                     disabled={isLoading}
                                     className="flex-[2] bg-primary text-primary-foreground px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:shadow-xl hover:shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2"
                                 >
-                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Create Workspace'}
+                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingCompanyId ? 'Update Workspace' : 'Create Workspace')}
                                 </button>
                             </div>
                         </form>

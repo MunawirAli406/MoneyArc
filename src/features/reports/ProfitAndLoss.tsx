@@ -9,26 +9,35 @@ export default function ProfitAndLoss() {
     const { provider, activeCompany } = usePersistence();
     const [expenses, setExpenses] = useState<GroupSummary[]>([]);
     const [incomes, setIncomes] = useState<GroupSummary[]>([]);
+    const [closingStock, setClosingStock] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadData = async () => {
             if (!provider || !activeCompany) return;
 
-            const ledgers = await provider.read<Ledger[]>('ledgers.json', activeCompany.path) || [];
+            const [ledgerData, stockItemsData] = await Promise.all([
+                provider.read<Ledger[]>('ledgers.json', activeCompany.path),
+                provider.read<any[]>('stock_items.json', activeCompany.path)
+            ]);
 
-            const expenseData = ReportService.getGroupSummary(ledgers, ACCT_GROUPS.EXPENSES);
-            const incomeData = ReportService.getGroupSummary(ledgers, ACCT_GROUPS.INCOME);
+            const ledgers = ledgerData || [];
+            const stockItems = stockItemsData || [];
+
+            const expenseData = ReportService.getGroupSummary(ledgers as Ledger[], ACCT_GROUPS.EXPENSES);
+            const incomeData = ReportService.getGroupSummary(ledgers as Ledger[], ACCT_GROUPS.INCOME);
+            const cs = ReportService.getClosingStockValue(stockItems);
 
             setExpenses(expenseData);
             setIncomes(incomeData);
+            setClosingStock(cs);
             setLoading(false);
         };
         loadData();
     }, [provider, activeCompany]);
 
     const totalExpenses = ReportService.calculateTotal(expenses);
-    const totalIncome = ReportService.calculateTotal(incomes);
+    const totalIncome = ReportService.calculateTotal(incomes) + closingStock;
     const netProfit = totalIncome - totalExpenses;
 
     if (loading) return (
@@ -168,6 +177,15 @@ export default function ProfitAndLoss() {
                                     </div>
                                 )
                             ))}
+
+                            {closingStock > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-baseline group">
+                                        <span className="text-sm font-black text-foreground uppercase tracking-tight group-hover:text-cyan-500 transition-colors">Closing Stock</span>
+                                        <span className="font-mono font-bold text-foreground text-base">{closingStock.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            )}
 
                             {netProfit < 0 && (
                                 <motion.div

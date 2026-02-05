@@ -12,9 +12,20 @@ import VoucherEntry from './features/accounting/vouchers/VoucherEntry';
 import BalanceSheet from './features/reports/BalanceSheet';
 import ProfitAndLoss from './features/reports/ProfitAndLoss';
 import GstReport from './features/reports/GstReport';
+import Gstr1Report from './features/reports/Gstr1Report';
+import Gstr3bReport from './features/reports/Gstr3bReport';
+import RatioAnalysis from './features/reports/RatioAnalysis';
+import AuditLogViewer from './features/security/AuditLogViewer';
 import CashFlow from './features/reports/CashFlow';
 import FundFlow from './features/reports/FundFlow';
 import Daybook from './features/accounting/reports/Daybook';
+import UnitList from './features/inventory/UnitList';
+import UnitForm from './features/inventory/UnitForm';
+import StockItemList from './features/inventory/StockItemList';
+import StockItemForm from './features/inventory/StockItemForm';
+import StockGroupList from './features/inventory/StockGroupList';
+import StockGroupForm from './features/inventory/StockGroupForm';
+import StockSummary from './features/inventory/StockSummary';
 import { PersistenceProvider } from './services/persistence/PersistenceContext';
 import { AuthProvider, useAuth } from './features/auth/AuthContext';
 import { ThemeProvider } from './features/settings/ThemeContext';
@@ -56,13 +67,32 @@ function AppContent() {
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="ledgers" element={<LedgerList />} />
         <Route path="ledgers/new" element={<LedgerForm />} />
-        <Route path="vouchers" element={<VoucherEntry />} />
+        <Route path="ledgers/:id" element={<LedgerForm />} />
+        <Route path="vouchers/new" element={<VoucherEntry />} />
+        <Route path="vouchers/edit/:id" element={<VoucherEntry />} />
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="reports/profit-loss" element={<ProfitAndLoss />} />
         <Route path="reports/gst" element={<GstReport />} />
+        <Route path="reports/gst/r1" element={<Gstr1Report />} />
+        <Route path="reports/gst/r3b" element={<Gstr3bReport />} />
+        <Route path="reports/ratios" element={<RatioAnalysis />} />
+        <Route path="security/audit" element={<AuditLogViewer />} />
         <Route path="reports/cash-flow" element={<CashFlow />} />
         <Route path="reports/fund-flow" element={<FundFlow />} />
         <Route path="reports/daybook" element={<Daybook />} />
+
+        {/* Inventory Routes */}
+        <Route path="inventory/units" element={<UnitList />} />
+        <Route path="inventory/units/new" element={<UnitForm />} />
+        <Route path="inventory/units/:id" element={<UnitForm />} />
+        <Route path="inventory/items" element={<StockItemList />} />
+        <Route path="inventory/items/new" element={<StockItemForm />} />
+        <Route path="inventory/items/:id" element={<StockItemForm />} />
+        <Route path="inventory/groups" element={<StockGroupList />} />
+        <Route path="inventory/groups/new" element={<StockGroupForm />} />
+        <Route path="inventory/groups/:id" element={<StockGroupForm />} />
+        <Route path="inventory/stock-summary" element={<StockSummary />} />
+
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

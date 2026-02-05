@@ -9,26 +9,39 @@ export default function BalanceSheet() {
     const { provider, activeCompany } = usePersistence();
     const [liabilities, setLiabilities] = useState<GroupSummary[]>([]);
     const [assets, setAssets] = useState<GroupSummary[]>([]);
+    const [closingStock, setClosingStock] = useState(0);
+    const [netProfit, setNetProfit] = useState(0);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const loadData = async () => {
             if (!provider || !activeCompany) return;
 
-            const ledgers = await provider.read<Ledger[]>('ledgers.json', activeCompany.path) || [];
+            const [ledgerData, stockItemsData] = await Promise.all([
+                provider.read<Ledger[]>('ledgers.json', activeCompany.path),
+                provider.read<any[]>('stock_items.json', activeCompany.path)
+            ]);
 
-            const liabilityData = ReportService.getGroupSummary(ledgers, ACCT_GROUPS.LIABILITIES);
-            const assetData = ReportService.getGroupSummary(ledgers, ACCT_GROUPS.ASSETS);
+            const ledgers = ledgerData || [];
+            const stockItems = stockItemsData || [];
+
+            const liabilityData = ReportService.getGroupSummary(ledgers as Ledger[], ACCT_GROUPS.LIABILITIES);
+            const assetData = ReportService.getGroupSummary(ledgers as Ledger[], ACCT_GROUPS.ASSETS);
+
+            const np = ReportService.getNetProfit(ledgers as Ledger[]);
+            const cs = ReportService.getClosingStockValue(stockItems);
 
             setLiabilities(liabilityData);
             setAssets(assetData);
+            setNetProfit(np);
+            setClosingStock(cs);
             setLoading(false);
         };
         loadData();
     }, [provider, activeCompany]);
 
-    const totalLiabilities = ReportService.calculateTotal(liabilities);
-    const totalAssets = ReportService.calculateTotal(assets);
+    const totalLiabilities = ReportService.calculateTotal(liabilities) + (netProfit > 0 ? netProfit : 0);
+    const totalAssets = ReportService.calculateTotal(assets) + closingStock + (netProfit < 0 ? Math.abs(netProfit) : 0);
 
     if (loading) return (
         <div className="flex items-center justify-center p-12">
@@ -104,6 +117,14 @@ export default function BalanceSheet() {
                                     </div>
                                 )
                             ))}
+                            {netProfit > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-baseline group">
+                                        <span className="text-sm font-black text-emerald-500 uppercase tracking-tight">Profit & Loss A/c (Net Profit)</span>
+                                        <span className="font-mono font-bold text-emerald-600 text-base">{netProfit.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="p-6 bg-muted/30 border-t border-border flex justify-between items-center px-8">
                             <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Total Liabilities</span>
@@ -117,6 +138,14 @@ export default function BalanceSheet() {
                             Assets & Resources
                         </div>
                         <div className="p-8 space-y-8 flex-1">
+                            {closingStock > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-baseline group">
+                                        <span className="text-sm font-black text-foreground uppercase tracking-tight group-hover:text-cyan-500 transition-colors">Closing Stock</span>
+                                        <span className="font-mono font-bold text-foreground text-base">{closingStock.toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            )}
                             {assets.map(group => (
                                 group.total > 0 && (
                                     <div key={group.groupName} className="space-y-4">
@@ -135,6 +164,14 @@ export default function BalanceSheet() {
                                     </div>
                                 )
                             ))}
+                            {netProfit < 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-baseline group">
+                                        <span className="text-sm font-black text-rose-500 uppercase tracking-tight">Profit & Loss A/c (Net Loss)</span>
+                                        <span className="font-mono font-bold text-rose-600 text-base">{Math.abs(netProfit).toLocaleString()}</span>
+                                    </div>
+                                </div>
+                            )}
                         </div>
                         <div className="p-6 bg-muted/30 border-t border-border flex justify-between items-center px-8">
                             <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Total Assets</span>

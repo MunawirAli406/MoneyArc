@@ -1,9 +1,10 @@
-import { Bell, Search, Sun, Moon, Building2, ChevronDown, LogOut } from 'lucide-react';
+import { Bell, Sun, Moon, Building2, ChevronDown, LogOut } from 'lucide-react';
 import { useTheme } from '../../features/settings/ThemeContext';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
+import GoToSearch from './GoToSearch';
 
 export default function Header() {
     const { theme, toggleTheme } = useTheme();
@@ -60,14 +61,7 @@ export default function Header() {
                     )}
                 </div>
 
-                <div className="relative w-64 hidden md:block">
-                    <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                    <input
-                        type="text"
-                        placeholder="Search records..."
-                        className="w-full pl-9 pr-4 py-2 text-sm bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all font-medium"
-                    />
-                </div>
+                <GoToSearch />
             </div>
 
             <div className="flex items-center gap-2">

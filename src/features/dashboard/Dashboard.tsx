@@ -1,15 +1,17 @@
-import { TrendingUp, TrendingDown, DollarSign, Activity, PieChart, Wallet, BookOpen } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, FileText, ShieldCheck, Settings } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useTheme } from '../../features/settings/ThemeContext';
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
 
 export default function Dashboard() {
     const { provider, activeCompany } = usePersistence();
     const { theme } = useTheme();
+    const navigate = useNavigate();
     const [stats, setStats] = useState([
         { label: 'Total Revenue', value: '₹0.00', change: '0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
         { label: 'Total Expenses', value: '₹0.00', change: '0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10' },
@@ -201,12 +203,14 @@ export default function Dashboard() {
                         </h2>
                         <div className="space-y-4">
                             {[
-                                { label: 'New Voucher', icon: Wallet, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
-                                { label: 'Add Ledger', icon: BookOpen, color: 'text-indigo-500', bg: 'bg-indigo-500/10' },
-                                { label: 'View Reports', icon: PieChart, color: 'text-amber-500', bg: 'bg-amber-500/10' },
+                                { label: 'New Voucher', icon: Wallet, color: 'text-cyan-500', bg: 'bg-cyan-500/10', path: '/vouchers/new' },
+                                { label: 'GSTR-1 Report', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-500/10', path: '/reports/gst/r1' },
+                                { label: 'Audit Trail', icon: ShieldCheck, color: 'text-rose-500', bg: 'bg-rose-500/10', path: '/security/audit' },
+                                { label: 'Settings', icon: Settings, color: 'text-slate-500', bg: 'bg-slate-500/10', path: '/settings' },
                             ].map((action, i) => (
                                 <button
                                     key={i}
+                                    onClick={() => navigate(action.path)}
                                     className="w-full flex items-center justify-between p-4 rounded-2xl border border-transparent bg-background hover:bg-muted hover:border-border transition-all group"
                                 >
                                     <div className="flex items-center gap-4">

@@ -1,6 +1,18 @@
-
 import type { StorageProvider } from '../persistence/types';
 import type { Ledger } from './ReportService';
+import { AuditService } from '../security/AuditService';
+
+export interface InventoryEntry {
+    id: string;
+    itemId: string;
+    itemName: string;
+    quantity: number;
+    unitId: string;
+    rate: number;
+    amount: number;
+    batchNo?: string;
+    expiryDate?: string;
+}
 
 export interface VoucherRow {
     id: number;
@@ -8,6 +20,7 @@ export interface VoucherRow {
     account: string; // Ledger Name
     debit: number;
     credit: number;
+    inventoryAllocations?: InventoryEntry[];
 }
 
 export interface Voucher {
@@ -17,53 +30,136 @@ export interface Voucher {
     type: string;
     narration: string;
     rows: VoucherRow[];
+    currency?: string;
+    exchangeRate?: number;
 }
 
 export class VoucherService {
     static async saveVoucher(provider: StorageProvider, voucher: Voucher, companyPath?: string): Promise<void> {
         if (!provider) throw new Error("Storage provider not initialized");
 
-        // 1. Save the Voucher
         const vouchers = await provider.read<Voucher[]>('vouchers.json', companyPath) || [];
         vouchers.push(voucher);
         await provider.write('vouchers.json', vouchers, companyPath);
 
-        // 2. Update Ledger Balances
-        const ledgers = await provider.read<Ledger[]>('ledgers.json', companyPath) || [];
+        await this.applyImpact(provider, voucher, 1, companyPath);
 
-        // Create a map for fast lookup
+        await AuditService.log(provider as any, companyPath || '', {
+            action: 'CREATE',
+            entityType: 'VOUCHER',
+            entityId: voucher.id,
+            details: `${voucher.type} Voucher #${voucher.voucherNo} recorded for ₹${voucher.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0).toLocaleString()}`
+        });
+    }
+
+    static async deleteVoucher(provider: StorageProvider, voucherId: string, companyPath?: string): Promise<void> {
+        if (!provider) throw new Error("Storage provider not initialized");
+
+        const vouchers = await provider.read<Voucher[]>('vouchers.json', companyPath) || [];
+        const voucher = vouchers.find(v => v.id === voucherId);
+        if (!voucher) throw new Error("Voucher not found");
+
+        // Reverse Impact
+        await this.applyImpact(provider, voucher, -1, companyPath);
+
+        // Remove from list
+        const updatedVouchers = vouchers.filter(v => v.id !== voucherId);
+        await provider.write('vouchers.json', updatedVouchers, companyPath);
+
+        await AuditService.log(provider as any, companyPath || '', {
+            action: 'DELETE',
+            entityType: 'VOUCHER',
+            entityId: voucherId,
+            details: `${voucher.type} Voucher #${voucher.voucherNo} deleted`
+        });
+    }
+
+    static async updateVoucher(provider: StorageProvider, voucher: Voucher, companyPath?: string): Promise<void> {
+        if (!provider) throw new Error("Storage provider not initialized");
+
+        const vouchers = await provider.read<Voucher[]>('vouchers.json', companyPath) || [];
+        const oldVoucher = vouchers.find(v => v.id === voucher.id);
+
+        if (oldVoucher) {
+            // Revert old impact
+            await this.applyImpact(provider, oldVoucher, -1, companyPath);
+            // Replace in list
+            const updatedVouchers = vouchers.map(v => v.id === voucher.id ? voucher : v);
+            await provider.write('vouchers.json', updatedVouchers, companyPath);
+        } else {
+            vouchers.push(voucher);
+            await provider.write('vouchers.json', vouchers, companyPath);
+        }
+
+        // Apply new impact
+        await this.applyImpact(provider, voucher, 1, companyPath);
+
+        await AuditService.log(provider as any, companyPath || '', {
+            action: 'UPDATE',
+            entityType: 'VOUCHER',
+            entityId: voucher.id,
+            details: `${voucher.type} Voucher #${voucher.voucherNo} modified`
+        });
+    }
+
+    private static async applyImpact(provider: StorageProvider, voucher: Voucher, multiplier: 1 | -1, companyPath?: string): Promise<void> {
+        // 1. Update Ledger Balances
+        const ledgers = await provider.read<Ledger[]>('ledgers.json', companyPath) || [];
         const ledgerMap = new Map(ledgers.map(l => [l.name, l]));
 
-        // Process all ledgers involved in the voucher
         for (const row of voucher.rows) {
             if (!row.account) continue;
-
             const ledger = ledgerMap.get(row.account);
             if (ledger) {
-                // Calculate impact
-                // Dr increases Dr balance, Cr decreases Dr balance
-                let change = 0;
-                if (row.type === 'Dr') {
-                    change = row.debit;
-                } else {
-                    change = -row.credit;
-                }
-
-                // Adjust based on Ledger's base type (Asset/Exp = Dr, Liab/Inc = Cr)
-                // For simplicity, we just track raw 'Dr' or 'Cr' balance.
-                // Current logic: simple addition/subtraction.
-
-                // Convert current balance to signed number (Dr +, Cr -)
+                let change = (row.type === 'Dr' ? row.debit : -row.credit) * multiplier;
                 let currentSigned = ledger.balance * (ledger.type === 'Dr' ? 1 : -1);
                 currentSigned += change;
-
                 ledger.balance = Math.abs(currentSigned);
                 ledger.type = currentSigned >= 0 ? 'Dr' : 'Cr';
             }
         }
-
-        // Reconstruct the ledgers list
-        // (This is a simplified approach; in production, use IDs and transactional safety)
         await provider.write('ledgers.json', ledgers, companyPath);
+
+        // 2. Update Inventory
+        const stockItems = await provider.read<any[]>('stock_items.json', companyPath) || [];
+        const stockMap = new Map(stockItems.map(i => [i.id, i]));
+        let stockChanged = false;
+
+        for (const row of voucher.rows) {
+            if (row.inventoryAllocations) {
+                for (const allocation of row.inventoryAllocations) {
+                    const item = stockMap.get(allocation.itemId);
+                    if (item) {
+                        stockChanged = true;
+                        if (item.currentBalance === undefined) {
+                            item.currentBalance = item.openingStock;
+                            item.currentRate = item.openingRate;
+                            item.currentValue = item.openingValue;
+                        }
+
+                        const qtyChange = allocation.quantity * multiplier;
+                        const valChange = allocation.amount * multiplier;
+
+                        if (voucher.type === 'Purchase') {
+                            item.currentBalance += qtyChange;
+                            item.currentValue += valChange;
+                        } else if (voucher.type === 'Sales') {
+                            item.currentBalance -= qtyChange;
+                            // Re-calculate value at current average rate
+                            item.currentValue = item.currentBalance * item.currentRate;
+                        }
+
+                        // Recalculate Average Rate if balance is positive
+                        if (item.currentBalance > 0) {
+                            item.currentRate = item.currentValue / item.currentBalance;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (stockChanged) {
+            await provider.write('stock_items.json', stockItems, companyPath);
+        }
     }
 }

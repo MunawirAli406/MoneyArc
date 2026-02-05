@@ -1,33 +1,67 @@
-import { useState } from 'react';
-import { Save, ChevronDown } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Save, CheckCircle2 } from 'lucide-react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
+import type { Ledger } from '../../../services/accounting/ReportService';
 
 const GROUPS = [
     'Bank Accounts', 'Cash-in-hand', 'Sundry Debtors', 'Sundry Creditors',
-    'Sales Accounts', 'Purchase Accounts', 'Direct Expenses', 'Indirect Expenses'
+    'Sales Accounts', 'Purchase Accounts', 'Direct Expenses', 'Indirect Expenses',
+    'Fixed Assets', 'Duties & Taxes', 'Loans (Liability)', 'Direct Incomes', 'Indirect Incomes',
+    'Capital Account', 'Stock-in-hand', 'Current Assets', 'Current Liabilities',
+    'Loans & Advances (Asset)', 'Reserves & Surplus'
 ];
-
-interface Ledger {
-    id: string;
-    name: string;
-    group: string;
-    balance: number;
-    type: 'Dr' | 'Cr';
-}
 
 export default function LedgerForm() {
     const navigate = useNavigate();
+    const { id } = useParams();
     const { provider, activeCompany } = usePersistence();
 
     const [formData, setFormData] = useState({
         name: '',
         group: '',
+        category: '',
         opBalance: '',
         balanceType: 'Dr',
         mailingName: '',
-        address: ''
+        address: '',
+        state: activeCompany?.state || '',
+        gstin: '',
+        isGstEnabled: false
     });
+
+    const [isLoading, setIsLoading] = useState(false);
+
+    useEffect(() => {
+        const loadLedger = async () => {
+            if (id && provider && activeCompany) {
+                setIsLoading(true);
+                try {
+                    const ledgers = await provider.read<Ledger[]>('ledgers.json', activeCompany.path);
+                    const ledger = ledgers?.find(l => l.id === id);
+                    if (ledger) {
+                        setFormData({
+                            name: ledger.name,
+                            group: ledger.group,
+                            category: ledger.category || '',
+                            opBalance: Math.abs(ledger.balance).toString(),
+                            balanceType: ledger.type,
+                            mailingName: ledger.name,
+                            address: ledger.address || '',
+                            state: ledger.state || '',
+                            gstin: ledger.gstin || '',
+                            isGstEnabled: ledger.isGstEnabled || false
+                        });
+                    }
+                } catch (e) {
+                    console.error("Failed to load ledger", e);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+        loadLedger();
+    }, [id, provider, activeCompany]);
 
     const handleSave = async () => {
         if (!provider || !activeCompany) {
@@ -36,136 +70,193 @@ export default function LedgerForm() {
         }
 
         try {
-            // 1. Read existing ledgers
             const existingLedgers = (await provider.read<Ledger[]>('ledgers.json', activeCompany.path)) || [];
 
-            // 2. Create new ledger object
-            const newLedger: Ledger = {
-                id: Date.now().toString(),
+            const ledgerData: Ledger = {
+                id: id || Date.now().toString(),
                 name: formData.name,
                 group: formData.group,
+                category: formData.category,
                 balance: parseFloat(formData.opBalance) || 0,
-                type: formData.balanceType as 'Dr' | 'Cr'
+                type: formData.balanceType as 'Dr' | 'Cr',
+                gstin: formData.gstin,
+                address: formData.address,
+                state: formData.state,
+                isGstEnabled: formData.isGstEnabled
             };
 
-            // 3. Append and write back
-            const updatedLedgers = [...existingLedgers, newLedger];
-            await provider.write('ledgers.json', updatedLedgers, activeCompany.path);
+            let updatedLedgers;
+            if (id) {
+                updatedLedgers = existingLedgers.map(l => l.id === id ? ledgerData : l);
+            } else {
+                updatedLedgers = [...existingLedgers, ledgerData];
+            }
 
+            await provider.write('ledgers.json', updatedLedgers, activeCompany.path);
             navigate('/ledgers');
         } catch (error) {
             console.error('Failed to save ledger:', error);
-            alert('Failed to save ledger. Check console for details.');
+            alert('Failed to save ledger.');
         }
     };
 
+    if (isLoading) return <div className="p-12 text-center text-muted-foreground">Loading Ledger...</div>;
+
     return (
-        <div className="max-w-3xl mx-auto">
-            <div className="flex items-center justify-between mb-6">
+        <div className="max-w-4xl mx-auto space-y-8">
+            <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Create New Ledger</h1>
-                    <p className="text-gray-500">Add a new account to your chart of accounts</p>
+                    <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">
+                        {id ? 'Alter Ledger' : 'Establish Ledger'}
+                    </h1>
+                    <p className="text-muted-foreground font-medium">
+                        {id ? `Modifying ${formData.name}` : 'Add a new financial account to your workspace.'}
+                    </p>
                 </div>
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => navigate('/ledgers')}
-                        className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                        className="px-6 py-3 border border-border rounded-xl font-bold uppercase tracking-widest text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSave}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors"
+                        className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold uppercase tracking-widest text-xs hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
                     >
                         <Save className="w-5 h-5" />
-                        <span>Save Ledger</span>
+                        <span>{id ? 'Update Ledger' : 'Save Ledger'}</span>
                     </button>
                 </div>
             </div>
 
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <form className="space-y-6" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Basic Details */}
+                <div className="lg:col-span-2 space-y-8">
+                    <div className="bg-card rounded-3xl p-8 border border-border shadow-sm space-y-6">
                         <div className="space-y-2">
-                            <label htmlFor="name" className="block text-sm font-medium text-gray-700">Ledger Name</label>
+                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Ledger Name</label>
                             <input
+                                required
                                 type="text"
-                                id="name"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                                className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-lg"
                                 placeholder="e.g. Gotham City Bank"
                             />
                         </div>
 
-                        <div className="space-y-2">
-                            <label htmlFor="group" className="block text-sm font-medium text-gray-700">Under Group</label>
-                            <div className="relative">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Under Group</label>
                                 <select
-                                    id="group"
                                     value={formData.group}
                                     onChange={(e) => setFormData({ ...formData, group: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all appearance-none bg-white"
+                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
                                 >
                                     <option value="">Select Group</option>
-                                    {GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+                                    {GROUPS.sort().map(g => <option key={g} value={g}>{g}</option>)}
                                 </select>
-                                <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Category (Optional)</label>
+                                <input
+                                    type="text"
+                                    value={formData.category}
+                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
+                                    placeholder="e.g. Operating, Assets"
+                                />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <label htmlFor="opBalance" className="block text-sm font-medium text-gray-700">Opening Balance</label>
-                            <div className="flex gap-2">
+                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Opening Balance</label>
+                            <div className="flex gap-4">
                                 <input
                                     type="number"
-                                    id="opBalance"
                                     value={formData.opBalance}
                                     onChange={(e) => setFormData({ ...formData, opBalance: e.target.value })}
-                                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
+                                    className="flex-1 px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
                                     placeholder="0.00"
                                 />
                                 <select
                                     value={formData.balanceType}
                                     onChange={(e) => setFormData({ ...formData, balanceType: e.target.value })}
-                                    className="width-24 px-2 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-white"
+                                    className="w-32 px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-black text-center"
                                 >
-                                    <option value="Dr">Dr</option>
-                                    <option value="Cr">Cr</option>
+                                    <option value="Dr">Debit</option>
+                                    <option value="Cr">Credit</option>
                                 </select>
                             </div>
                         </div>
-
-                        <div className="space-y-2">
-                            <label htmlFor="mailingName" className="block text-sm font-medium text-gray-700">Mailing Name</label>
-                            <input
-                                type="text"
-                                id="mailingName"
-                                value={formData.mailingName}
-                                onChange={(e) => setFormData({ ...formData, mailingName: e.target.value })}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all"
-                                placeholder="Same as Ledger Name"
-                            />
-                        </div>
                     </div>
 
-                    <div className="pt-4 border-t border-gray-100">
-                        <h3 className="text-sm font-medium text-gray-900 mb-4">Mailing Details & Address</h3>
-                        <div className="grid grid-cols-1 gap-6">
+                    <div className="bg-card rounded-3xl p-8 border border-border shadow-sm space-y-6 text-muted-foreground">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-xs font-black uppercase tracking-[0.2em]">Compliance Details</h3>
+                            <button
+                                onClick={() => setFormData({ ...formData, isGstEnabled: !formData.isGstEnabled })}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase transition-all ${formData.isGstEnabled ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'}`}
+                            >
+                                <CheckCircle2 className={`w-4 h-4 ${formData.isGstEnabled ? 'opacity-100' : 'opacity-30'}`} />
+                                GST / VAT Enabled
+                            </button>
+                        </div>
+
+                        <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity duration-300 ${formData.isGstEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
                             <div className="space-y-2">
-                                <label htmlFor="address" className="block text-sm font-medium text-gray-700">Address</label>
-                                <textarea
-                                    id="address"
-                                    rows={3}
-                                    value={formData.address}
-                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-all resize-none"
-                                    placeholder="Street address, City, etc."
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1">GSTIN Number</label>
+                                <input
+                                    type="text"
+                                    value={formData.gstin}
+                                    onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
+                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold uppercase"
+                                    placeholder="27AAACR1224A1Z1"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1">Registration State</label>
+                                <input
+                                    type="text"
+                                    value={formData.state}
+                                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
+                                    placeholder="State Name"
                                 />
                             </div>
                         </div>
                     </div>
-                </form>
+                </div>
+
+                {/* Mailing Details */}
+                <div className="space-y-8">
+                    <div className="bg-card rounded-3xl p-8 border border-border shadow-sm space-y-6 h-full">
+                        <h3 className="text-xs font-black text-muted-foreground uppercase tracking-[0.2em]">Mailing Address</h3>
+                        <div className="space-y-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Mailing Name</label>
+                                <input
+                                    type="text"
+                                    value={formData.mailingName}
+                                    onChange={(e) => setFormData({ ...formData, mailingName: e.target.value })}
+                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
+                                    placeholder="Print name..."
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Permanent Address</label>
+                                <textarea
+                                    rows={6}
+                                    value={formData.address}
+                                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold resize-none"
+                                    placeholder="Full street address..."
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     );

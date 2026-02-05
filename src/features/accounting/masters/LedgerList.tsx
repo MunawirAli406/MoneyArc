@@ -130,9 +130,12 @@ export default function LedgerList() {
                                         </td>
                                         <td className="px-8 py-4 text-center">
                                             <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                                <button className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                                                <Link
+                                                    to={`/ledgers/${ledger.id}`}
+                                                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                                >
                                                     <Edit2 className="w-4 h-4" />
-                                                </button>
+                                                </Link>
                                                 <button
                                                     onClick={() => handleDelete(ledger.id)}
                                                     className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"

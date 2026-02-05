@@ -6,6 +6,12 @@ export interface Company {
     gstin?: string;
     address?: string;
     state?: string;
+    country: string;
+    phone?: string;
+    email?: string;
+    website?: string;
+    currency: string;
+    symbol: string;
     registrationType?: 'Regular' | 'Composition' | 'Unregistered';
 }
 
@@ -24,6 +30,11 @@ export interface StorageProvider {
      * Create a new company
      */
     createCompany(data: Omit<Company, 'id' | 'path'>): Promise<Company>;
+
+    /**
+     * Update an existing company
+     */
+    updateCompany(id: string, path: string, data: Partial<Omit<Company, 'id' | 'path'>>): Promise<Company>;
 
     /**
      * Read a file and return its content as JSON

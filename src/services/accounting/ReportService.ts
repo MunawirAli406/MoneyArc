@@ -3,8 +3,13 @@ export interface Ledger {
     id: string;
     name: string;
     group: string;
+    category?: string;
     balance: number;
     type: 'Dr' | 'Cr';
+    gstin?: string;
+    address?: string;
+    state?: string;
+    isGstEnabled: boolean;
 }
 
 export interface GroupSummary {
@@ -14,8 +19,8 @@ export interface GroupSummary {
 }
 
 export const ACCT_GROUPS = {
-    ASSETS: ['Bank Accounts', 'Cash-in-hand', 'Sundry Debtors', 'Fixed Assets'],
-    LIABILITIES: ['Sundry Creditors', 'Loans (Liability)', 'Duties & Taxes'],
+    ASSETS: ['Bank Accounts', 'Cash-in-hand', 'Sundry Debtors', 'Fixed Assets', 'Stock-in-hand', 'Current Assets', 'Loans & Advances (Asset)'],
+    LIABILITIES: ['Capital Account', 'Sundry Creditors', 'Loans (Liability)', 'Duties & Taxes', 'Current Liabilities', 'Reserves & Surplus'],
     INCOME: ['Sales Accounts', 'Direct Incomes', 'Indirect Incomes'],
     EXPENSES: ['Purchase Accounts', 'Direct Expenses', 'Indirect Expenses'],
 };
@@ -35,5 +40,19 @@ export class ReportService {
 
     static calculateTotal(summaries: GroupSummary[]): number {
         return summaries.reduce((sum, g) => sum + g.total, 0);
+    }
+
+    static getNetProfit(ledgers: Ledger[]): number {
+        const income = this.calculateTotal(this.getGroupSummary(ledgers, ACCT_GROUPS.INCOME));
+        const expenses = this.calculateTotal(this.getGroupSummary(ledgers, ACCT_GROUPS.EXPENSES));
+        return income - expenses;
+    }
+
+    static getClosingStockValue(stockItems: any[]): number {
+        return stockItems.reduce((sum, item) => {
+            const balance = item.currentBalance !== undefined ? item.currentBalance : item.openingStock;
+            const rate = item.currentRate !== undefined ? item.currentRate : item.openingRate;
+            return sum + (balance * rate);
+        }, 0);
     }
 }
