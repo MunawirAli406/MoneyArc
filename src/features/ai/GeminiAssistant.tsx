@@ -16,7 +16,7 @@ export default function GeminiAssistant({ isOpen, onClose }: GeminiAssistantProp
     const [apiKey, setApiKey] = useState(localStorage.getItem('moneyarc_gemini_key') || '');
     const [query, setQuery] = useState('');
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
-        { role: 'ai', text: 'Hi! I am moneyArc AI. Ask me anything about your finances.' }
+        { role: 'ai', text: 'Hi! I am MoneyArc AI. Ask me anything about your finances.' }
     ]);
     const [loading, setLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
