@@ -18,10 +18,10 @@ export default function InvoiceModal({ voucher, company, customer, onClose }: In
         window.print();
     };
 
-    const taxableValue = voucher.rows.find((r: any) => r.type === 'Cr' && !r.account.includes('GST'))?.credit || 0;
-    const cgst = voucher.rows.find((r: any) => r.account.includes('Central GST'))?.credit || 0;
-    const sgst = voucher.rows.find((r: any) => r.account.includes('State GST'))?.credit || 0;
-    const igst = voucher.rows.find((r: any) => r.account.includes('Integrated GST'))?.credit || 0;
+    const taxableValue = voucher.rows.find((r) => r.type === 'Cr' && !r.account.includes('GST'))?.credit || 0;
+    const cgst = voucher.rows.find((r) => r.account.includes('Central GST'))?.credit || 0;
+    const sgst = voucher.rows.find((r) => r.account.includes('State GST'))?.credit || 0;
+    const igst = voucher.rows.find((r) => r.account.includes('Integrated GST'))?.credit || 0;
     const totalAmount = taxableValue + cgst + sgst + igst;
 
     return (
@@ -105,7 +105,7 @@ export default function InvoiceModal({ voucher, company, customer, onClose }: In
                         <tbody className="divide-y divide-slate-100">
                             {/* In a real app we'd map inventory items here. 
                                 For now we show the main taxable ledger amount as a generic 'Sales' item if items aren't available */}
-                            {voucher.rows.find((r: any) => r.inventoryAllocations)?.inventoryAllocations?.map((item: any, idx: number) => (
+                            {voucher.rows.find((r) => r.inventoryAllocations)?.inventoryAllocations?.map((item, idx: number) => (
                                 <tr key={idx}>
                                     <td className="py-6 font-black text-slate-900 uppercase">
                                         {/* Needs a way to resolve item names from IDs */}

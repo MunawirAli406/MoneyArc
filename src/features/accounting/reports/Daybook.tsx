@@ -159,7 +159,7 @@ export default function Daybook() {
                                                                 try {
                                                                     await VoucherService.deleteVoucher(provider!, v.id, activeCompany!.path);
                                                                     setVouchers(prev => prev.filter(item => item.id !== v.id));
-                                                                } catch (err) {
+                                                                } catch {
                                                                     alert("Failed to delete voucher.");
                                                                 }
                                                             }

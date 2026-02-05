@@ -22,7 +22,7 @@ export default function VoucherEntry() {
 
     // UI States
     const [voucherType, setVoucherType] = useState<VoucherType>('Payment');
-    const [isInventoryMode, setIsInventoryMode] = useState(false);
+    const isInventoryMode = voucherType === 'Sales' || voucherType === 'Purchase';
     const [rows, setRows] = useState<VoucherRow[]>([
         { id: 1, type: 'Dr', account: '', debit: 0, credit: 0 },
         { id: 2, type: 'Cr', account: '', debit: 0, credit: 0 },
@@ -72,16 +72,8 @@ export default function VoucherEntry() {
         loadData();
     }, [provider, activeCompany, id]);
 
-    // Automatically set inventory mode for Sales/Purchase
-    useEffect(() => {
-        if (voucherType === 'Sales' || voucherType === 'Purchase') {
-            setIsInventoryMode(true);
-        } else {
-            setIsInventoryMode(false);
-        }
-    }, [voucherType]);
 
-    const handleKeyDown = (e: React.KeyboardEvent, _rowId: number, _field: string) => {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter') {
             const isSelect = (e.target as HTMLElement).tagName === 'SELECT';
             if (isSelect) return; // Let select handle enter for selection
@@ -112,7 +104,7 @@ export default function VoucherEntry() {
         if (rows.length > 2) setRows(rows.filter(r => r.id !== id));
     };
 
-    const updateRow = (id: number, field: keyof VoucherRow, value: any) => {
+    const updateRow = (id: number, field: keyof VoucherRow, value: string | number | unknown) => {
         setRows(rows.map(r => r.id === id ? { ...r, [field]: value } : r));
     };
 
@@ -141,7 +133,7 @@ export default function VoucherEntry() {
         }]);
     };
 
-    const updateInventoryRow = (id: string, field: keyof InventoryEntry, value: any) => {
+    const updateInventoryRow = (id: string, field: keyof InventoryEntry, value: string | number | unknown) => {
         setTempAllocations(tempAllocations.map(a => {
             if (a.id === id) {
                 const updated = { ...a, [field]: value };
@@ -199,7 +191,7 @@ export default function VoucherEntry() {
                 const taxLedgerNames = ['Central GST (CGST)', 'State GST (SGST)', 'Integrated GST (IGST)', 'Output GST'];
 
                 // Clear previous auto-added tax rows to avoid duplicates
-                let finalRows = newRows.filter(r => !taxLedgerNames.includes(r.account));
+                const finalRows = newRows.filter(r => !taxLedgerNames.includes(r.account));
 
                 if (totalGst > 0) {
                     const commonType = activeRow?.type || 'Dr';
@@ -421,7 +413,7 @@ export default function VoucherEntry() {
                                                     list={`ledgers-${row.id}`}
                                                     value={row.account}
                                                     onChange={(e) => updateRow(row.id, 'account', e.target.value)}
-                                                    onKeyDown={(e) => handleKeyDown(e, row.id, 'account')}
+                                                    onKeyDown={handleKeyDown}
                                                     className="w-full outline-none border-b-2 border-transparent focus:border-primary transition-all font-bold text-base bg-transparent py-1.5 pr-8"
                                                     placeholder="Search ledger..."
                                                 />
@@ -466,7 +458,7 @@ export default function VoucherEntry() {
                                             type="number"
                                             value={row.debit || ''}
                                             onChange={(e) => updateRow(row.id, 'debit', parseFloat(e.target.value))}
-                                            onKeyDown={(e) => handleKeyDown(e, row.id, 'debit')}
+                                            onKeyDown={handleKeyDown}
                                             disabled={row.type === 'Cr' || (isInventoryMode && !!row.inventoryAllocations?.length)}
                                             className={clsx(
                                                 "w-full text-right outline-none bg-transparent transition-all font-mono font-black text-base px-2 py-1.5 rounded-xl block ml-auto",
@@ -480,7 +472,7 @@ export default function VoucherEntry() {
                                             type="number"
                                             value={row.credit || ''}
                                             onChange={(e) => updateRow(row.id, 'credit', parseFloat(e.target.value))}
-                                            onKeyDown={(e) => handleKeyDown(e, row.id, 'credit')}
+                                            onKeyDown={handleKeyDown}
                                             disabled={row.type === 'Dr' || (isInventoryMode && !!row.inventoryAllocations?.length)}
                                             className={clsx(
                                                 "w-full text-right outline-none bg-transparent transition-all font-mono font-black text-base px-2 py-1.5 rounded-xl block ml-auto",

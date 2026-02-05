@@ -18,7 +18,12 @@ export default function Dashboard() {
         { label: 'Net Profit', value: '₹0.00', change: '0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
         { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10' },
     ]);
-    const [chartData, setChartData] = useState<any[]>([]);
+    interface ChartData {
+        name: string;
+        revenue: number;
+        expenses: number;
+    }
+    const [chartData, setChartData] = useState<ChartData[]>([]);
 
     useEffect(() => {
         const loadDashboardData = async () => {
@@ -39,7 +44,7 @@ export default function Dashboard() {
             const monthlyData = months.reduce((acc, month) => {
                 acc[month] = { name: month, revenue: 0, expenses: 0 };
                 return acc;
-            }, {} as Record<string, any>);
+            }, {} as Record<string, ChartData>);
 
             vouchers.forEach(v => {
                 const date = new Date(v.date);
