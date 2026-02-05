@@ -1,10 +1,11 @@
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import GeminiAssistant from '../../features/ai/GeminiAssistant';
 
 export default function Layout() {
     return (
-        <div className="flex h-screen bg-background text-foreground transition-colors duration-300 overflow-hidden">
+        <div className="flex h-screen bg-background text-foreground transition-colors duration-300 overflow-hidden relative">
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header />
@@ -12,6 +13,7 @@ export default function Layout() {
                     <Outlet />
                 </main>
             </div>
+            <GeminiAssistant />
         </div>
     );
 }

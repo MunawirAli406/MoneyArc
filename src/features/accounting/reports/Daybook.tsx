@@ -99,9 +99,9 @@ export default function Daybook() {
                     <table className="w-full text-left text-sm">
                         <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
                             <tr>
-                                <th className="px-8 py-4">Date / Period</th>
-                                <th className="px-8 py-4">Particulars & Narration</th>
-                                <th className="px-8 py-4">Voucher Info</th>
+                                <th className="px-8 py-4 text-left">Date / Period</th>
+                                <th className="px-8 py-4 text-left">Particulars & Narration</th>
+                                <th className="px-8 py-4 text-left">Voucher Info</th>
                                 <th className="px-8 py-4 text-right">Debit Balance</th>
                                 <th className="px-8 py-4 text-right">Credit Balance</th>
                             </tr>

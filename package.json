@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@types/wicg-file-system-access": "^2023.10.7",
     "clsx": "^2.1.1",
     "framer-motion": "^12.31.0",
