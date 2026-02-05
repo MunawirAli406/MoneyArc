@@ -24,24 +24,58 @@ export default function GstReport() {
         loadData();
     }, [provider, activeCompany]);
 
-    // Simple GST Logic:
-    // Output GST: From Sales (Cr side of GST Ledger)
-    // Input GST: From Purchases (Dr side of GST Ledger)
+    // Detailed GST Logic
+    let totalTaxable = 0;
+    let totalIGST = 0;
+    let totalCGST = 0;
+    let totalSGST = 0;
+    let totalCess = 0;
 
-    let totalOutput = 0;
-    let totalInput = 0;
+    // We only care about Sales (Output) for GSTR-1 and GSTR-3B liability
+    // For Input Tax Credit (ITC), we look at Purchases.
+    // This report seems to be a Summary of Liability vs Input Credit.
+
+    let outputCGST = 0;
+    let outputSGST = 0;
+    let outputIGST = 0;
+
+    let inputCGST = 0;
+    let inputSGST = 0;
+    let inputIGST = 0;
 
     vouchers.forEach(v => {
         v.rows.forEach(r => {
             const acc = r.account.toLowerCase();
-            if (acc.includes('sales') || acc.includes('output gst')) {
-                if (r.type === 'Cr') totalOutput += r.credit;
-            }
-            if (acc.includes('purchase') || acc.includes('input gst')) {
-                if (r.type === 'Dr') totalInput += r.debit;
+            const amount = r.credit || r.debit || 0; // Use the value present
+
+            // Identify Tax Legders
+            if (acc.includes('gst') || acc.includes('tax') || acc.includes('duty')) {
+                const isOutput = r.type === 'Cr'; // Credits are typically Output Tax liability
+                const isInput = r.type === 'Dr'; // Debits are typically Input Tax Credit
+
+                if (acc.includes('igst')) {
+                    if (isOutput) outputIGST += amount;
+                    if (isInput) inputIGST += amount;
+                } else if (acc.includes('cgst')) {
+                    if (isOutput) outputCGST += amount;
+                    if (isInput) inputCGST += amount;
+                } else if (acc.includes('sgst')) {
+                    if (isOutput) outputSGST += amount;
+                    if (isInput) inputSGST += amount;
+                } else if (acc.includes('cess')) {
+                    totalCess += amount;
+                }
+            } else {
+                // If it's a Sales voucher and a Credit row (that isn't tax), it's likely the Sales Income (Taxable Value)
+                if (v.type === 'Sales' && r.type === 'Cr') {
+                    totalTaxable += amount;
+                }
             }
         });
     });
+
+    const totalOutput = outputCGST + outputSGST + outputIGST;
+    const totalInput = inputCGST + inputSGST + inputIGST;
 
     if (loading) return <div className="p-8">Loading GST Data...</div>;
 
@@ -155,32 +189,51 @@ export default function GstReport() {
                     <table className="w-full">
                         <thead>
                             <tr className="text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest border-b border-border pb-4">
-                                <th className="pb-4">Tax Head</th>
-                                <th className="pb-4">Output Tax</th>
-                                <th className="pb-4">Input Credit (ITC)</th>
-                                <th className="pb-4 text-right">Net Payable</th>
+                                <th className="pb-4">Component</th>
+                                <th className="pb-4 text-right">Taxable Value</th>
+                                <th className="pb-4 text-right">IGST</th>
+                                <th className="pb-4 text-right">CGST</th>
+                                <th className="pb-4 text-right">SGST</th>
+                                <th className="pb-4 text-right">Total Tax</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/50">
                             {[
-                                { head: 'CGST (Central Tax)', out: totalOutput * 0.5, in: totalInput * 0.5 },
-                                { head: 'SGST (State Tax)', out: totalOutput * 0.5, in: totalInput * 0.5 },
-                                { head: 'IGST (Integrated Tax)', out: 0, in: 0 },
+                                {
+                                    head: 'Output Liability (Sales)',
+                                    taxable: totalTaxable,
+                                    igst: outputIGST,
+                                    cgst: outputCGST,
+                                    sgst: outputSGST,
+                                    total: totalOutput
+                                },
+                                {
+                                    head: 'Input Credit (Purchases)',
+                                    taxable: 0, // We typically don't track purchase taxable val in summary, but could if needed
+                                    igst: inputIGST,
+                                    cgst: inputCGST,
+                                    sgst: inputSGST,
+                                    total: totalInput
+                                },
                             ].map((row, i) => (
                                 <tr key={i} className="group hover:bg-muted/10 transition-colors">
                                     <td className="py-5 font-bold text-foreground">{row.head}</td>
-                                    <td className="py-5 font-mono text-sm text-rose-500">₹{row.out.toLocaleString()}</td>
-                                    <td className="py-5 font-mono text-sm text-cyan-500">₹{row.in.toLocaleString()}</td>
-                                    <td className="py-5 font-black text-foreground text-right">₹{(row.out - row.in).toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-foreground text-right">₹{row.taxable.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">₹{row.igst.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">₹{row.cgst.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">₹{row.sgst.toLocaleString()}</td>
+                                    <td className="py-5 font-black text-foreground text-right">₹{row.total.toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>
                         <tfoot>
                             <tr className="bg-muted/40 font-black">
-                                <td className="py-6 px-1 text-sm uppercase tracking-widest">Grand Total</td>
-                                <td className="py-6 font-mono text-rose-500 text-lg">₹{totalOutput.toLocaleString()}</td>
-                                <td className="py-6 font-mono text-cyan-500 text-lg">₹{totalInput.toLocaleString()}</td>
-                                <td className="py-6 text-right text-lg">₹{(totalOutput - totalInput).toLocaleString()}</td>
+                                <td className="py-6 px-1 text-sm uppercase tracking-widest">Net Payable</td>
+                                <td className="py-6 text-right"></td>
+                                <td className="py-6 font-mono text-right">₹{Math.max(0, outputIGST - inputIGST).toLocaleString()}</td>
+                                <td className="py-6 font-mono text-right">₹{Math.max(0, outputCGST - inputCGST).toLocaleString()}</td>
+                                <td className="py-6 font-mono text-right">₹{Math.max(0, outputSGST - inputSGST).toLocaleString()}</td>
+                                <td className="py-6 text-right text-lg text-emerald-500">₹{Math.max(0, totalOutput - totalInput).toLocaleString()}</td>
                             </tr>
                         </tfoot>
                     </table>

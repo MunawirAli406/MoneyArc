@@ -287,7 +287,7 @@ export default function VoucherEntry() {
             {/* Header Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="flex items-center gap-5">
-                    <div className="w-14 h-14 cyan-gradient rounded-[1.25rem] flex items-center justify-center text-white shadow-xl shadow-primary/20 rotate-3">
+                    <div className="w-14 h-14 cyan-gradient rounded-[1.25rem] flex items-center justify-center text-white shadow-xl shadow-primary/20">
                         <Keyboard className="w-7 h-7" />
                     </div>
                     <div>
