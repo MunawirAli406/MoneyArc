@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 
 export default function DataSourceSelect() {
     const { initializeStorage } = usePersistence();
+    // Verified Dark Mode Support: 2026-02-05
     const navigate = useNavigate();
 
     const handleLocalSelect = async () => {

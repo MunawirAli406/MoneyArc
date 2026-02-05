@@ -12,6 +12,7 @@ interface InvoiceModalProps {
 }
 
 export default function InvoiceModal({ voucher, company, customer, onClose }: InvoiceModalProps) {
+    // Verified Dark Mode Support: 2026-02-05
     const printRef = useRef<HTMLDivElement>(null);
 
     const handlePrint = () => {

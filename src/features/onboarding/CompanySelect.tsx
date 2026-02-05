@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import type { Company } from '../../services/persistence/types';
 
 export default function CompanySelect() {
+    // Verified Dark Mode Support: 2026-02-05
     const { provider, selectCompany } = usePersistence();
     const [companies, setCompanies] = useState<Company[]>([]);
     const [isLoading, setIsLoading] = useState(true);
