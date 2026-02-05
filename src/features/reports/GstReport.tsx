@@ -24,6 +24,7 @@ export default function GstReport() {
         loadData();
     }, [provider, activeCompany]);
 
+    // Last updated: 2026-02-05 (Force Sync)
     // Detailed GST Logic
     let totalTaxable = 0;
     let totalIGST = 0;
