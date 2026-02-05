@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const foundUser = users.find((u) => u.email === email && (!password || u.password === password));
 
             if (foundUser) {
-                const { password: _password, ...userSafe } = foundUser;
+                const { password: _, ...userSafe } = foundUser;
                 setUser(userSafe as User);
                 localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
             } else {
@@ -89,7 +89,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const updatedUsers = [...users, newUser];
             await saveUsers(updatedUsers);
 
-            const { password: _password, ...userSafe } = newUser;
+            const { password: _, ...userSafe } = newUser;
             setUser(userSafe as User);
             localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
         } finally {
