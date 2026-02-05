@@ -2,7 +2,7 @@ import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, FileText, Shiel
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { useTheme } from '../../features/settings/ThemeContext';
+import { useTheme } from '../../features/settings/useTheme';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Voucher } from '../../services/accounting/VoucherService';

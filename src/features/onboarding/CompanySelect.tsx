@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Building2, Plus, Search, Calendar, ChevronRight, Loader2 } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
@@ -27,18 +27,12 @@ export default function CompanySelect() {
     });
     const navigate = useNavigate();
 
-    useEffect(() => {
-        if (!provider) {
-            navigate('/select-source');
-            return;
-        }
-        loadCompanies();
-    }, [provider]);
-
-    const loadCompanies = async () => {
+    const loadCompanies = useCallback(async () => {
         if (!provider) return;
         setIsLoading(true);
         try {
+            // Simulate network delay
+            await new Promise<void>((resolve) => { setTimeout(() => { resolve(); }, 800); });
             const list = await provider.listCompanies();
             setCompanies(list);
         } catch (error) {
@@ -46,7 +40,15 @@ export default function CompanySelect() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [provider]);
+
+    useEffect(() => {
+        if (!provider) {
+            navigate('/select-source');
+            return;
+        }
+        loadCompanies();
+    }, [provider, loadCompanies, navigate]);
 
     const handleSelect = (company: Company) => {
         selectCompany(company);
@@ -100,13 +102,12 @@ export default function CompanySelect() {
                 const companyToEdit = companies.find(c => c.id === editingCompanyId);
                 if (companyToEdit) {
                     await provider.updateCompany(editingCompanyId, companyToEdit.path, newCompany);
-                    await loadCompanies();
-                    resetForm();
                 }
             } else {
-                const created = await provider.createCompany(newCompany);
-                handleSelect(created);
+                await provider.createCompany(newCompany);
             }
+            await loadCompanies();
+            resetForm();
         } catch (error) {
             console.error("Failed to save company", error);
         } finally {
@@ -119,248 +120,256 @@ export default function CompanySelect() {
     );
 
     return (
-        <div className="min-h-screen bg-background flex items-center justify-center p-4">
-            <div className="max-w-4xl w-full">
-                <div className="text-center mb-10">
-                    <h1 className="text-4xl font-black text-foreground mb-4 tracking-tight uppercase">Select Company</h1>
-                    <p className="text-muted-foreground font-medium">Choose a workspace to manage your financial arc.</p>
+        <div className="min-h-screen bg-gray-50 p-8">
+            <div className="max-w-4xl mx-auto">
+                <div className="flex items-center justify-between mb-8">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="w-10 h-10 rounded-xl bg-primary-600 flex items-center justify-center text-white">
+                                <Building2 size={24} />
+                            </div>
+                            <h1 className="text-2xl font-bold text-gray-900">Select Company</h1>
+                        </div>
+                        <p className="text-gray-600">Choose a company to start accounting</p>
+                    </div>
+                    <button
+                        onClick={() => setShowCreateForm(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+                    >
+                        <Plus size={20} />
+                        Create New
+                    </button>
                 </div>
 
-                <div className="bg-card rounded-3xl shadow-xl overflow-hidden border border-border">
-                    <div className="p-8 border-b border-border flex items-center justify-between bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-                        <div className="relative flex-1 max-w-md">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+                {!showCreateForm ? (
+                    <div className="space-y-6">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 type="text"
                                 placeholder="Search companies..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full pl-12 pr-4 py-3 bg-muted/30 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-medium"
+                                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none transition-all shadow-sm"
                             />
                         </div>
-                        <button
-                            onClick={() => setShowCreateForm(true)}
-                            className="ml-6 flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-2xl font-black uppercase tracking-widest text-xs hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
-                        >
-                            <Plus className="w-5 h-5" />
-                            New Company
-                        </button>
-                    </div>
 
-                    <div className="divide-y divide-border/50 max-h-[500px] overflow-y-auto">
-                        {isLoading ? (
-                            <div className="py-24 flex flex-col items-center justify-center text-muted-foreground">
-                                <Loader2 className="w-12 h-12 animate-spin text-primary mb-6" />
-                                <p className="font-bold uppercase tracking-widest text-xs">Accessing Ledgers...</p>
+                        {isLoading && companies.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                                <Loader2 className="w-8 h-8 text-primary-600 animate-spin mb-4" />
+                                <p className="text-gray-500">Loading your companies...</p>
                             </div>
-                        ) : filteredCompanies.length > 0 ? (
-                            filteredCompanies.map((company) => (
-                                <button
-                                    key={company.id}
-                                    onClick={() => handleSelect(company)}
-                                    className="w-full p-8 flex items-center justify-between hover:bg-muted/30 transition-all text-left group"
-                                >
-                                    <div className="flex items-center gap-6">
-                                        <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-                                            <Building2 className="w-8 h-8" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-xl font-black text-foreground group-hover:text-primary transition-colors tracking-tight">
-                                                {company.name}
-                                            </h3>
-                                            <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground mt-2 uppercase tracking-widest">
-                                                <span className="flex items-center gap-1.5">
-                                                    <Calendar className="w-4 h-4" />
-                                                    FY: {company.financialYear}
-                                                </span>
-                                                <span className="w-1.5 h-1.5 bg-border rounded-full"></span>
-                                                <span>GSTIN: {company.gstin || 'UNREGISTERED'}</span>
+                        ) : filteredCompanies.length === 0 ? (
+                            <div className="text-center py-20 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                                    <Building2 size={32} />
+                                </div>
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">No Companies Found</h3>
+                                <p className="text-gray-500">Create your first company to get started</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {filteredCompanies.map((company) => (
+                                    <div
+                                        key={company.id}
+                                        className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:border-primary-500 hover:shadow-lg transition-all cursor-pointer"
+                                    >
+                                        <div onClick={() => handleSelect(company)}>
+                                            <div className="flex items-start justify-between mb-4">
+                                                <div className="w-12 h-12 rounded-lg bg-gray-50 flex items-center justify-center text-primary-600 group-hover:bg-primary-50 transition-colors">
+                                                    <Building2 size={24} />
+                                                </div>
+                                                <ChevronRight className="text-gray-400 group-hover:translate-x-1 transition-transform" />
                                             </div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-4">
-                                        <div className="text-right hidden sm:block">
-                                            <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Active State</p>
-                                            <p className="text-sm font-bold text-foreground">{company.state || 'N/A'}</p>
+                                            <h3 className="text-lg font-bold text-gray-900 mb-1">{company.name}</h3>
+                                            <div className="flex items-center gap-4 text-sm text-gray-500">
+                                                <div className="flex items-center gap-1">
+                                                    <Calendar size={14} />
+                                                    {company.financialYear}
+                                                </div>
+                                                {company.gstin && (
+                                                    <div className="px-2 py-0.5 bg-gray-100 rounded text-[10px] font-bold uppercase tracking-wider">
+                                                        GST: {company.gstin}
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                         <button
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 handleEdit(company);
                                             }}
-                                            className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all"
+                                            className="absolute bottom-6 right-6 text-primary-600 p-2 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary-50 rounded-lg text-sm font-medium"
                                         >
-                                            <Building2 className="w-5 h-5" />
+                                            Settings
                                         </button>
-                                        <ChevronRight className="w-8 h-8 text-border group-hover:text-primary group-hover:translate-x-1 transition-all" />
                                     </div>
-                                </button>
-                            ))
-                        ) : (
-                            <div className="py-32 text-center text-muted-foreground">
-                                <div className="w-20 h-20 bg-muted rounded-3xl flex items-center justify-center mx-auto mb-6">
-                                    <Building2 className="w-10 h-10" />
-                                </div>
-                                <p className="text-xl font-black text-foreground mb-2">No Companies Found</p>
-                                <p className="text-sm font-medium">Initialize a new company to begin your accounting arc.</p>
+                                ))}
                             </div>
                         )}
                     </div>
-                </div>
-            </div>
-
-            {/* Create Company Modal */}
-            {showCreateForm && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-md flex items-center justify-center p-4 z-50 overflow-y-auto">
-                    <div className="bg-card rounded-[2.5rem] shadow-2xl w-full max-w-2xl my-8 overflow-hidden animate-in fade-in zoom-in duration-300 border border-border">
-                        <div className="p-10 border-b border-border bg-muted/30">
-                            <h2 className="text-3xl font-black text-foreground tracking-tight uppercase">
-                                {editingCompanyId ? 'Alter Company' : 'Establish Company'}
+                ) : (
+                    <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                        <div className="p-6 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+                            <h2 className="text-xl font-bold text-gray-900">
+                                {editingCompanyId ? 'Edit Company' : 'Create New Company'}
                             </h2>
-                            <p className="font-medium text-muted-foreground mt-1">
-                                {editingCompanyId ? 'Modify your organization details.' : "Define your organization's core financial identity."}
-                            </p>
+                            <button
+                                onClick={resetForm}
+                                className="text-gray-400 hover:text-gray-600 transition-colors"
+                            >
+                                <Plus size={24} className="rotate-45" />
+                            </button>
                         </div>
-                        <form onSubmit={handleCreate} className="p-10 space-y-8">
+                        <form onSubmit={handleCreate} className="p-8 space-y-8">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Company Name</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        value={newCompany.name}
-                                        onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
-                                        placeholder="e.g., MoneyArc Tech Solutions"
-                                    />
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Basic Information</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Company Name *</label>
+                                            <input
+                                                type="text"
+                                                required
+                                                value={newCompany.name}
+                                                onChange={(e) => setNewCompany({ ...newCompany, name: e.target.value })}
+                                                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                placeholder="e.g. Acme Industries"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Financial Year</label>
+                                                <select
+                                                    value={newCompany.financialYear}
+                                                    onChange={(e) => setNewCompany({ ...newCompany, financialYear: e.target.value })}
+                                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                >
+                                                    <option value="2025-26">2025-26</option>
+                                                    <option value="2024-25">2024-25</option>
+                                                </select>
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Currency</label>
+                                                <input
+                                                    type="text"
+                                                    value={newCompany.currency}
+                                                    onChange={(e) => setNewCompany({ ...newCompany, currency: e.target.value })}
+                                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Financial Year</label>
-                                    <select
-                                        value={newCompany.financialYear}
-                                        onChange={(e) => setNewCompany({ ...newCompany, financialYear: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground appearance-none"
-                                    >
-                                        <option value="2024-25">2024-25</option>
-                                        <option value="2025-26">2025-26</option>
-                                        <option value="2026-27">2026-27</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">GSTIN Number</label>
-                                    <input
-                                        type="text"
-                                        value={newCompany.gstin}
-                                        onChange={(e) => setNewCompany({ ...newCompany, gstin: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground uppercase"
-                                        placeholder="27AAACR1234A1Z1"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Registration Type</label>
-                                    <select
-                                        value={newCompany.registrationType}
-                                        onChange={(e) => setNewCompany({ ...newCompany, registrationType: e.target.value as Company['registrationType'] })}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground appearance-none"
-                                    >
-                                        <option value="Regular">Regular</option>
-                                        <option value="Composition">Composition</option>
-                                        <option value="Unregistered">Unregistered</option>
-                                    </select>
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Country</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        value={newCompany.country}
-                                        onChange={(e) => setNewCompany({ ...newCompany, country: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
-                                        placeholder="e.g., India"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">State</label>
-                                    <input
-                                        required
-                                        type="text"
-                                        value={newCompany.state}
-                                        onChange={(e) => setNewCompany({ ...newCompany, state: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
-                                        placeholder="e.g., Maharashtra"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Phone</label>
-                                    <input
-                                        type="text"
-                                        value={newCompany.phone}
-                                        onChange={(e) => setNewCompany({ ...newCompany, phone: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
-                                        placeholder="+91 98765 43210"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Email</label>
-                                    <input
-                                        type="email"
-                                        value={newCompany.email}
-                                        onChange={(e) => setNewCompany({ ...newCompany, email: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
-                                        placeholder="contact@company.com"
-                                    />
-                                </div>
-                                <div className="md:col-span-2 space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Business Address</label>
-                                    <textarea
-                                        value={newCompany.address}
-                                        onChange={(e) => setNewCompany({ ...newCompany, address: e.target.value })}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground resize-none"
-                                        rows={2}
-                                        placeholder="Enter full registered address..."
-                                    />
-                                </div>
-                                <div className="md:col-span-2 space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Currency & Symbol</label>
-                                    <div className="flex gap-4">
-                                        <input
-                                            type="text"
-                                            value={newCompany.currency}
-                                            onChange={(e) => setNewCompany({ ...newCompany, currency: e.target.value })}
-                                            className="flex-1 px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
-                                            placeholder="Currency (e.g., INR)"
-                                        />
-                                        <input
-                                            type="text"
-                                            value={newCompany.symbol}
-                                            onChange={(e) => setNewCompany({ ...newCompany, symbol: e.target.value })}
-                                            className="w-24 px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-foreground"
-                                            placeholder="Symbol (₹)"
-                                        />
+
+                                <div className="space-y-6">
+                                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Compliance & Tax</h3>
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">GSTIN</label>
+                                            <input
+                                                type="text"
+                                                value={newCompany.gstin}
+                                                onChange={(e) => setNewCompany({ ...newCompany, gstin: e.target.value })}
+                                                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all uppercase"
+                                                placeholder="27AAAAA0000A1Z5"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-gray-700 mb-1">Registration Type</label>
+                                            <select
+                                                value={newCompany.registrationType}
+                                                onChange={(e) => setNewCompany({ ...newCompany, registrationType: e.target.value as 'Regular' | 'Composition' | 'Unregistered' })}
+                                                className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                            >
+                                                <option value="Regular">Regular</option>
+                                                <option value="Composition">Composition</option>
+                                                <option value="Unregistered">Unregistered</option>
+                                            </select>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="flex gap-4 pt-6">
+                            <div className="space-y-6">
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest border-b border-gray-100 pb-2">Address & Contact</h3>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <div>
+                                        <label className="block text-sm font-bold text-gray-700 mb-1">Full Address</label>
+                                        <textarea
+                                            rows={4}
+                                            value={newCompany.address}
+                                            onChange={(e) => setNewCompany({ ...newCompany, address: e.target.value })}
+                                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all resize-none"
+                                            placeholder="Unit No. 123, Business Park..."
+                                        />
+                                    </div>
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">State</label>
+                                                <input
+                                                    type="text"
+                                                    value={newCompany.state}
+                                                    onChange={(e) => setNewCompany({ ...newCompany, state: e.target.value })}
+                                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Country</label>
+                                                <input
+                                                    type="text"
+                                                    value={newCompany.country}
+                                                    onChange={(e) => setNewCompany({ ...newCompany, country: e.target.value })}
+                                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Phone</label>
+                                                <input
+                                                    type="text"
+                                                    value={newCompany.phone}
+                                                    onChange={(e) => setNewCompany({ ...newCompany, phone: e.target.value })}
+                                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-bold text-gray-700 mb-1">Email</label>
+                                                <input
+                                                    type="email"
+                                                    value={newCompany.email}
+                                                    onChange={(e) => setNewCompany({ ...newCompany, email: e.target.value })}
+                                                    className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-3 pt-6 border-t border-gray-100">
                                 <button
                                     type="button"
                                     onClick={resetForm}
-                                    className="flex-1 px-8 py-4 border border-border rounded-2xl font-black uppercase tracking-widest text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+                                    className="px-6 py-2.5 text-gray-600 font-bold hover:bg-gray-50 rounded-lg transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isLoading}
-                                    className="flex-[2] bg-primary text-primary-foreground px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs hover:shadow-xl hover:shadow-primary/20 transition-all active:scale-95 flex items-center justify-center gap-2"
+                                    className="px-8 py-2.5 bg-primary-600 text-white font-black uppercase tracking-widest text-xs rounded-lg hover:bg-primary-700 transition-colors shadow-lg shadow-primary-500/20 disabled:opacity-50 flex items-center gap-2"
                                 >
-                                    {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (editingCompanyId ? 'Update Workspace' : 'Create Workspace')}
+                                    {isLoading && <Loader2 size={16} className="animate-spin" />}
+                                    {editingCompanyId ? 'Update Company' : 'Create Company'}
                                 </button>
                             </div>
                         </form>
                     </div>
-                </div>
-            )}
+                )}
+            </div>
         </div>
     );
 }

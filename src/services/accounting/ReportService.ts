@@ -1,3 +1,4 @@
+import { type StockItem } from '../inventory/types';
 
 export interface Ledger {
     id: string;
@@ -48,7 +49,7 @@ export class ReportService {
         return income - expenses;
     }
 
-    static getClosingStockValue(stockItems: any[]): number {
+    static getClosingStockValue(stockItems: StockItem[]): number {
         return stockItems.reduce((sum, item) => {
             const balance = item.currentBalance !== undefined ? item.currentBalance : item.openingStock;
             const rate = item.currentRate !== undefined ? item.currentRate : item.openingRate;

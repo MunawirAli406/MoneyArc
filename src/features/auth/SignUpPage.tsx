@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Mail, User, Lock, ArrowRight, Loader2, PieChart, FolderOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useAuth } from './AuthContext.provider';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 
 export default function SignUpPage() {

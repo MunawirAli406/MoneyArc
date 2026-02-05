@@ -27,7 +27,8 @@ import StockGroupList from './features/inventory/StockGroupList';
 import StockGroupForm from './features/inventory/StockGroupForm';
 import StockSummary from './features/inventory/StockSummary';
 import { PersistenceProvider } from './services/persistence/PersistenceContext';
-import { AuthProvider, useAuth } from './features/auth/AuthContext';
+import { AuthProvider } from './features/auth/AuthContext';
+import { useAuth } from './features/auth/AuthContext.provider';
 import { ThemeProvider } from './features/settings/ThemeContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {

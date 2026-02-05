@@ -1,5 +1,5 @@
 import { Bell, Sun, Moon, Building2, ChevronDown, LogOut } from 'lucide-react';
-import { useTheme } from '../../features/settings/ThemeContext';
+import { useTheme } from '../../features/settings/useTheme';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';

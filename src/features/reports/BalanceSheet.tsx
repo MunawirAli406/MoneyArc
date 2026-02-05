@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ReportService, ACCT_GROUPS, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
+import { type StockItem } from '../../services/inventory/types';
 import { Calendar, FileDown } from 'lucide-react';
 import { ExportService } from '../../services/reports/ExportService';
 
@@ -19,7 +20,7 @@ export default function BalanceSheet() {
 
             const [ledgerData, stockItemsData] = await Promise.all([
                 provider.read<Ledger[]>('ledgers.json', activeCompany.path),
-                provider.read<any[]>('stock_items.json', activeCompany.path)
+                provider.read<StockItem[]>('stock_items.json', activeCompany.path)
             ]);
 
             const ledgers = ledgerData || [];
@@ -63,7 +64,7 @@ export default function BalanceSheet() {
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => {
-                            const rows: any[][] = [];
+                            const rows: string[][] = [];
                             liabilities.forEach(g => {
                                 if (g.total > 0) {
                                     rows.push([g.groupName.toUpperCase(), g.total.toFixed(2)]);

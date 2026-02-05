@@ -5,21 +5,22 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
 import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
+import type { StockItem } from '../../services/inventory/types';
 
 export default function RatioAnalysis() {
     const { provider, activeCompany } = usePersistence();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
-    const [ratios, setRatios] = useState<any[]>([]);
+    const [ratios, setRatios] = useState<{ name: string, value: string, target: string, desc: string, icon: any, color: string, bg: string }[]>([]);
 
     useEffect(() => {
         const calculateRatios = async () => {
             if (!provider || !activeCompany) return;
 
-            const [vData, lData, sData] = await Promise.all([
+            const [, lData, sData] = await Promise.all([
                 provider.read<Voucher[]>('vouchers.json', activeCompany.path),
                 provider.read<Ledger[]>('ledgers.json', activeCompany.path),
-                provider.read<any[]>('stock_items.json', activeCompany.path)
+                provider.read<StockItem[]>('stock_items.json', activeCompany.path)
             ]);
 
             const ledgers = lData || [];

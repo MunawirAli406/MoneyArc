@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Mail, ArrowRight, Loader2, Lock, FolderOpen, PieChart } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { useAuth } from './AuthContext';
+import { useAuth } from './AuthContext.provider';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -163,7 +163,7 @@ export default function LoginPage() {
                     </div>
                 </div>
             </motion.div>
-        </div>
+        </div >
     );
 }
 

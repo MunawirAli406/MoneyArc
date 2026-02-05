@@ -1,5 +1,5 @@
 import { Moon, Sun, Palette, Bell, Shield } from 'lucide-react';
-import { useTheme } from './ThemeContext';
+import { useTheme } from './useTheme';
 import { motion } from 'framer-motion';
 
 export default function SettingsPage() {

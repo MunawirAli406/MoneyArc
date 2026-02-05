@@ -28,9 +28,9 @@ export interface StockItem {
     openingValue: number;
 
     // Current State (Calculated/Cached)
-    currentBalance: number;
-    currentRate: number;
-    currentValue: number;
+    currentBalance?: number;
+    currentRate?: number;
+    currentValue?: number;
 
     // Tracking
     reorderLevel?: number;

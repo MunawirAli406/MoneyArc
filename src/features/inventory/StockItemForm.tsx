@@ -78,7 +78,7 @@ export default function StockItemForm() {
         if (value !== formData.openingValue) {
             setFormData(prev => ({ ...prev, openingValue: value }));
         }
-    }, [formData.openingStock, formData.openingRate]);
+    }, [formData.openingStock, formData.openingRate, formData.openingValue]);
 
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();

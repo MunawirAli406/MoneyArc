@@ -1,5 +1,6 @@
 import type { StorageProvider } from '../persistence/types';
 import type { Ledger } from './ReportService';
+import type { StockItem } from '../inventory/types';
 import { AuditService } from '../security/AuditService';
 
 export interface InventoryEntry {
@@ -44,7 +45,7 @@ export class VoucherService {
 
         await this.applyImpact(provider, voucher, 1, companyPath);
 
-        await AuditService.log(provider as any, companyPath || '', {
+        await AuditService.log(provider, companyPath || '', {
             action: 'CREATE',
             entityType: 'VOUCHER',
             entityId: voucher.id,
@@ -66,7 +67,7 @@ export class VoucherService {
         const updatedVouchers = vouchers.filter(v => v.id !== voucherId);
         await provider.write('vouchers.json', updatedVouchers, companyPath);
 
-        await AuditService.log(provider as any, companyPath || '', {
+        await AuditService.log(provider, companyPath || '', {
             action: 'DELETE',
             entityType: 'VOUCHER',
             entityId: voucherId,
@@ -94,7 +95,7 @@ export class VoucherService {
         // Apply new impact
         await this.applyImpact(provider, voucher, 1, companyPath);
 
-        await AuditService.log(provider as any, companyPath || '', {
+        await AuditService.log(provider, companyPath || '', {
             action: 'UPDATE',
             entityType: 'VOUCHER',
             entityId: voucher.id,
@@ -111,7 +112,7 @@ export class VoucherService {
             if (!row.account) continue;
             const ledger = ledgerMap.get(row.account);
             if (ledger) {
-                let change = (row.type === 'Dr' ? row.debit : -row.credit) * multiplier;
+                const change = (row.type === 'Dr' ? row.debit : -row.credit) * multiplier;
                 let currentSigned = ledger.balance * (ledger.type === 'Dr' ? 1 : -1);
                 currentSigned += change;
                 ledger.balance = Math.abs(currentSigned);
@@ -121,7 +122,7 @@ export class VoucherService {
         await provider.write('ledgers.json', ledgers, companyPath);
 
         // 2. Update Inventory
-        const stockItems = await provider.read<any[]>('stock_items.json', companyPath) || [];
+        const stockItems = await provider.read<StockItem[]>('stock_items.json', companyPath) || [];
         const stockMap = new Map(stockItems.map(i => [i.id, i]));
         let stockChanged = false;
 
@@ -141,17 +142,17 @@ export class VoucherService {
                         const valChange = allocation.amount * multiplier;
 
                         if (voucher.type === 'Purchase') {
-                            item.currentBalance += qtyChange;
-                            item.currentValue += valChange;
+                            item.currentBalance! += qtyChange;
+                            item.currentValue! += valChange;
                         } else if (voucher.type === 'Sales') {
-                            item.currentBalance -= qtyChange;
+                            item.currentBalance! -= qtyChange;
                             // Re-calculate value at current average rate
-                            item.currentValue = item.currentBalance * item.currentRate;
+                            item.currentValue = item.currentBalance! * item.currentRate!;
                         }
 
                         // Recalculate Average Rate if balance is positive
-                        if (item.currentBalance > 0) {
-                            item.currentRate = item.currentValue / item.currentBalance;
+                        if (item.currentBalance! > 0) {
+                            item.currentRate = item.currentValue! / item.currentBalance!;
                         }
                     }
                 }

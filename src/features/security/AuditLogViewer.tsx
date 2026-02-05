@@ -13,7 +13,7 @@ export default function AuditLogViewer() {
     useEffect(() => {
         const loadLogs = async () => {
             if (provider && activeCompany) {
-                const data = await AuditService.getLogs(provider as any, activeCompany.path);
+                const data = await AuditService.getLogs(provider, activeCompany.path);
                 setLogs(data);
                 setLoading(false);
             }

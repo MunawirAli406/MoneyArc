@@ -1,25 +1,7 @@
-import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-
-interface User {
-    id: string;
-    email: string;
-    name?: string;
-    password?: string; // Stored for local validation
-}
-
-interface AuthContextType {
-    user: User | null;
-    isAuthenticated: boolean;
-    isLoading: boolean;
-    login: (email: string, password?: string) => Promise<void>;
-    signup: (email: string, name: string, password?: string) => Promise<void>;
-    logout: () => void;
-}
-
-const AuthContext = createContext<AuthContextType | null>(null);
-
-const AUTH_KEY = 'moneyarc_auth_user';
+import { type User, AUTH_KEY } from './types';
+import { AuthContext } from './AuthContext.provider';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -59,12 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const login = async (email: string, password?: string) => {
         setIsLoading(true);
         try {
-            await new Promise((resolve) => setTimeout(resolve, 600)); // Smooth feel
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await new Promise<void>((resolve: any) => { setTimeout(() => { resolve(); }, 600); });
             const users = await getUsers();
             const foundUser = users.find((u) => u.email === email && (!password || u.password === password));
 
             if (foundUser) {
-                const { password: _, ...userSafe } = foundUser;
+                const userSafe = { ...foundUser };
+                delete userSafe.password;
                 setUser(userSafe as User);
                 localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
             } else {
@@ -78,7 +62,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const signup = async (email: string, name: string, password?: string) => {
         setIsLoading(true);
         try {
-            await new Promise((resolve) => setTimeout(resolve, 800));
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            await new Promise<void>((resolve: any) => { setTimeout(() => { resolve(); }, 800); });
             const users = await getUsers();
 
             if (users.find((u) => u.email === email)) {
@@ -89,8 +74,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const updatedUsers = [...users, newUser];
             await saveUsers(updatedUsers);
 
-            const { password: _, ...userSafe } = newUser;
-            setUser(userSafe as User);
+            const userSafe = { ...newUser } as User;
+            delete userSafe.password;
+            setUser(userSafe);
             localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
         } finally {
             setIsLoading(false);
@@ -109,10 +95,5 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 }
 
-export function useAuth() {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error('useAuth must be used within an AuthProvider');
-    }
-    return context;
-}
+
+// useAuth moved to AuthContext.provider.tsx

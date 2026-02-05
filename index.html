@@ -8,6 +8,15 @@
   <title>MoneyArc | Advanced Accounting & Inventory Management</title>
   <meta name="description"
     content="MoneyArc is a premium, local-first accounting software inspired by Tally and SAP, featuring real-time inventory tracking, multi-company support, and comprehensive financial reporting." />
+  <script>
+    window.onerror = function (message, source, lineno, colno, error) {
+      document.body.innerHTML += '<div style="position:fixed;top:0;left:0;right:0;padding:20px;background:red;color:white;z-index:9999;font-size:16px;white-space:pre-wrap;">' +
+        '<h1>Global Error Caught</h1>' +
+        '<p><b>Message:</b> ' + message + '</p>' +
+        '<p><b>Source:</b> ' + source + ':' + lineno + '</p>' +
+        '</div>';
+    };
+  </script>
 </head>
 
 <body>

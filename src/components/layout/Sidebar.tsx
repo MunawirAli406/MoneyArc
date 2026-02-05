@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, BookOpen, FileText, Settings, Wallet, TrendingUp, PieChart, Building2, LogOut, Package } from 'lucide-react';
 import clsx from 'clsx';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { useAuth } from '../../features/auth/AuthContext';
+import { useAuth } from '../../features/auth/AuthContext.provider';
 
 const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
