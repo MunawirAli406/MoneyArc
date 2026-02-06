@@ -50,8 +50,8 @@ export default function CompanySelect() {
         loadCompanies();
     }, [provider, loadCompanies, navigate]);
 
-    const handleSelect = (company: Company) => {
-        selectCompany(company);
+    const handleSelect = async (company: Company) => {
+        await selectCompany(company);
         navigate('/dashboard');
     };
 

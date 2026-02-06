@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { StorageProvider, StorageType, Company } from './types';
 import { FileSystemProvider } from './FileSystemProvider';
+import { LedgerService } from '../accounting/LedgerService';
 
 interface PersistenceContextType {
     provider: StorageProvider | null;
@@ -8,7 +9,7 @@ interface PersistenceContextType {
     activeCompany: Company | null;
     initializeStorage: (type: StorageType) => Promise<void>;
     restoreStorage: () => Promise<boolean>;
-    selectCompany: (company: Company | null) => void;
+    selectCompany: (company: Company | null) => Promise<void>;
 }
 
 const PersistenceContext = createContext<PersistenceContextType | null>(null);
@@ -61,8 +62,11 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const selectCompany = (company: Company | null) => {
+    const selectCompany = async (company: Company | null) => {
         setActiveCompany(company);
+        if (provider && company) {
+            await LedgerService.ensureDataSanity(provider, company);
+        }
     };
 
     return (
