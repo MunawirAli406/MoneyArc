@@ -8,6 +8,7 @@ const navItems = [
     { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
     { icon: Wallet, label: 'Vouchers', path: '/vouchers/new' },
     { icon: BookOpen, label: 'Ledgers', path: '/ledgers' },
+    { icon: BookOpen, label: 'Ledger Vouchers', path: '/reports/ledger' },
     { icon: BookOpen, label: 'Daybook', path: '/reports/daybook' },
     { icon: FileText, label: 'Balance Sheet', path: '/reports/balance-sheet' },
     { icon: TrendingUp, label: 'Profit & Loss', path: '/reports/profit-loss' },

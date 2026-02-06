@@ -19,6 +19,7 @@ import AuditLogViewer from './features/security/AuditLogViewer';
 import CashFlow from './features/reports/CashFlow';
 import FundFlow from './features/reports/FundFlow';
 import Daybook from './features/accounting/reports/Daybook';
+import LedgerReport from './features/reports/LedgerReport';
 import UnitList from './features/inventory/UnitList';
 import UnitForm from './features/inventory/UnitForm';
 import StockItemList from './features/inventory/StockItemList';
@@ -80,6 +81,14 @@ function AppContent() {
         <Route path="security/audit" element={<AuditLogViewer />} />
         <Route path="reports/cash-flow" element={<CashFlow />} />
         <Route path="reports/fund-flow" element={<FundFlow />} />
+        import LedgerReport from './features/reports/LedgerReport';
+
+        // ... (other imports)
+
+        // Inside Routes:
+        <Route path="reports/cash-flow" element={<CashFlow />} />
+        <Route path="reports/fund-flow" element={<FundFlow />} />
+        <Route path="reports/ledger" element={<LedgerReport />} />
         <Route path="reports/daybook" element={<Daybook />} />
 
         {/* Inventory Routes */}

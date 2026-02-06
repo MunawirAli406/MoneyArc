@@ -88,19 +88,19 @@ export default function UnitList() {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
                                 <tr>
-                                    <th className="px-8 py-4">Symbol</th>
-                                    <th className="px-8 py-4">Formal Name</th>
-                                    <th className="px-8 py-4">Decimal Places</th>
-                                    <th className="px-8 py-4 text-center">Actions</th>
+                                    <th className="px-4 py-2">Symbol</th>
+                                    <th className="px-4 py-2">Formal Name</th>
+                                    <th className="px-4 py-2">Decimal Places</th>
+                                    <th className="px-4 py-2 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/50">
                                 {units.map((unit) => (
                                     <tr key={unit.id} className="hover:bg-muted/10 transition-colors group">
-                                        <td className="px-8 py-4 font-black text-primary uppercase">{unit.name}</td>
-                                        <td className="px-8 py-4 font-bold text-foreground">{unit.formalName}</td>
-                                        <td className="px-8 py-4 text-muted-foreground font-mono">{unit.decimalPlaces}</td>
-                                        <td className="px-8 py-4 text-center">
+                                        <td className="px-4 py-2 font-black text-primary uppercase">{unit.name}</td>
+                                        <td className="px-4 py-2 font-bold text-foreground">{unit.formalName}</td>
+                                        <td className="px-4 py-2 text-muted-foreground font-mono">{unit.decimalPlaces}</td>
+                                        <td className="px-4 py-2 text-center">
                                             <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
                                                 <Link
                                                     to={`/inventory/units/${unit.id}`}

@@ -52,4 +52,4 @@ export interface StorageProvider {
     isReady: boolean;
 }
 
-export type StorageType = 'local' | 'cloud' | null;
+export type StorageType = 'local' | 'cloud' | 'browser' | null;

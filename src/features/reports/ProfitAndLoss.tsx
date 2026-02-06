@@ -17,16 +17,26 @@ export default function ProfitAndLoss() {
         const loadData = async () => {
             if (!provider || !activeCompany) return;
 
-            const [ledgerData, stockItemsData] = await Promise.all([
+            const [ledgerData, stockItemsData, customGroupsData] = await Promise.all([
                 provider.read<Ledger[]>('ledgers.json', activeCompany.path),
-                provider.read<StockItem[]>('stock_items.json', activeCompany.path)
+                provider.read<StockItem[]>('stock_items.json', activeCompany.path),
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                provider.read<any[]>('custom_groups.json', activeCompany.path)
             ]);
 
             const ledgers = ledgerData || [];
             const stockItems = stockItemsData || [];
+            const customGroups = customGroupsData || [];
 
-            const expenseData = ReportService.getGroupSummary(ledgers as Ledger[], ACCT_GROUPS.EXPENSES);
-            const incomeData = ReportService.getGroupSummary(ledgers as Ledger[], ACCT_GROUPS.INCOME);
+            // Re-register groups
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { AccountGroupManager } = await import('../../services/accounting/ReportService');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            customGroups.forEach((c: any) => AccountGroupManager.registerGroup(c.name, c.parentType));
+
+
+            const expenseData = ReportService.getGroupSummary(ledgers as Ledger[], 'EXPENSES');
+            const incomeData = ReportService.getGroupSummary(ledgers as Ledger[], 'INCOME');
             const cs = ReportService.getClosingStockValue(stockItems);
 
             setExpenses(expenseData);
@@ -98,9 +108,23 @@ export default function ProfitAndLoss() {
                         <FileDown className="w-4 h-4" />
                         Export PDF
                     </button>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-xl text-xs font-bold text-muted-foreground uppercase tracking-widest border border-border">
-                        <Calendar className="w-4 h-4" />
-                        Period Ending {new Date().toLocaleDateString()}
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm">
+                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">Period</label>
+                            <input
+                                type="date"
+                                className="bg-transparent text-xs font-bold outline-none text-foreground w-24"
+                                value={new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]}
+                                onChange={() => { }}
+                            />
+                            <span className="text-muted-foreground">-</span>
+                            <input
+                                type="date"
+                                className="bg-transparent text-xs font-bold outline-none text-foreground w-24"
+                                value={new Date().toISOString().split('T')[0]}
+                                onChange={() => { }}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>

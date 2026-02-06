@@ -88,21 +88,21 @@ export default function StockGroupList() {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
                                 <tr>
-                                    <th className="px-8 py-4">Group Name</th>
-                                    <th className="px-8 py-4">Parent Group</th>
-                                    <th className="px-8 py-4 text-center">Actions</th>
+                                    <th className="px-4 py-2">Group Name</th>
+                                    <th className="px-4 py-2">Parent Group</th>
+                                    <th className="px-4 py-2 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/50">
                                 {groups.map((group) => (
                                     <tr key={group.id} className="hover:bg-muted/10 transition-colors group">
-                                        <td className="px-8 py-4 font-bold text-foreground text-lg uppercase">{group.name}</td>
-                                        <td className="px-8 py-4">
+                                        <td className="px-4 py-2 font-bold text-foreground text-lg uppercase">{group.name}</td>
+                                        <td className="px-4 py-2">
                                             <span className="px-2.5 py-1 rounded-lg bg-muted text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                                                 {groups.find(g => g.id === group.parentGroupId)?.name || 'Primary'}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-4 text-center">
+                                        <td className="px-4 py-2 text-center">
                                             <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
                                                 <Link
                                                     to={`/inventory/groups/${group.id}`}

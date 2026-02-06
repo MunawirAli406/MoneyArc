@@ -12,7 +12,7 @@ export default function Layout() {
             <Sidebar />
             <div className="flex-1 flex flex-col overflow-hidden">
                 <Header onToggleGemini={() => setIsGeminiOpen(prev => !prev)} />
-                <main className="flex-1 overflow-y-auto p-6">
+                <main className="flex-1 overflow-y-auto p-3">
                     <Outlet />
                 </main>
             </div>

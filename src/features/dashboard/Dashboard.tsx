@@ -31,6 +31,7 @@ export default function Dashboard() {
 
             const vouchers = await provider.read<Voucher[]>('vouchers.json', activeCompany.path) || [];
             const ledgers = await provider.read<Ledger[]>('ledgers.json', activeCompany.path) || [];
+            const stockItems = await provider.read<any[]>('stock_items.json', activeCompany.path) || [];
 
             // Map ledger name to group
             const ledgerGroupMap = new Map(ledgers.map(l => [l.name, l.group]));
@@ -67,10 +68,22 @@ export default function Dashboard() {
                 });
             });
 
+            // Calculate Closing Stock Value (for Net Profit)
+            // Note: This matches ReportService logic
+            const closingStockValue = stockItems.reduce((sum, item) => {
+                const balance = item.currentBalance !== undefined ? item.currentBalance : item.openingStock;
+                const rate = item.currentRate !== undefined ? item.currentRate : item.openingRate;
+                return sum + (balance * rate);
+            }, 0);
+
+            const openingStockValue = stockItems.reduce((sum, item) => {
+                return sum + (item.openingStock * item.openingRate);
+            }, 0);
+
             setStats([
                 { label: 'Total Revenue', value: `₹${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10' },
                 { label: 'Total Expenses', value: `₹${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                { label: 'Net Profit', value: `₹${(revenue - expenses).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                { label: 'Net Profit', value: `₹${(revenue + closingStockValue - (expenses + openingStockValue)).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' }, // Corrected Logic: (Inc + CS) - (Exp + OS)
                 { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10' },
             ]);
 

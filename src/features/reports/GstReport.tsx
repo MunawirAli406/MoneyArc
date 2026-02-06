@@ -27,6 +27,7 @@ export default function GstReport() {
     // Last updated: 2026-02-06 (Logic Refinement)
     // Detailed GST Logic
     let totalTaxable = 0;
+    let purchaseTaxable = 0; // Added for Input Taxable Value
 
     // Output Liability (Sales)
     let outputCGST = 0;
@@ -63,10 +64,13 @@ export default function GstReport() {
                     totalCess += amount;
                 }
             } else {
-                // If it's a Sales voucher and a Credit row (that isn't tax), it's likely the Sales Income (Taxable Value)
+                // Sales Taxable Value
                 if (v.type === 'Sales' && r.type === 'Cr') {
-                    // Accumulate Taxable Value
                     totalTaxable += amount;
+                }
+                // Purchase Taxable Value (Approximate: Debits in Purchase vouchers not identifying as tax)
+                else if (v.type === 'Purchase' && r.type === 'Dr') {
+                    purchaseTaxable += amount;
                 }
             }
         });
@@ -210,14 +214,12 @@ export default function GstReport() {
                                 },
                                 {
                                     head: 'Input Credit (Purchases)',
-                                    taxable: 0,
+                                    taxable: purchaseTaxable,
                                     igst: inputIGST,
                                     cgst: inputCGST,
                                     sgst: inputSGST,
                                     totalTax: totalInputTax,
-                                    totalValue: totalInputTax // For purchases, Total Value usually means Purchase Cost. We have 0 taxable here, so just Tax? 
-                                    // Actually, if we don't track purchase taxable, we shouldn't show a misleading Total Value.
-                                    // Let's keep it 0 + Tax for now or hiding it. PROBABLY expected to be 0 if taxable is 0.
+                                    totalValue: purchaseTaxable + totalInputTax
                                 },
                             ].map((row, i) => (
                                 <tr key={i} className="group hover:bg-muted/10 transition-colors">

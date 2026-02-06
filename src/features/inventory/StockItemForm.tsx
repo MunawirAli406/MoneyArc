@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Save, Info, Target, Calculator } from 'lucide-react';
+import { Save, Info, Target, Calculator, Plus } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import type { StockItem, UnitOfMeasure, StockGroup } from '../../services/inventory/types';
+import QuickStockGroupForm from './QuickStockGroupForm';
+import QuickUnitForm from './QuickUnitForm';
 
 export default function StockItemForm() {
     const { id } = useParams();
@@ -12,6 +14,10 @@ export default function StockItemForm() {
     const [units, setUnits] = useState<UnitOfMeasure[]>([]);
     const [groups, setGroups] = useState<StockGroup[]>([]);
     const [isLoading, setIsLoading] = useState(false);
+
+    // Quick Create Modals
+    const [showGroupModal, setShowGroupModal] = useState(false);
+    const [showUnitModal, setShowUnitModal] = useState(false);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -188,25 +194,65 @@ export default function StockItemForm() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Under Group</label>
+                                <div className="flex justify-between">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Under Group</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowGroupModal(true)}
+                                        className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                                    >
+                                        <Plus className="w-3 h-3" /> New (Alt+C)
+                                    </button>
+                                </div>
                                 <select
                                     value={formData.groupId}
-                                    onChange={(e) => setFormData({ ...formData, groupId: e.target.value })}
+                                    onChange={(e) => {
+                                        if (e.target.value === 'CREATE_NEW') setShowGroupModal(true);
+                                        else setFormData({ ...formData, groupId: e.target.value });
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.altKey && e.key.toLowerCase() === 'c') {
+                                            e.preventDefault();
+                                            setShowGroupModal(true);
+                                        }
+                                    }}
                                     className="w-full px-5 py-4 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
                                 >
                                     <option value="">Primary</option>
+                                    <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Group</option>
+                                    <option disabled>──────────</option>
                                     {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
                                 </select>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Base Unit</label>
+                                <div className="flex justify-between">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Base Unit</label>
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowUnitModal(true)}
+                                        className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                                    >
+                                        <Plus className="w-3 h-3" /> New (Alt+U)
+                                    </button>
+                                </div>
                                 <select
                                     required
                                     value={formData.unitId}
-                                    onChange={(e) => setFormData({ ...formData, unitId: e.target.value })}
+                                    onChange={(e) => {
+                                        if (e.target.value === 'CREATE_NEW') setShowUnitModal(true);
+                                        else setFormData({ ...formData, unitId: e.target.value });
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.altKey && e.key.toLowerCase() === 'u') {
+                                            e.preventDefault();
+                                            setShowUnitModal(true);
+                                        }
+                                    }}
                                     className="w-full px-5 py-4 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
                                 >
                                     <option value="">Select Unit</option>
+                                    <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Unit</option>
+                                    <option disabled>──────────</option>
                                     {units.map(u => <option key={u.id} value={u.id}>{u.name} ({u.formalName})</option>)}
                                 </select>
                             </div>
@@ -306,6 +352,26 @@ export default function StockItemForm() {
                     </div>
                 </div>
             </form>
+
+            {showGroupModal && (
+                <QuickStockGroupForm
+                    onClose={() => setShowGroupModal(false)}
+                    onSuccess={(newGroup) => {
+                        setGroups(prev => [...prev, newGroup]);
+                        setFormData(prev => ({ ...prev, groupId: newGroup.id }));
+                    }}
+                />
+            )}
+
+            {showUnitModal && (
+                <QuickUnitForm
+                    onClose={() => setShowUnitModal(false)}
+                    onSuccess={(newUnit) => {
+                        setUnits(prev => [...prev, newUnit]);
+                        setFormData(prev => ({ ...prev, unitId: newUnit.id }));
+                    }}
+                />
+            )}
         </div>
     );
 }

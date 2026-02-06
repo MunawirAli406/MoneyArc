@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Save, CheckCircle2 } from 'lucide-react';
+import { Save, CheckCircle2, Plus } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import type { Ledger } from '../../../services/accounting/ReportService';
+import QuickGroupForm, { type CustomGroup } from './QuickGroupForm';
+import QuickCategoryForm, { type CustomCategory } from './QuickCategoryForm';
+import { AccountGroupManager } from '../../../services/accounting/ReportService';
 
-const GROUPS = [
+const SYSTEM_GROUPS = [
     'Bank Accounts', 'Cash-in-hand', 'Sundry Debtors', 'Sundry Creditors',
     'Sales Accounts', 'Purchase Accounts', 'Direct Expenses', 'Indirect Expenses',
     'Fixed Assets', 'Duties & Taxes', 'Loans (Liability)', 'Direct Incomes', 'Indirect Incomes',
@@ -16,6 +19,11 @@ export default function LedgerForm() {
     const navigate = useNavigate();
     const { id } = useParams();
     const { provider, activeCompany } = usePersistence();
+
+    const [availableGroups, setAvailableGroups] = useState<string[]>(SYSTEM_GROUPS);
+    const [availableCategories, setAvailableCategories] = useState<string[]>([]);
+    const [showGroupModal, setShowGroupModal] = useState(false);
+    const [showCategoryModal, setShowCategoryModal] = useState(false);
 
     const [formData, setFormData] = useState({
         name: '',
@@ -33,7 +41,33 @@ export default function LedgerForm() {
     const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
-        const loadLedger = async () => {
+        const loadData = async () => {
+            if (provider && activeCompany) {
+                // Load Custom Groups
+                try {
+                    const custom = await provider.read<CustomGroup[]>('custom_groups.json', activeCompany.path) || [];
+                    const customNames = custom.map(c => c.name);
+
+                    // Register them to manager for this session
+                    custom.forEach(c => AccountGroupManager.registerGroup(c.name, c.parentType));
+
+                    setAvailableGroups([...SYSTEM_GROUPS, ...customNames].sort());
+
+                    // Load Categories
+                    const customCats = await provider.read<CustomCategory[]>('custom_categories.json', activeCompany.path) || [];
+                    const customCatNames = customCats.map(c => c.name);
+
+                    // Also get unique categories from existing ledgers to populate the list if valid
+                    const ledgers = await provider.read<Ledger[]>('ledgers.json', activeCompany.path) || [];
+                    const ledgerCats = Array.from(new Set(ledgers.map(l => l.category).filter(Boolean))) as string[];
+
+                    const allCategories = Array.from(new Set([...customCatNames, ...ledgerCats])).sort();
+                    setAvailableCategories(allCategories);
+                } catch (e) {
+                    console.error('Failed to load custom groups', e);
+                }
+            }
+
             if (id && provider && activeCompany) {
                 setIsLoading(true);
                 try {
@@ -60,7 +94,7 @@ export default function LedgerForm() {
                 }
             }
         };
-        loadLedger();
+        loadData();
     }, [id, provider, activeCompany]);
 
     const handleSave = async () => {
@@ -148,25 +182,81 @@ export default function LedgerForm() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Under Group</label>
-                                <select
-                                    value={formData.group}
-                                    onChange={(e) => setFormData({ ...formData, group: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
-                                >
-                                    <option value="">Select Group</option>
-                                    {GROUPS.sort().map(g => <option key={g} value={g}>{g}</option>)}
-                                </select>
+                                <div className="flex justify-between">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Under Group</label>
+                                    <button
+                                        onClick={() => setShowGroupModal(true)}
+                                        className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                                    >
+                                        <Plus className="w-3 h-3" /> New (Alt+C)
+                                    </button>
+                                </div>
+                                <div className="relative">
+                                    <select
+                                        value={formData.group}
+                                        onChange={(e) => {
+                                            const newGroup = e.target.value;
+                                            if (newGroup === 'CREATE_NEW') {
+                                                setShowGroupModal(true);
+                                            } else {
+                                                // Auto-detect Balance Type
+                                                const isAssetOrExpense = AccountGroupManager.isAssetOrExpense(newGroup);
+                                                setFormData({
+                                                    ...formData,
+                                                    group: newGroup,
+                                                    balanceType: isAssetOrExpense ? 'Dr' : 'Cr'
+                                                });
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.altKey && e.key.toLowerCase() === 'c') {
+                                                e.preventDefault();
+                                                setShowGroupModal(true);
+                                            }
+                                        }}
+                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
+                                    >
+                                        <option value="">Select Group</option>
+                                        <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Group</option>
+                                        <option disabled>──────────</option>
+                                        {availableGroups.map(g => <option key={g} value={g}>{g}</option>)}
+                                    </select>
+                                </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Category (Optional)</label>
-                                <input
-                                    type="text"
-                                    value={formData.category}
-                                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
-                                    placeholder="e.g. Operating, Assets"
-                                />
+                                <div className="flex justify-between">
+                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Category (Optional)</label>
+                                    <button
+                                        onClick={() => setShowCategoryModal(true)}
+                                        className="text-[10px] font-bold text-primary hover:underline flex items-center gap-1"
+                                    >
+                                        <Plus className="w-3 h-3" /> New (Alt+C)
+                                    </button>
+                                </div>
+                                <div className="relative">
+                                    <select
+                                        value={formData.category}
+                                        onChange={(e) => {
+                                            if (e.target.value === 'CREATE_NEW') {
+                                                setShowCategoryModal(true);
+                                            } else {
+                                                setFormData({ ...formData, category: e.target.value });
+                                            }
+                                        }}
+                                        onKeyDown={(e) => {
+                                            if (e.altKey && e.key.toLowerCase() === 'c') {
+                                                e.preventDefault();
+                                                setShowCategoryModal(true);
+                                            }
+                                        }}
+                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
+                                    >
+                                        <option value="">Select Category</option>
+                                        <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Category</option>
+                                        <option disabled>──────────</option>
+                                        {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
@@ -257,6 +347,27 @@ export default function LedgerForm() {
                         </div>
                     </div>
                 </div>
+                {showGroupModal && (
+                    <QuickGroupForm
+                        onClose={() => setShowGroupModal(false)}
+                        initialName=""
+                        onSuccess={(newGroupName) => {
+                            setAvailableGroups(prev => [...prev, newGroupName].sort());
+                            setFormData({ ...formData, group: newGroupName });
+                        }}
+                    />
+                )}
+
+                {showCategoryModal && (
+                    <QuickCategoryForm
+                        onClose={() => setShowCategoryModal(false)}
+                        initialName=""
+                        onSuccess={(newCatName) => {
+                            setAvailableCategories(prev => [...prev, newCatName].sort());
+                            setFormData({ ...formData, category: newCatName });
+                        }}
+                    />
+                )}
             </div>
         </div>
     );

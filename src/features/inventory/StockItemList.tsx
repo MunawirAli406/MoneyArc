@@ -95,28 +95,28 @@ export default function StockItemList() {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
                                 <tr>
-                                    <th className="px-8 py-4">Product Name</th>
-                                    <th className="px-8 py-4">Group</th>
-                                    <th className="px-8 py-4">Opening Stock</th>
-                                    <th className="px-8 py-4">Valuation</th>
-                                    <th className="px-8 py-4 text-center">Actions</th>
+                                    <th className="px-4 py-2">Product Name</th>
+                                    <th className="px-4 py-2">Group</th>
+                                    <th className="px-4 py-2">Opening Stock</th>
+                                    <th className="px-4 py-2">Valuation</th>
+                                    <th className="px-4 py-2 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/50">
                                 {items.map((item) => (
                                     <tr key={item.id} className="hover:bg-muted/10 transition-colors group">
-                                        <td className="px-8 py-4">
+                                        <td className="px-4 py-2">
                                             <div>
                                                 <p className="font-bold text-foreground text-lg">{item.name}</p>
                                                 <p className="text-[10px] font-mono text-muted-foreground uppercase">{item.sku || 'No SKU'}</p>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-4">
+                                        <td className="px-4 py-2">
                                             <span className="px-2.5 py-1 rounded-lg bg-muted text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                                                 {item.groupId || 'Primary'}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-4">
+                                        <td className="px-4 py-2">
                                             <p className="font-mono font-bold text-foreground">
                                                 {item.openingStock.toLocaleString()} {getUnitName(item.unitId)}
                                             </p>
@@ -124,7 +124,7 @@ export default function StockItemList() {
                                                 @ {item.openingRate.toLocaleString()} / {getUnitName(item.unitId)}
                                             </p>
                                         </td>
-                                        <td className="px-8 py-4">
+                                        <td className="px-4 py-2">
                                             <div className="w-fit bg-primary/5 border border-primary/10 rounded-xl px-4 py-2">
                                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary leading-none mb-1">Total Value</p>
                                                 <p className="font-mono font-black text-primary text-lg leading-none">
@@ -132,7 +132,7 @@ export default function StockItemList() {
                                                 </p>
                                             </div>
                                         </td>
-                                        <td className="px-8 py-4 text-center">
+                                        <td className="px-4 py-2 text-center">
                                             <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
                                                 <Link
                                                     to={`/inventory/items/${item.id}`}

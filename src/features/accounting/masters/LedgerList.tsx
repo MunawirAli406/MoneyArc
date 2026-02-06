@@ -108,27 +108,27 @@ export default function LedgerList() {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
                                 <tr>
-                                    <th className="px-8 py-4">Account Name</th>
-                                    <th className="px-8 py-4">Group</th>
-                                    <th className="px-8 py-4 text-right">Balance</th>
-                                    <th className="px-8 py-4 text-center">Actions</th>
+                                    <th className="px-4 py-2">Account Name</th>
+                                    <th className="px-4 py-2">Group</th>
+                                    <th className="px-4 py-2 text-right">Balance</th>
+                                    <th className="px-4 py-2 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/50">
                                 {ledgers.map((ledger) => (
                                     <tr key={ledger.id} className="hover:bg-muted/10 transition-colors group">
-                                        <td className="px-8 py-4 font-bold text-foreground">{ledger.name}</td>
-                                        <td className="px-8 py-4 font-medium text-muted-foreground">
-                                            <span className="px-2.5 py-1 rounded-lg bg-muted text-[10px] font-bold uppercase tracking-wider">
+                                        <td className="px-4 py-2 font-bold text-foreground">{ledger.name}</td>
+                                        <td className="px-4 py-2 font-medium text-muted-foreground">
+                                            <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-bold uppercase tracking-wider">
                                                 {ledger.group}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-4 text-right font-mono font-bold">
+                                        <td className="px-4 py-2 text-right font-mono font-bold">
                                             <span className={ledger.type === 'Cr' ? 'text-rose-500' : 'text-cyan-500'}>
                                                 {ledger.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {ledger.type}
                                             </span>
                                         </td>
-                                        <td className="px-8 py-4 text-center">
+                                        <td className="px-4 py-2 text-center">
                                             <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
                                                 <Link
                                                     to={`/ledgers/${ledger.id}`}

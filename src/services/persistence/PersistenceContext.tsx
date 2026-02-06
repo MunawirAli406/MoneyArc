@@ -46,6 +46,9 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
 
         if (type === 'local') {
             newProvider = new FileSystemProvider();
+        } else if (type === 'browser') {
+            const { LocalStorageProvider } = await import('./LocalStorageProvider');
+            newProvider = new LocalStorageProvider();
         }
         // Add Cloud provider logic here later
 
