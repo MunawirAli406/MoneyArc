@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { ReportService, ACCT_GROUPS, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
+import { ReportService, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
 import { type StockItem } from '../../services/inventory/types';
-import { Calendar, TrendingUp, TrendingDown, FileDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, FileDown } from 'lucide-react';
 import { ExportService } from '../../services/reports/ExportService';
 
 export default function ProfitAndLoss() {

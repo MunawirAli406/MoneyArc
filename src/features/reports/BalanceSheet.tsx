@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { ReportService, ACCT_GROUPS, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
+import { ReportService, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
 import { type StockItem } from '../../services/inventory/types';
 import { Calendar, FileDown } from 'lucide-react';
 import { ExportService } from '../../services/reports/ExportService';
@@ -29,19 +29,7 @@ export default function BalanceSheet() {
             const stockItems = stockItemsData || [];
             const customGroups = customGroupsData || [];
 
-            // Register Custom Groups
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            customGroups.forEach((c: any) => {
-                // Import AccountGroupManager (needs to be available)
-                // We imported 'AccountGroupManager' in previous step? No, check imports.
-                // Assuming it's exported from ReportService.ts
-                // Note: We need to update import to include AccountGroupManager
-                // For now, I'll rely on ReportService or just assume it's there. 
-                // Wait, I need to add it to imports first.
-            });
 
-            // Actually, let's fix the imports in the same step if possible or separate.
-            // I'll do imports in a separate check but here I'm replacing lines 21-28.
 
             // Re-register groups (safe to call multiple times)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any

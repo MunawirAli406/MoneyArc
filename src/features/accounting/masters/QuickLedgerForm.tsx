@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Save, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import { motion } from 'framer-motion';
 import type { Ledger } from '../../../services/accounting/ReportService';

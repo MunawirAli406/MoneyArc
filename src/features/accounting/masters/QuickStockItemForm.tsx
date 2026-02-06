@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import { motion } from 'framer-motion';
 import type { StockItem, UnitOfMeasure } from '../../../services/inventory/types';
@@ -36,9 +36,13 @@ export default function QuickStockItemForm({ onClose, onSuccess, initialName = '
             const newItem: StockItem = {
                 id: Date.now().toString(),
                 name,
+                groupId: '', // Default to Primary/No Group for quick creation
                 unitId,
                 openingStock: 0,
                 openingRate: 0,
+                openingValue: 0,
+                isBatchEnabled: false,
+                isExpiryEnabled: false,
                 gstRate: 0, // Default
                 hsnCode: ''
             };
@@ -84,7 +88,7 @@ export default function QuickStockItemForm({ onClose, onSuccess, initialName = '
                             className="w-full px-3 py-2 bg-background border border-border rounded-lg font-bold"
                         >
                             <option value="">Select Unit...</option>
-                            {units.map(u => <option key={u.id} value={u.id}>{u.symbol} ({u.name})</option>)}
+                            {units.map(u => <option key={u.id} value={u.id}>{u.name} ({u.formalName})</option>)}
                         </select>
                         {units.length === 0 && <p className="text-[10px] text-rose-500">No units found. Create units in Masters first.</p>}
                     </div>
