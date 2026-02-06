@@ -5,6 +5,7 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { useNavigate } from 'react-router-dom';
+import { GstService } from '../../services/accounting/GstService';
 
 export default function Gstr3bReport() {
     const { provider, activeCompany } = usePersistence();
@@ -26,21 +27,12 @@ export default function Gstr3bReport() {
     const salesVouchers = vouchers.filter(v => v.type === 'Sales');
     const purchaseVouchers = vouchers.filter(v => v.type === 'Purchase');
 
-    const outwardTaxable = salesVouchers.reduce((sum, v) => {
-        const taxableRow = v.rows.find(r => r.type === 'Cr' && !r.account.includes('GST'));
-        return sum + (taxableRow?.credit || 0);
-    }, 0);
+    const salesSummary = GstService.aggregateSummaries(salesVouchers);
+    const purchaseSummary = GstService.aggregateSummaries(purchaseVouchers);
 
-    const outwardTax = salesVouchers.reduce((sum, v) => {
-        const taxRows = v.rows.filter(r => r.type === 'Cr' && r.account.includes('GST'));
-        return sum + taxRows.reduce((s, r) => s + r.credit, 0);
-    }, 0);
-
-    const eligibleItc = purchaseVouchers.reduce((sum, v) => {
-        const taxRows = v.rows.filter(r => r.type === 'Dr' && r.account.includes('GST'));
-        return sum + taxRows.reduce((s, r) => s + r.debit, 0);
-    }, 0);
-
+    const outwardTaxable = salesSummary.taxableValue;
+    const outwardTax = salesSummary.totalTax;
+    const eligibleItc = purchaseSummary.totalTax;
     const netTaxPayable = outwardTax - eligibleItc;
 
     if (loading) return <div className="p-12 text-center text-muted-foreground font-black uppercase tracking-[0.3em] animate-pulse">Computing GSTR-3B Summary...</div>;

@@ -6,10 +6,16 @@ import { type Voucher } from '../../services/accounting/VoucherService';
 import { FileDown, Wallet } from 'lucide-react';
 import { ExportService } from '../../services/reports/ExportService';
 
-export default function LedgerReport() {
+interface LedgerReportProps {
+    externalSelectedLedgerId?: string;
+    onLedgerChange?: (ledgerId: string) => void;
+    isEmbedded?: boolean;
+}
+
+export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange, isEmbedded }: LedgerReportProps) {
     const { provider, activeCompany } = usePersistence();
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
-    const [selectedLedgerId, setSelectedLedgerId] = useState<string>('');
+    const [selectedLedgerId, setSelectedLedgerId] = useState<string>(externalSelectedLedgerId || '');
     const [reportData, setReportData] = useState<LedgerReportData | null>(null);
     const [startDate, setStartDate] = useState<string>(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -21,12 +27,19 @@ export default function LedgerReport() {
             if (!provider || !activeCompany) return;
             const l = await provider.read<Ledger[]>('ledgers.json', activeCompany.path) || [];
             setLedgers(l.sort((a, b) => a.name.localeCompare(b.name)));
-            if (l.length > 0) {
+            if (!externalSelectedLedgerId && l.length > 0 && !selectedLedgerId) {
                 setSelectedLedgerId(l[0].id);
             }
         };
         init();
-    }, [provider, activeCompany]);
+    }, [provider, activeCompany, externalSelectedLedgerId]);
+
+    // Sync with external selected ledger ID
+    useEffect(() => {
+        if (externalSelectedLedgerId) {
+            setSelectedLedgerId(externalSelectedLedgerId);
+        }
+    }, [externalSelectedLedgerId]);
 
     // Fetch Report Data when filters change
     useEffect(() => {
@@ -91,20 +104,25 @@ export default function LedgerReport() {
             {/* Header Controls */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-card p-6 rounded-2xl border border-border shadow-sm">
                 <div className="space-y-4 flex-1">
-                    <div>
-                        <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
-                            <Wallet className="w-6 h-6 text-primary" />
-                            Ledger Vouchers
-                        </h1>
-                        <p className="text-muted-foreground text-sm font-medium">Transaction history & running balance</p>
-                    </div>
+                    {!isEmbedded && (
+                        <div>
+                            <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
+                                <Wallet className="w-6 h-6 text-primary" />
+                                Ledger Vouchers
+                            </h1>
+                            <p className="text-muted-foreground text-sm font-medium">Transaction history & running balance</p>
+                        </div>
+                    )}
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-1">
                             <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Select Ledger</label>
                             <select
                                 value={selectedLedgerId}
-                                onChange={(e) => setSelectedLedgerId(e.target.value)}
+                                onChange={(e) => {
+                                    setSelectedLedgerId(e.target.value);
+                                    if (onLedgerChange) onLedgerChange(e.target.value);
+                                }}
                                 className="w-full p-2.5 rounded-xl bg-muted/50 border border-border font-medium text-sm focus:ring-2 focus:ring-primary/20 outline-none"
                             >
                                 {ledgers.map(l => (

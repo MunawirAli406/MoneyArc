@@ -7,6 +7,7 @@ import type { Voucher } from '../../services/accounting/VoucherService';
 import type { Ledger } from '../../services/accounting/ReportService';
 import type { StockItem } from '../../services/inventory/types';
 import { useNavigate } from 'react-router-dom';
+import { GstService } from '../../services/accounting/GstService';
 
 export default function Gstr1Report() {
     const { provider, activeCompany } = usePersistence();
@@ -50,17 +51,11 @@ export default function Gstr1Report() {
     });
 
     const calculateTotal = (invoices: Voucher[]) => {
-        return invoices.reduce((sum, v) => {
-            const taxableRow = v.rows.find(r => r.type === 'Cr' && !r.account.includes('GST'));
-            return sum + (taxableRow?.credit || 0);
-        }, 0);
+        return GstService.aggregateSummaries(invoices).taxableValue;
     };
 
     const calculateTax = (invoices: Voucher[]) => {
-        return invoices.reduce((sum, v) => {
-            const taxRows = v.rows.filter(r => r.type === 'Cr' && r.account.includes('GST'));
-            return sum + taxRows.reduce((s, r) => s + r.credit, 0);
-        }, 0);
+        return GstService.aggregateSummaries(invoices).totalTax;
     };
 
     // HSN Summary logic
@@ -234,8 +229,10 @@ export default function Gstr1Report() {
                             {salesVouchers.map(v => {
                                 const partyRow = v.rows.find(r => r.type === 'Dr');
                                 const ledger = ledgers.find(l => l.name === partyRow?.account);
-                                const taxableValue = v.rows.find(r => r.type === 'Cr' && !r.account.includes('GST'))?.credit || 0;
-                                const taxAmount = v.rows.filter(r => r.type === 'Cr' && r.account.includes('GST')).reduce((s, r) => s + r.credit, 0);
+                                const vSummary = GstService.calculateVoucherSummary(v);
+                                const taxableValue = vSummary.taxableValue;
+                                const taxAmount = vSummary.totalTax;
+                                const invoiceValue = vSummary.invoiceValue;
 
                                 return (
                                     <tr key={v.id} className="hover:bg-muted/5 transition-all">
@@ -247,7 +244,7 @@ export default function Gstr1Report() {
                                         <td className="px-4 py-5 font-mono text-xs text-primary font-black">{ledger?.gstin || '-'}</td>
                                         <td className="px-4 py-5 text-right font-mono text-sm">₹{taxableValue.toLocaleString()}</td>
                                         <td className="px-4 py-5 text-right font-mono text-sm text-primary">₹{taxAmount.toLocaleString()}</td>
-                                        <td className="px-10 py-5 text-right font-mono font-black text-base">₹{(taxableValue + taxAmount).toLocaleString()}</td>
+                                        <td className="px-10 py-5 text-right font-mono font-black text-base">₹{invoiceValue.toLocaleString()}</td>
                                     </tr>
                                 );
                             })}

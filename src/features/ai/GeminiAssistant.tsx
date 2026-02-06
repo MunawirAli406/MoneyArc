@@ -13,7 +13,7 @@ interface GeminiAssistantProps {
 
 export default function GeminiAssistant({ isOpen, onClose }: GeminiAssistantProps) {
     const { provider, activeCompany } = usePersistence();
-    const [apiKey, setApiKey] = useState(localStorage.getItem('moneyarc_gemini_key') || '');
+    const [apiKey, setApiKey] = useState(localStorage.getItem('moneyarc_gemini_key') || import.meta.env.VITE_GEMINI_API_KEY || '');
     const [query, setQuery] = useState('');
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
         { role: 'ai', text: 'Hi! I am MoneyArc AI. Ask me anything about your finances.' }

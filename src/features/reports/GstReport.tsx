@@ -6,6 +6,7 @@ import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
+import { GstService } from '../../services/accounting/GstService';
 
 export default function GstReport() {
     const navigate = useNavigate();
@@ -24,61 +25,27 @@ export default function GstReport() {
         loadData();
     }, [provider, activeCompany]);
 
-    // Last updated: 2026-02-06 (Logic Refinement)
-    // Detailed GST Logic
-    let totalTaxable = 0;
-    let purchaseTaxable = 0; // Added for Input Taxable Value
+    // Use centralized GstService for robust calculations
+    const salesVouchers = vouchers.filter(v => v.type === 'Sales');
+    const purchaseVouchers = vouchers.filter(v => v.type === 'Purchase');
 
-    // Output Liability (Sales)
-    let outputCGST = 0;
-    let outputSGST = 0;
-    let outputIGST = 0;
+    const salesSummary = GstService.aggregateSummaries(salesVouchers);
+    const purchaseSummary = GstService.aggregateSummaries(purchaseVouchers);
 
-    // Input Credit (Purchases)
-    let inputCGST = 0;
-    let inputSGST = 0;
-    let inputIGST = 0;
+    const totalTaxable = salesSummary.taxableValue;
+    const purchaseTaxable = purchaseSummary.taxableValue;
 
-    let totalCess = 0;
+    const outputCGST = salesSummary.cgst;
+    const outputSGST = salesSummary.sgst;
+    const outputIGST = salesSummary.igst;
+    const totalOutputTax = salesSummary.totalTax;
 
-    vouchers.forEach(v => {
-        v.rows.forEach(r => {
-            const acc = r.account.toLowerCase();
-            const amount = r.credit || r.debit || 0; // Use the value present
+    const inputCGST = purchaseSummary.cgst;
+    const inputSGST = purchaseSummary.sgst;
+    const inputIGST = purchaseSummary.igst;
+    const totalInputTax = purchaseSummary.totalTax;
 
-            // Identify Tax Legders
-            if (acc.includes('gst') || acc.includes('tax') || acc.includes('duty')) {
-                const isOutput = r.type === 'Cr'; // Credits are typically Output Tax liability
-                const isInput = r.type === 'Dr'; // Debits are typically Input Tax Credit
-
-                if (acc.includes('igst')) {
-                    if (isOutput) outputIGST += amount;
-                    if (isInput) inputIGST += amount;
-                } else if (acc.includes('cgst')) {
-                    if (isOutput) outputCGST += amount;
-                    if (isInput) inputCGST += amount;
-                } else if (acc.includes('sgst')) {
-                    if (isOutput) outputSGST += amount;
-                    if (isInput) inputSGST += amount;
-                } else if (acc.includes('cess')) {
-                    totalCess += amount;
-                }
-            } else {
-                // Sales Taxable Value
-                if (v.type === 'Sales' && r.type === 'Cr') {
-                    totalTaxable += amount;
-                }
-                // Purchase Taxable Value (Approximate: Debits in Purchase vouchers not identifying as tax)
-                else if (v.type === 'Purchase' && r.type === 'Dr') {
-                    purchaseTaxable += amount;
-                }
-            }
-        });
-    });
-
-    const totalOutputTax = outputCGST + outputSGST + outputIGST;
-    const totalInputTax = inputCGST + inputSGST + inputIGST;
-    const totalInvoiceValue = totalTaxable + totalOutputTax;
+    const totalInvoiceValue = salesSummary.invoiceValue;
 
     if (loading) return <div className="p-8">Loading GST Data...</div>;
 

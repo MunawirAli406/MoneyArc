@@ -8,7 +8,7 @@ export class GeminiService {
 
     constructor(apiKey: string) {
         this.genAI = new GoogleGenerativeAI(apiKey);
-        this.model = this.genAI.getGenerativeModel({ model: "gemini-pro" });
+        this.model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     }
 
     async generateInsight(
@@ -50,9 +50,10 @@ Guidelines:
             const response = await result.response;
             return response.text();
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Gemini API Error:", error);
-            return "I encountered an error connecting to Gemini. Please check your API usage or network connection.";
+            // Return the actual error message for debugging
+            return `I encountered an error connecting to Gemini. Details: ${error.message || error}`;
         }
     }
 }

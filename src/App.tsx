@@ -6,7 +6,7 @@ import DataSourceSelect from './features/onboarding/DataSourceSelect';
 import CompanySelect from './features/onboarding/CompanySelect';
 import Dashboard from './features/dashboard/Dashboard';
 import SettingsPage from './features/settings/SettingsPage';
-import LedgerList from './features/accounting/masters/LedgerList';
+import LedgerManagement from './features/accounting/masters/LedgerManagement';
 import LedgerForm from './features/accounting/masters/LedgerForm';
 import VoucherEntry from './features/accounting/vouchers/VoucherEntry';
 import BalanceSheet from './features/reports/BalanceSheet';
@@ -19,7 +19,6 @@ import AuditLogViewer from './features/security/AuditLogViewer';
 import CashFlow from './features/reports/CashFlow';
 import FundFlow from './features/reports/FundFlow';
 import Daybook from './features/accounting/reports/Daybook';
-import LedgerReport from './features/reports/LedgerReport';
 import UnitList from './features/inventory/UnitList';
 import UnitForm from './features/inventory/UnitForm';
 import StockItemList from './features/inventory/StockItemList';
@@ -67,7 +66,7 @@ function AppContent() {
       }>
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
-        <Route path="ledgers" element={<LedgerList />} />
+        <Route path="ledgers" element={<LedgerManagement />} />
         <Route path="ledgers/new" element={<LedgerForm />} />
         <Route path="ledgers/:id" element={<LedgerForm />} />
         <Route path="vouchers/new" element={<VoucherEntry />} />
@@ -81,14 +80,6 @@ function AppContent() {
         <Route path="security/audit" element={<AuditLogViewer />} />
         <Route path="reports/cash-flow" element={<CashFlow />} />
         <Route path="reports/fund-flow" element={<FundFlow />} />
-        import LedgerReport from './features/reports/LedgerReport';
-
-        // ... (other imports)
-
-        // Inside Routes:
-        <Route path="reports/cash-flow" element={<CashFlow />} />
-        <Route path="reports/fund-flow" element={<FundFlow />} />
-        <Route path="reports/ledger" element={<LedgerReport />} />
         <Route path="reports/daybook" element={<Daybook />} />
 
         {/* Inventory Routes */}

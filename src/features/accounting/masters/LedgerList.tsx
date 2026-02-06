@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Edit2, Trash2, BookOpen } from 'lucide-react';
+import { Plus, Search, Filter, Edit2, Trash2, BookOpen, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
@@ -12,7 +12,11 @@ interface Ledger {
     type: 'Dr' | 'Cr';
 }
 
-export default function LedgerList() {
+interface LedgerListProps {
+    onViewTransactions?: (ledgerId: string) => void;
+}
+
+export default function LedgerList({ onViewTransactions }: LedgerListProps) {
     const { provider, activeCompany } = usePersistence();
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
     const [loading, setLoading] = useState(true);
@@ -130,6 +134,15 @@ export default function LedgerList() {
                                         </td>
                                         <td className="px-4 py-2 text-center">
                                             <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                                {onViewTransactions && (
+                                                    <button
+                                                        onClick={() => onViewTransactions(ledger.id)}
+                                                        className="p-2 text-muted-foreground hover:text-cyan-500 hover:bg-cyan-500/10 rounded-lg transition-colors"
+                                                        title="View Vouchers"
+                                                    >
+                                                        <FileText className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <Link
                                                     to={`/ledgers/${ledger.id}`}
                                                     className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
