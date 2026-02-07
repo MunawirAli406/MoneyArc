@@ -23,6 +23,8 @@ export default function Dashboard() {
         revenue: number;
         expenses: number;
     }
+    const [recentVouchers, setRecentVouchers] = useState<Voucher[]>([]);
+    const [stockWatch, setStockWatch] = useState<any[]>([]);
     const [chartData, setChartData] = useState<ChartData[]>([]);
 
     useEffect(() => {
@@ -32,6 +34,20 @@ export default function Dashboard() {
             const vouchers = await provider.read<Voucher[]>('vouchers.json', activeCompany.path) || [];
             const ledgers = await provider.read<Ledger[]>('ledgers.json', activeCompany.path) || [];
             const stockItems = await provider.read<any[]>('stock_items.json', activeCompany.path) || [];
+
+            // Recent Vouchers
+            const sortedVouchers = [...vouchers].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+            setRecentVouchers(sortedVouchers);
+
+            // Stock Watch (Top 5 by Value for now, or Low Stock)
+            // Let's show items with lowest quantity to simulate "Low Stock" or just high value items.
+            // Let's do High Value for positive vibe.
+            const sortedStock = [...stockItems].sort((a, b) => {
+                const valA = (a.currentBalance || a.openingStock) * (a.currentRate || a.openingRate);
+                const valB = (b.currentBalance || b.openingStock) * (b.currentRate || b.openingRate);
+                return valB - valA;
+            }).slice(0, 5);
+            setStockWatch(sortedStock);
 
             // Map ledger name to group
             const ledgerGroupMap = new Map(ledgers.map(l => [l.name, l.group]));
@@ -155,62 +171,90 @@ export default function Dashboard() {
             </div>
 
             <motion.div variants={item} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-card rounded-3xl shadow-sm border border-border p-8 relative overflow-hidden group">
-                    <div className="flex justify-between items-center mb-8 relative z-10">
-                        <div>
-                            <h2 className="text-xl font-black tracking-tight">Financial Trends</h2>
-                            <p className="text-sm text-muted-foreground">Revenue and expenses over time</p>
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Financial Trends Chart */}
+                    <div className="bg-card rounded-3xl shadow-sm border border-border p-8 relative overflow-hidden group">
+                        <div className="flex justify-between items-center mb-8 relative z-10">
+                            <div>
+                                <h2 className="text-xl font-black tracking-tight">Financial Trends</h2>
+                                <p className="text-sm text-muted-foreground">Revenue and expenses over time</p>
+                            </div>
+                            <div className="flex gap-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-cyan-500" />
+                                    <span className="text-xs font-bold text-muted-foreground uppercase">Revenue</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <div className="w-3 h-3 rounded-full bg-rose-500" />
+                                    <span className="text-xs font-bold text-muted-foreground uppercase">Expenses</span>
+                                </div>
+                            </div>
                         </div>
-                        <div className="flex gap-4">
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-cyan-500" />
-                                <span className="text-xs font-bold text-muted-foreground uppercase">Revenue</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-full bg-rose-500" />
-                                <span className="text-xs font-bold text-muted-foreground uppercase">Expenses</span>
-                            </div>
+                        <div className="h-80 relative z-10">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="rgb(6, 182, 212)" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="rgb(6, 182, 212)" stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="rgb(244, 63, 94)" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="rgb(244, 63, 94)" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <XAxis
+                                        dataKey="name"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 600 }}
+                                    />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 600 }}
+                                    />
+                                    <CartesianGrid vertical={false} stroke={theme === 'dark' ? '#1e293b' : '#f1f5f9'} strokeDasharray="3 3" />
+                                    <Tooltip
+                                        contentStyle={{
+                                            backgroundColor: theme === 'dark' ? '#0f172a' : '#fff',
+                                            borderRadius: '16px',
+                                            border: 'none',
+                                            boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
+                                            fontSize: '12px',
+                                            fontWeight: 'bold'
+                                        }}
+                                    />
+                                    <Area type="monotone" dataKey="revenue" stroke="rgb(6, 182, 212)" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
+                                    <Area type="monotone" dataKey="expenses" stroke="rgb(244, 63, 94)" strokeWidth={4} fillOpacity={1} fill="url(#colorExp)" />
+                                </AreaChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                    <div className="h-80 relative z-10">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorRev" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="rgb(6, 182, 212)" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="rgb(6, 182, 212)" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="rgb(244, 63, 94)" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="rgb(244, 63, 94)" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis
-                                    dataKey="name"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 600 }}
-                                />
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: theme === 'dark' ? '#94a3b8' : '#64748b', fontSize: 12, fontWeight: 600 }}
-                                />
-                                <CartesianGrid vertical={false} stroke={theme === 'dark' ? '#1e293b' : '#f1f5f9'} strokeDasharray="3 3" />
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: theme === 'dark' ? '#0f172a' : '#fff',
-                                        borderRadius: '16px',
-                                        border: 'none',
-                                        boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)',
-                                        fontSize: '12px',
-                                        fontWeight: 'bold'
-                                    }}
-                                />
-                                <Area type="monotone" dataKey="revenue" stroke="rgb(6, 182, 212)" strokeWidth={4} fillOpacity={1} fill="url(#colorRev)" />
-                                <Area type="monotone" dataKey="expenses" stroke="rgb(244, 63, 94)" strokeWidth={4} fillOpacity={1} fill="url(#colorExp)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
+
+                    {/* Recent Transactions Widget */}
+                    <div className="bg-card rounded-3xl shadow-sm border border-border p-8">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-black tracking-tight">Recent Transactions</h2>
+                            <button onClick={() => navigate('/reports/daybook')} className="text-xs font-bold text-primary hover:underline uppercase tracking-wide">View All</button>
+                        </div>
+                        <div className="space-y-4">
+                            {recentVouchers.length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-4">No recent transactions</p>
+                            ) : (
+                                recentVouchers.map(v => (
+                                    <div key={v.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                                        <div className="flex flex-col">
+                                            <span className="font-bold text-sm text-foreground">{v.rows[0]?.account || 'Multiple'}</span>
+                                            <span className="text-[10px] uppercase font-bold text-muted-foreground">{v.type} • #{v.voucherNo}</span>
+                                        </div>
+                                        <span className="font-mono font-bold text-foreground">
+                                            ₹{v.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0).toLocaleString()}
+                                        </span>
+                                    </div>
+                                ))
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -222,8 +266,8 @@ export default function Dashboard() {
                         <div className="space-y-4">
                             {[
                                 { label: 'New Voucher', icon: Wallet, color: 'text-cyan-500', bg: 'bg-cyan-500/10', path: '/vouchers/new' },
-                                { label: 'GSTR-1 Report', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-500/10', path: '/reports/gst/r1' },
-                                { label: 'Ratio Analysis', icon: PieChart, color: 'text-violet-500', bg: 'bg-violet-500/10', path: '/reports/ratios' },
+                                { label: 'Daybook', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-500/10', path: '/reports/daybook' },
+                                { label: 'Stock Summary', icon: PieChart, color: 'text-violet-500', bg: 'bg-violet-500/10', path: '/reports/stock-summary' },
                                 { label: 'Audit Trail', icon: ShieldCheck, color: 'text-rose-500', bg: 'bg-rose-500/10', path: '/security/audit' },
                             ].map((action, i) => (
                                 <button
@@ -240,6 +284,35 @@ export default function Dashboard() {
                                     <TrendingUp className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
                                 </button>
                             ))}
+                        </div>
+                    </div>
+
+                    {/* Stock Watch Widget */}
+                    <div className="bg-card rounded-3xl shadow-sm border border-border p-8">
+                        <h2 className="text-xl font-black tracking-tight mb-6 flex items-center gap-2">
+                            Top Stock Items
+                        </h2>
+                        <div className="space-y-4">
+                            {stockWatch.length === 0 ? (
+                                <p className="text-sm text-muted-foreground text-center py-4">No stock items found</p>
+                            ) : (
+                                stockWatch.map((item, i) => (
+                                    <div key={item.id} className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-lg bg-orange-500/10 text-orange-500 flex items-center justify-center text-xs font-black">
+                                                {i + 1}
+                                            </div>
+                                            <div className="flex flex-col">
+                                                <span className="font-bold text-sm text-foreground">{item.name}</span>
+                                                <span className="text-[10px] text-muted-foreground font-bold">{item.currentBalance || item.openingStock} Units</span>
+                                            </div>
+                                        </div>
+                                        <span className="font-mono font-bold text-sm text-foreground">
+                                            ₹{((item.currentBalance || item.openingStock) * (item.currentRate || item.openingRate)).toLocaleString()}
+                                        </span>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </div>
                 </div>

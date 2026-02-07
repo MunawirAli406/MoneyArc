@@ -46,6 +46,8 @@ export default function VoucherEntry() {
 
     const tableRef = useRef<HTMLTableElement>(null);
 
+    const [submitting, setSubmitting] = useState(false);
+
     // Initial Data Loading
     useEffect(() => {
         const loadData = async () => {
@@ -278,7 +280,11 @@ export default function VoucherEntry() {
             return;
         }
 
+        setSubmitting(true);
         try {
+            // Simulate a small delay for better UX
+            await new Promise(resolve => setTimeout(resolve, 600));
+
             const voucher: Voucher = {
                 id: id || Date.now().toString(),
                 voucherNo,
@@ -300,6 +306,8 @@ export default function VoucherEntry() {
         } catch (error) {
             console.error("Save failed", error);
             alert("Failed to save voucher.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
@@ -619,10 +627,15 @@ export default function VoucherEntry() {
                                 </button>
                                 <button
                                     onClick={handleSave}
-                                    className="flex-[2] flex items-center justify-center gap-4 py-4 bg-primary text-primary-foreground rounded-2xl hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-[0.98] shadow-xl shadow-primary/10"
+                                    disabled={submitting}
+                                    className="flex-[2] flex items-center justify-center gap-4 py-4 bg-primary text-primary-foreground rounded-2xl hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-[0.98] shadow-xl shadow-primary/10 disabled:opacity-70 disabled:cursor-not-allowed"
                                 >
-                                    <Save className="w-5 h-5" />
-                                    <span className="font-black uppercase tracking-[0.2em] text-[11px]">Finalize Entry</span>
+                                    {submitting ? (
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    ) : (
+                                        <Save className="w-5 h-5" />
+                                    )}
+                                    <span className="font-black uppercase tracking-[0.2em] text-[11px]">{submitting ? 'Saving...' : 'Finalize Entry'}</span>
                                 </button>
                             </div>
                         </div>

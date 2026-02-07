@@ -6,6 +6,7 @@ import type { Ledger } from '../../../services/accounting/ReportService';
 import QuickGroupForm, { type CustomGroup } from './QuickGroupForm';
 import QuickCategoryForm, { type CustomCategory } from './QuickCategoryForm';
 import { AccountGroupManager } from '../../../services/accounting/ReportService';
+import { INDIAN_STATES } from '../../../data/indian_states';
 
 const SYSTEM_GROUPS = [
     'Bank Accounts', 'Cash-in-hand', 'Sundry Debtors', 'Sundry Creditors',
@@ -307,13 +308,16 @@ export default function LedgerForm() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1">Registration State</label>
-                                <input
-                                    type="text"
+                                <select
                                     value={formData.state}
                                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
-                                    placeholder="State Name"
-                                />
+                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
+                                >
+                                    <option value="">Select State</option>
+                                    {INDIAN_STATES.map((state) => (
+                                        <option key={state} value={state}>{state}</option>
+                                    ))}
+                                </select>
                             </div>
                         </div>
                     </div>

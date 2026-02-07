@@ -4,6 +4,8 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ReportService, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
 import { type StockItem } from '../../services/inventory/types';
 import { TrendingUp, TrendingDown, FileDown } from 'lucide-react';
+import type { Voucher } from '../../services/accounting/VoucherService';
+import PeriodSelector from '../../components/ui/PeriodSelector';
 
 
 export default function ProfitAndLoss() {
@@ -13,20 +15,27 @@ export default function ProfitAndLoss() {
     const [closingStock, setClosingStock] = useState(0);
     const [loading, setLoading] = useState(true);
 
+    // Date Filters
+    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), 3, 1).toISOString().split('T')[0]); // Default April 1st
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+
     useEffect(() => {
         const loadData = async () => {
             if (!provider || !activeCompany) return;
+            setLoading(true);
 
-            const [ledgerData, stockItemsData, customGroupsData] = await Promise.all([
+            const [ledgerData, stockItemsData, customGroupsData, vouchersData] = await Promise.all([
                 provider.read<Ledger[]>('ledgers.json', activeCompany.path),
                 provider.read<StockItem[]>('stock_items.json', activeCompany.path),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                provider.read<any[]>('custom_groups.json', activeCompany.path)
+                provider.read<any[]>('custom_groups.json', activeCompany.path),
+                provider.read<Voucher[]>('vouchers.json', activeCompany.path)
             ]);
 
             const ledgers = ledgerData || [];
             const stockItems = stockItemsData || [];
             const customGroups = customGroupsData || [];
+            const vouchers = vouchersData || [];
 
             // Re-register groups
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,9 +44,9 @@ export default function ProfitAndLoss() {
             customGroups.forEach((c: any) => AccountGroupManager.registerGroup(c.name, c.parentType));
 
 
-            const expenseData = ReportService.getGroupSummary(ledgers as Ledger[], 'EXPENSES');
-            const incomeData = ReportService.getGroupSummary(ledgers as Ledger[], 'INCOME');
-            const cs = ReportService.getClosingStockValue(stockItems);
+            const expenseData = ReportService.getPeriodGroupSummary(ledgers as Ledger[], vouchers, new Date(startDate), new Date(endDate), 'EXPENSES');
+            const incomeData = ReportService.getPeriodGroupSummary(ledgers as Ledger[], vouchers, new Date(startDate), new Date(endDate), 'INCOME');
+            const cs = ReportService.getClosingStockValue(stockItems); // Still using generic closing stock for now
 
             setExpenses(expenseData);
             setIncomes(incomeData);
@@ -45,10 +54,10 @@ export default function ProfitAndLoss() {
             setLoading(false);
         };
         loadData();
-    }, [provider, activeCompany]);
+    }, [provider, activeCompany, startDate, endDate]);
 
     const totalExpenses = ReportService.calculateTotal(expenses);
-    const totalIncome = ReportService.calculateTotal(incomes) + closingStock;
+    const totalIncome = ReportService.calculateTotal(incomes) + closingStock; // Opening stock ignored for simplicty in V1 P&L view unless we calc it
     const netProfit = totalIncome - totalExpenses;
 
     if (loading) return (
@@ -77,20 +86,14 @@ export default function ProfitAndLoss() {
                         Print / Save PDF
                     </button>
                     <div className="flex items-center gap-4 no-print">
-                        <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">Period</label>
-                            <input
-                                type="date"
-                                className="bg-transparent text-xs font-bold outline-none text-foreground w-24"
-                                value={new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0]}
-                                onChange={() => { }}
-                            />
-                            <span className="text-muted-foreground">-</span>
-                            <input
-                                type="date"
-                                className="bg-transparent text-xs font-bold outline-none text-foreground w-24"
-                                value={new Date().toISOString().split('T')[0]}
-                                onChange={() => { }}
+                        <div className="flex items-center gap-2 no-print">
+                            <PeriodSelector
+                                startDate={startDate}
+                                endDate={endDate}
+                                onChange={(s, e) => {
+                                    setStartDate(s);
+                                    setEndDate(e);
+                                }}
                             />
                         </div>
                     </div>

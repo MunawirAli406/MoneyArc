@@ -7,11 +7,11 @@ import type { Ledger } from '../../../services/accounting/ReportService';
 interface InvoiceModalProps {
     voucher: Voucher;
     company: Company;
-    customer: Ledger;
+    party: Ledger; // Renamed from customer to party to be generic
     onClose: () => void;
 }
 
-export default function InvoiceModal({ voucher, company, customer, onClose }: InvoiceModalProps) {
+export default function InvoiceModal({ voucher, company, party, onClose }: InvoiceModalProps) {
     // Verified Dark Mode Support: 2026-02-05
     const printRef = useRef<HTMLDivElement>(null);
 
@@ -19,11 +19,42 @@ export default function InvoiceModal({ voucher, company, customer, onClose }: In
         window.print();
     };
 
+    // Helper to determine Voucher Title
+    const getVoucherTitle = (type: string) => {
+        switch (type) {
+            case 'Sales': return 'TAX INVOICE';
+            case 'Purchase': return 'PURCHASE VOUCHER';
+            case 'Payment': return 'PAYMENT VOUCHER';
+            case 'Receipt': return 'RECEIPT VOUCHER';
+            case 'Contra': return 'CONTRA VOUCHER';
+            case 'Journal': return 'JOURNAL VOUCHER';
+            default: return `${type.toUpperCase()} VOUCHER`;
+        }
+    };
+
+    // Helper to determine Party Label (Bill To / Paid To / Received From)
+    const getPartyLabel = (type: string) => {
+        switch (type) {
+            case 'Sales': return 'Bill To';
+            case 'Purchase': return 'Supplier';
+            case 'Payment': return 'Paid To';
+            case 'Receipt': return 'Received From';
+            default: return 'Party Details';
+        }
+    };
+
+    const hasInventory = voucher.rows.some(r => r.inventoryAllocations && r.inventoryAllocations.length > 0);
+
+    // Calculation Logic
     const taxableValue = voucher.rows.find((r) => r.type === 'Cr' && !r.account.includes('GST'))?.credit || 0;
     const cgst = voucher.rows.find((r) => r.account.includes('Central GST'))?.credit || 0;
     const sgst = voucher.rows.find((r) => r.account.includes('State GST'))?.credit || 0;
     const igst = voucher.rows.find((r) => r.account.includes('Integrated GST'))?.credit || 0;
-    const totalAmount = taxableValue + cgst + sgst + igst;
+
+    // For non-inventory vouchers, total is usually the sum of the main party amount or just the total of rows / 2 (since it balances)
+    // Actually, for Payment/Receipt, the total amount is the amount paid/received.
+    // Let's use the total of the 'Dr' side for simplicity or the party amount.
+    const totalAmount = voucher.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0);
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -32,7 +63,7 @@ export default function InvoiceModal({ voucher, company, customer, onClose }: In
                 <div className="p-6 border-b border-border flex items-center justify-between bg-card sticky top-0 z-10">
                     <div className="flex items-center gap-4">
                         <FileText className="w-6 h-6 text-primary" />
-                        <h2 className="text-xl font-black uppercase tracking-tight">Tax Invoice Preview</h2>
+                        <h2 className="text-xl font-black uppercase tracking-tight">{getVoucherTitle(voucher.type)} PREVIEW</h2>
                         <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-full uppercase">{voucher.voucherNo}</span>
                     </div>
                     <div className="flex gap-2">
@@ -41,7 +72,7 @@ export default function InvoiceModal({ voucher, company, customer, onClose }: In
                             className="flex items-center gap-2 px-5 py-2.5 bg-foreground text-background rounded-xl text-xs font-black uppercase tracking-widest hover:opacity-90 transition-all shadow-lg"
                         >
                             <Printer className="w-4 h-4" />
-                            Print Invoice
+                            Print
                         </button>
                         <button
                             onClick={onClose}
@@ -71,88 +102,110 @@ export default function InvoiceModal({ voucher, company, customer, onClose }: In
                             </div>
                         </div>
                         <div className="text-right">
-                            <h2 className="text-6xl font-black text-muted/10 uppercase tracking-tighter mb-2 leading-none">INVOICE</h2>
+                            <h2 className="text-4xl font-black text-muted/10 uppercase tracking-tighter mb-2 leading-none">{getVoucherTitle(voucher.type)}</h2>
                             <p className="text-sm font-black text-foreground mt-4 uppercase tracking-widest"># {voucher.voucherNo}</p>
-                            <p className="text-xs font-bold text-muted-foreground mt-1 uppercase tracking-widest">Date: {voucher.date}</p>
+                            <p className="text-xs font-bold text-muted-foreground mt-1 uppercase tracking-widest">Date: {new Date(voucher.date).toLocaleDateString()}</p>
                         </div>
                     </div>
 
                     {/* Parties */}
                     <div className="grid grid-cols-2 gap-12 mb-12">
                         <div className="p-6 bg-muted/30 rounded-3xl border border-border">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-3">Bill To</p>
-                            <h3 className="text-xl font-black text-foreground uppercase">{customer.name}</h3>
-                            <p className="text-sm font-bold text-muted-foreground mt-2 whitespace-pre-line">{customer.address || "Address not provided"}</p>
-                            <p className="text-xs font-black text-foreground mt-3 uppercase tracking-widest">GSTIN: {customer.gstin || "URD"}</p>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-3">{getPartyLabel(voucher.type)}</p>
+                            <h3 className="text-xl font-black text-foreground uppercase">{party.name}</h3>
+                            <p className="text-sm font-bold text-muted-foreground mt-2 whitespace-pre-line">{party.address || "Address not provided"}</p>
+                            {party.gstin && <p className="text-xs font-black text-foreground mt-3 uppercase tracking-widest">GSTIN: {party.gstin}</p>}
                         </div>
+                        {/* Only show 'Ship From' / Company details again if it's Sales/Purchase, otherwise maybe less relevant? 
+                            Actually, standard format usually shows Company as header (done) and 'Receiver/Payer' details.
+                            Let's keep the right side for Company Detail or empty for internal vouchers.
+                         */}
                         <div className="p-6 bg-muted/30 rounded-3xl border border-border">
+                            {/* For simple vouchers we might not need the second box, but keeping layout consistent */}
                             <div className="text-right">
-                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-3">Ship From</p>
-                                <h3 className="text-xl font-black text-foreground uppercase">{company.name}</h3>
-                                <p className="text-sm font-bold text-muted-foreground mt-2">{company.address}</p>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-3">Voucher Details</p>
+                                <p className="text-sm font-bold text-muted-foreground">Type: <span className="text-foreground">{voucher.type}</span></p>
+                                {voucher.narration && <p className="text-sm font-medium text-muted-foreground mt-2">"{voucher.narration}"</p>}
                             </div>
                         </div>
                     </div>
 
-                    {/* Table */}
+                    {/* Content Table */}
                     <table className="w-full mb-8">
                         <thead>
                             <tr className="border-b-2 border-foreground text-left">
-                                <th className="py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Description</th>
-                                <th className="py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right">Qty</th>
-                                <th className="py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right">Rate</th>
+                                <th className="py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Particulars</th>
+                                {hasInventory && <th className="py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right">Qty</th>}
+                                {hasInventory && <th className="py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right">Rate</th>}
                                 <th className="py-4 text-[10px] font-black uppercase tracking-widest text-muted-foreground text-right">Amount</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border">
-                            {voucher.rows.find((r) => r.inventoryAllocations)?.inventoryAllocations?.map((item, idx: number) => (
-                                <tr key={idx}>
-                                    <td className="py-6 font-black text-foreground uppercase">
-                                        Item {item.itemId}
-                                        <div className="text-[9px] text-muted-foreground font-bold mt-1">BATCH: {item.batchNo || '-'} // EXP: {item.expiryDate || '-'}</div>
-                                    </td>
-                                    <td className="py-6 text-right font-bold text-foreground">{item.quantity}</td>
-                                    <td className="py-6 text-right font-bold text-foreground">₹{item.rate.toLocaleString()}</td>
-                                    <td className="py-6 text-right font-black text-foreground">₹{item.amount.toLocaleString()}</td>
-                                </tr>
-                            )) || (
-                                    <tr>
-                                        <td className="py-6 font-black text-foreground uppercase">Sales / Outward Supplies</td>
-                                        <td className="py-6 text-right font-bold text-foreground">1.00</td>
-                                        <td className="py-6 text-right font-bold text-foreground">₹{taxableValue.toLocaleString()}</td>
-                                        <td className="py-6 text-right font-black text-foreground">₹{taxableValue.toLocaleString()}</td>
+                            {hasInventory ? (
+                                // Inventory Item Rows
+                                voucher.rows.map(r => r.inventoryAllocations).flat().filter(Boolean).map((item, idx: number) => (
+                                    <tr key={idx}>
+                                        <td className="py-6 font-black text-foreground uppercase">
+                                            {/* We need Item Name here. If not in allocation, we have an issue. 
+                                                VoucherService InventoryEntry has 'itemName'. Good. 
+                                            */}
+                                            {(item as any).itemName || `Item ${(item as any).itemId}`}
+                                            <div className="text-[9px] text-muted-foreground font-bold mt-1">BATCH: {(item as any).batchNo || '-'} // EXP: {(item as any).expiryDate || '-'}</div>
+                                        </td>
+                                        <td className="py-6 text-right font-bold text-foreground">{(item as any).quantity}</td>
+                                        <td className="py-6 text-right font-bold text-foreground">₹{(item as any).rate.toLocaleString()}</td>
+                                        <td className="py-6 text-right font-black text-foreground">₹{(item as any).amount.toLocaleString()}</td>
                                     </tr>
-                                )}
+                                ))
+                            ) : (
+                                // Accounting Rows (Ledgers)
+                                voucher.rows.map((row, idx) => (
+                                    <tr key={idx}>
+                                        <td className="py-6 font-black text-foreground uppercase">
+                                            {row.account}
+                                            <div className="text-[9px] text-muted-foreground font-bold mt-1 uppercase tracking-wider">{row.type === 'Dr' ? 'Debit' : 'Credit'}</div>
+                                        </td>
+                                        {/* Empty cells for Qty/Rate if generic table structure used, but we are conditionally rendering headers, so no need */}
+                                        <td className="py-6 text-right font-black text-foreground">₹{(row.type === 'Dr' ? row.debit : row.credit).toLocaleString()}</td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
 
                     {/* Totals */}
                     <div className="flex justify-end">
                         <div className="w-full max-w-xs space-y-4">
-                            <div className="flex justify-between text-sm">
-                                <span className="font-bold text-muted-foreground uppercase tracking-widest">Taxable Total</span>
-                                <span className="font-black text-foreground">₹{taxableValue.toLocaleString()}</span>
-                            </div>
-                            {cgst > 0 && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">CGST (Cent. Tax)</span>
-                                    <span className="font-black text-foreground">₹{cgst.toLocaleString()}</span>
-                                </div>
+                            {/* Only show Tax Breakdown if it's a Tax Invoice or has Tax */}
+                            {(cgst > 0 || sgst > 0 || igst > 0) && (
+                                <>
+                                    <div className="flex justify-between text-sm">
+                                        <span className="font-bold text-muted-foreground uppercase tracking-widest">Taxable Value</span>
+                                        <span className="font-black text-foreground">₹{taxableValue.toLocaleString()}</span>
+                                    </div>
+                                    {cgst > 0 && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">CGST</span>
+                                            <span className="font-black text-foreground">₹{cgst.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    {sgst > 0 && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">SGST</span>
+                                            <span className="font-black text-foreground">₹{sgst.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                    {igst > 0 && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">IGST</span>
+                                            <span className="font-black text-foreground">₹{igst.toLocaleString()}</span>
+                                        </div>
+                                    )}
+                                </>
                             )}
-                            {sgst > 0 && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">SGST (State Tax)</span>
-                                    <span className="font-black text-foreground">₹{sgst.toLocaleString()}</span>
-                                </div>
-                            )}
-                            {igst > 0 && (
-                                <div className="flex justify-between text-sm">
-                                    <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">IGST (Integ. Tax)</span>
-                                    <span className="font-black text-foreground">₹{igst.toLocaleString()}</span>
-                                </div>
-                            )}
+
                             <div className="flex justify-between items-center pt-4 border-t-2 border-foreground">
-                                <span className="text-sm font-black uppercase tracking-widest text-foreground">Total Payable</span>
+                                <span className="text-sm font-black uppercase tracking-widest text-foreground">Total Amount</span>
                                 <span className="text-2xl font-black text-foreground tracking-tighter">₹{totalAmount.toLocaleString()}</span>
                             </div>
                         </div>
@@ -161,12 +214,15 @@ export default function InvoiceModal({ voucher, company, customer, onClose }: In
                     {/* Footer / Notes */}
                     <div className="mt-20 pt-8 border-t border-border flex justify-between items-end">
                         <div>
-                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Terms & Conditions</p>
-                            <ul className="text-[9px] font-bold text-muted-foreground space-y-1">
-                                <li>1. Goods once sold will not be taken back.</li>
-                                <li>2. Payment should be made within 15 days.</li>
-                                <li>3. Interest @ 18% will be charged for delayed payments.</li>
-                            </ul>
+                            {(voucher.type === 'Sales' || voucher.type === 'Purchase') && (
+                                <>
+                                    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">Terms & Conditions</p>
+                                    <ul className="text-[9px] font-bold text-muted-foreground space-y-1">
+                                        <li>1. Goods once sold will not be taken back.</li>
+                                        <li>2. Payment should be made within 15 days.</li>
+                                    </ul>
+                                </>
+                            )}
                         </div>
                         <div className="text-right">
                             <div className="w-48 h-20 border-b border-foreground mb-2"></div>

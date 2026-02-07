@@ -15,7 +15,8 @@ export default function Daybook() {
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
     const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
     const [loading, setLoading] = useState(true);
-    const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -43,13 +44,18 @@ export default function Daybook() {
         loadData();
     }, [provider, activeCompany]);
 
-
-
     if (loading) return (
         <div className="flex items-center justify-center p-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
     );
+
+    const filteredVouchers = vouchers.filter(v => {
+        const d = new Date(v.date).getTime();
+        const start = new Date(startDate).setHours(0, 0, 0, 0);
+        const end = new Date(endDate).setHours(23, 59, 59, 999);
+        return d >= start && d <= end;
+    });
 
     return (
         <motion.div
@@ -70,17 +76,23 @@ export default function Daybook() {
                         <FileDown className="w-4 h-4" />
                         Print / Save PDF
                     </button>
-                    <div className="relative group no-print">
-                        <Calendar className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 group-focus-within:text-primary transition-colors" />
-                        <input
-                            type="text"
-                            onFocus={(e) => (e.target.type = 'date')} // Trick to show date picker only on focus for cleaner look if desired, or just keep type='date'
-                            onBlur={(e) => (e.target.type = 'text')}
-                            placeholder={selectedDate} // Show selected date as placeholder
-                            value={selectedDate}
-                            onChange={(e) => setSelectedDate(e.target.value)}
-                            className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary outline-none transition-all w-32"
-                        />
+                    <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm no-print relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                        <Calendar className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
+                            />
+                            <span className="text-muted-foreground font-medium">-</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
@@ -98,7 +110,7 @@ export default function Daybook() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/50">
-                            {vouchers.map((v) => {
+                            {filteredVouchers.map((v) => {
                                 const amount = v.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0);
 
                                 return (
@@ -121,18 +133,16 @@ export default function Daybook() {
                                             <div className="flex items-center justify-end gap-2">
                                                 <span>{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                                                 <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-4 no-print">
-                                                    {v.type === 'Sales' && (
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                setSelectedVoucher(v);
-                                                            }}
-                                                            className="p-2 hover:bg-primary/10 text-primary rounded-lg"
-                                                            title="Print Invoice"
-                                                        >
-                                                            <Printer className="w-4 h-4" />
-                                                        </button>
-                                                    )}
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setSelectedVoucher(v);
+                                                        }}
+                                                        className="p-2 hover:bg-primary/10 text-primary rounded-lg"
+                                                        title="Print Voucher"
+                                                    >
+                                                        <Printer className="w-4 h-4" />
+                                                    </button>
                                                     <button
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -189,7 +199,37 @@ export default function Daybook() {
                     <InvoiceModal
                         voucher={selectedVoucher}
                         company={activeCompany}
-                        customer={ledgers.find(l => l.name === selectedVoucher.rows.find(r => r.type === 'Dr')?.account) || { name: 'Cash', gstin: '', address: '', balance: 0, type: 'Dr', id: 'cash', group: 'Cash-in-hand', isGstEnabled: false }}
+                        party={(() => {
+                            // Helper to find the "Party" ledger based on voucher type
+                            let partyAccountName = '';
+                            if (selectedVoucher.type === 'Sales') {
+                                // Sales: Customer is usually Debited
+                                partyAccountName = selectedVoucher.rows.find(r => r.type === 'Dr')?.account || '';
+                            } else if (selectedVoucher.type === 'Purchase') {
+                                // Purchase: Supplier is usually Credited
+                                partyAccountName = selectedVoucher.rows.find(r => r.type === 'Cr')?.account || '';
+                            } else if (selectedVoucher.type === 'Payment') {
+                                // Payment: Receiver is Debited
+                                partyAccountName = selectedVoucher.rows.find(r => r.type === 'Dr')?.account || '';
+                            } else if (selectedVoucher.type === 'Receipt') {
+                                // Receipt: Payer is Credited
+                                partyAccountName = selectedVoucher.rows.find(r => r.type === 'Cr')?.account || '';
+                            } else {
+                                // Contra/Journal: Just pick the first account that isn't the primary one if possible, or just first row
+                                partyAccountName = selectedVoucher.rows[0]?.account || '';
+                            }
+
+                            return ledgers.find(l => l.name === partyAccountName) || {
+                                name: partyAccountName || 'Unknown Party',
+                                gstin: '',
+                                address: '',
+                                balance: 0,
+                                type: 'Dr',
+                                id: 'temp-party',
+                                group: 'Sundry Debtors',
+                                isGstEnabled: false
+                            };
+                        })()}
                         onClose={() => setSelectedVoucher(null)}
                     />
                 )}

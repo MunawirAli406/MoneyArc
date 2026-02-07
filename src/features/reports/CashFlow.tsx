@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Landmark, IndianRupee, FileDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Landmark, IndianRupee, FileDown, Calendar } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 
 import type { Voucher } from '../../services/accounting/VoucherService';
@@ -9,6 +9,8 @@ export default function CashFlow() {
     const { provider, activeCompany } = usePersistence();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
+    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -21,6 +23,14 @@ export default function CashFlow() {
         loadData();
     }, [provider, activeCompany]);
 
+    // Filter by Period
+    const filteredVouchers = vouchers.filter(v => {
+        const d = new Date(v.date).getTime();
+        const start = new Date(startDate).setHours(0, 0, 0, 0);
+        const end = new Date(endDate).setHours(23, 59, 59, 999);
+        return d >= start && d <= end;
+    });
+
     // Simple Cash Flow Logic:
     // Operating: Sales, Purchase, Expenses
     // Investing: Fixed Assets
@@ -30,7 +40,7 @@ export default function CashFlow() {
     let investing = 0;
     let financing = 0;
 
-    vouchers.forEach(v => {
+    filteredVouchers.forEach(v => {
         v.rows.forEach(r => {
             const acc = r.account.toLowerCase();
             const amount = r.debit - r.credit; // Positive for inflow (Dr), Negative for outflow (Cr)
@@ -67,6 +77,24 @@ export default function CashFlow() {
                     <p className="text-muted-foreground font-medium uppercase tracking-widest text-[10px] mt-2">Analysis for {activeCompany?.name}</p>
                 </div>
                 <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm no-print relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                        <Calendar className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
+                            />
+                            <span className="text-muted-foreground font-medium">-</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
+                            />
+                        </div>
+                    </div>
                     <button
                         onClick={() => window.print()}
                         className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"

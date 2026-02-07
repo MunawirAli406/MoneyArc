@@ -40,4 +40,25 @@
         -webkit-print-color-adjust: exact !important;
         print-color-adjust: exact !important;
     }
+
+    /* Hide scrollbars in print */
+    ::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Specific Report Adjustments */
+    .print-hide-icon {
+        display: none !important;
+    }
+
+    /* Ensure charts don't break or look bad */
+    .recharts-wrapper {
+        display: none !important;
+        /* Charts usually don't print well, better to hide or replace with table */
+    }
+
+    /* Header cleanup */
+    header {
+        display: none !important;
+    }
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, User, FileDown, ArrowLeft, Hash } from 'lucide-react';
+import { Users, User, FileDown, ArrowLeft, Hash, Calendar } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
@@ -16,6 +16,8 @@ export default function Gstr1Report() {
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
     const [stockItems, setStockItems] = useState<StockItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -34,7 +36,14 @@ export default function Gstr1Report() {
         loadData();
     }, [provider, activeCompany]);
 
-    const salesVouchers = vouchers.filter(v => v.type === 'Sales');
+    const filteredVouchers = vouchers.filter(v => {
+        const d = new Date(v.date).getTime();
+        const start = new Date(startDate).setHours(0, 0, 0, 0);
+        const end = new Date(endDate).setHours(23, 59, 59, 999);
+        return d >= start && d <= end;
+    });
+
+    const salesVouchers = filteredVouchers.filter(v => v.type === 'Sales');
 
     // B2B: Sales to registered ledgers (having GSTIN)
     const b2bInvoices = salesVouchers.filter(v => {
@@ -108,21 +117,28 @@ export default function Gstr1Report() {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <button
-                        onClick={() => {
-                            const cols = ['Type', 'Count', 'Taxable Value', 'Tax Amount'];
-                            const rows = [
-                                ['B2B Invoices', b2bInvoices.length, calculateTotal(b2bInvoices), calculateTax(b2bInvoices)],
-                                ['B2C Invoices', b2cInvoices.length, calculateTotal(b2cInvoices), calculateTax(b2cInvoices)],
-                                ['TOTAL', salesVouchers.length, calculateTotal(salesVouchers), calculateTax(salesVouchers)]
-                            ];
-                            ExportService.exportToExcel('GSTR-1 Summary', cols, rows);
-                        }}
-                        className="flex items-center gap-2 px-6 py-3 bg-card border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-muted transition-all"
-                    >
-                        <FileDown className="w-4 h-4" />
-                        Export Excel
-                    </button>
+                    <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm no-print relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                        <Calendar className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
+                            />
+                            <span className="text-muted-foreground font-medium">-</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
+                            />
+                        </div>
+                    </div>
+                    <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
+                        <Users className="w-5 h-5" />
+                    </div>
+                    <h2 className="text-xs font-black uppercase tracking-widest">B2B Invoices (4A, 4B, 4C, 6B, 6C)</h2>
                 </div>
             </div>
 

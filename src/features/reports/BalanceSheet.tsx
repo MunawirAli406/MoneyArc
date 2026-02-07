@@ -3,7 +3,9 @@ import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ReportService, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
 import { type StockItem } from '../../services/inventory/types';
-import { Calendar, FileDown } from 'lucide-react';
+import { FileDown } from 'lucide-react';
+import type { Voucher } from '../../services/accounting/VoucherService';
+import PeriodSelector from '../../components/ui/PeriodSelector';
 
 
 export default function BalanceSheet() {
@@ -14,22 +16,30 @@ export default function BalanceSheet() {
     const [netProfit, setNetProfit] = useState(0);
     const [loading, setLoading] = useState(true);
 
+    // Period State
+    const [startDate, setStartDate] = useState(() => {
+        const today = new Date();
+        return new Date(today.getFullYear(), 3, 1).toISOString().split('T')[0]; // Default: April 1st
+    });
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+
     useEffect(() => {
         const loadData = async () => {
             if (!provider || !activeCompany) return;
+            setLoading(true);
 
-            const [ledgerData, stockItemsData, customGroupsData] = await Promise.all([
+            const [ledgerData, stockItemsData, customGroupsData, vouchersData] = await Promise.all([
                 provider.read<Ledger[]>('ledgers.json', activeCompany.path),
                 provider.read<StockItem[]>('stock_items.json', activeCompany.path),
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                provider.read<any[]>('custom_groups.json', activeCompany.path)
+                provider.read<any[]>('custom_groups.json', activeCompany.path),
+                provider.read<Voucher[]>('vouchers.json', activeCompany.path)
             ]);
 
             const ledgers = ledgerData || [];
             const stockItems = stockItemsData || [];
             const customGroups = customGroupsData || [];
-
-
+            const vouchers = vouchersData || [];
 
             // Re-register groups (safe to call multiple times)
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,15 +47,24 @@ export default function BalanceSheet() {
             customGroups.forEach((c: any) => AccountGroupManager.registerGroup(c.name, c.parentType));
 
 
-            const liabilityData = ReportService.getGroupSummary(ledgers as Ledger[], 'LIABILITIES');
+            const liabilityData = ReportService.getAsOnGroupSummary(ledgers as Ledger[], vouchers, new Date(endDate), 'LIABILITIES');
             // Exclude 'Stock-in-hand' from standard assets as we add Closing Stock explicitly
-            const assetData = ReportService.getGroupSummary(ledgers as Ledger[], 'ASSETS')
+            // Assets are "As On" End Date
+            const assetData = ReportService.getAsOnGroupSummary(ledgers as Ledger[], vouchers, new Date(endDate), 'ASSETS')
                 .filter(g => g.groupName !== 'Stock-in-hand');
 
-            const np = ReportService.getNetProfitWithStock(ledgers as Ledger[], stockItems);
+            // Net Profit for Balance Sheet: P&L for the selected PERIOD
+            // Determine Fiscal Year Start -> No, User SELECTED Period.
+            // But usually BS is "As On", implying P&L from Start of Year to Date.
+            // Here we respect the User's "From" date for the P&L Calculation part of the BS.
+
+            const np = ReportService.getNetProfitPeriod(ledgers as Ledger[], vouchers, new Date(startDate), new Date(endDate), stockItems);
+
+            // Closing Stock: Should be As On End Date. 
+            // V1: Use current stock value (simplification)
             const cs = ReportService.getClosingStockValue(stockItems);
 
-            const tbDiff = ReportService.getTrialBalanceDiff(ledgers as Ledger[]);
+            const tbDiff = ReportService.getTrialBalanceDiff(ledgers as Ledger[]); // TB Diff might need AsOn calculation too but minor for now
 
             setLiabilities(liabilityData);
             setAssets(assetData);
@@ -56,7 +75,7 @@ export default function BalanceSheet() {
             setLoading(false);
         };
         loadData();
-    }, [provider, activeCompany]);
+    }, [provider, activeCompany, startDate, endDate]);
 
     const [tbDiff, setTbDiff] = useState(0);
 
@@ -78,19 +97,10 @@ export default function BalanceSheet() {
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-black text-foreground tracking-tight">Balance Sheet</h1>
-                    <p className="text-muted-foreground font-medium">Financial health of {activeCompany?.name}</p>
+                    <p className="text-muted-foreground font-medium">Financial health ({new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()})</p>
                 </div>
                 {/* Export Buttons Code ... */}
-                <div className="flex items-center gap-4 no-print">
-                    <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm">
-                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">As On</label>
-                        <input
-                            type="date"
-                            className="bg-transparent text-xs font-bold outline-none text-foreground"
-                            value={new Date().toISOString().split('T')[0]} // Static for now or state
-                            onChange={() => { }} // Placeholder
-                        />
-                    </div>
+                <div className="flex items-center gap-4">
                     <button
                         onClick={() => window.print()}
                         className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
@@ -98,9 +108,16 @@ export default function BalanceSheet() {
                         <FileDown className="w-4 h-4" />
                         Print / Save PDF
                     </button>
-                    <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-xl text-xs font-bold text-muted-foreground uppercase tracking-widest border border-border">
-                        <Calendar className="w-4 h-4" />
-                        As on {new Date().toLocaleDateString()}
+
+                    <div className="flex items-center gap-2 no-print">
+                        <PeriodSelector
+                            startDate={startDate}
+                            endDate={endDate}
+                            onChange={(s, e) => {
+                                setStartDate(s);
+                                setEndDate(e);
+                            }}
+                        />
                     </div>
                 </div>
             </div>

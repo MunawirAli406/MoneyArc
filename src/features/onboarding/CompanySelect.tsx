@@ -3,6 +3,7 @@ import { Building2, Plus, Search, Calendar, ChevronRight, Loader2 } from 'lucide
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../../services/persistence/types';
+import { INDIAN_STATES } from '../../data/indian_states';
 
 export default function CompanySelect() {
     // Verified Dark Mode Support: 2026-02-05
@@ -308,12 +309,16 @@ export default function CompanySelect() {
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-bold text-foreground mb-1">State</label>
-                                                <input
-                                                    type="text"
+                                                <select
                                                     value={newCompany.state}
                                                     onChange={(e) => setNewCompany({ ...newCompany, state: e.target.value })}
-                                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground"
-                                                />
+                                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground appearance-none"
+                                                >
+                                                    <option value="">Select State</option>
+                                                    {INDIAN_STATES.map((state) => (
+                                                        <option key={state} value={state}>{state}</option>
+                                                    ))}
+                                                </select>
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-foreground mb-1">Country</label>

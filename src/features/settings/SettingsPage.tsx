@@ -1,4 +1,4 @@
-import { Moon, Sun, Palette, Bell, Shield } from 'lucide-react';
+import { Moon, Sun, Palette, Bell, Shield, Info } from 'lucide-react';
 import { useTheme } from './useTheme';
 import { motion } from 'framer-motion';
 
@@ -69,6 +69,23 @@ export default function SettingsPage() {
                             <option>Never</option>
                         </select>
                     )
+                }
+            ]
+        },
+        {
+            title: 'About',
+            description: 'Application details.',
+            icon: Info,
+            items: [
+                {
+                    label: 'Developer',
+                    description: 'Created by',
+                    content: <span className="font-medium">Munawir Ali V K</span>
+                },
+                {
+                    label: 'Version',
+                    description: 'Current build',
+                    content: <span className="font-mono text-sm bg-muted px-2 py-1 rounded">0.00</span>
                 }
             ]
         }

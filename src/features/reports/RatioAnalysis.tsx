@@ -1,53 +1,109 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, PieChart, TrendingUp, Target, Zap, ShieldCheck, FileDown } from 'lucide-react';
+import { ArrowLeft, PieChart, TrendingUp, Target, Zap, ShieldCheck, FileDown, Calendar } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
-import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
+import { ACCT_GROUPS, type Ledger, ReportService } from '../../services/accounting/ReportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import type { StockItem } from '../../services/inventory/types';
+
 
 export default function RatioAnalysis() {
     const { provider, activeCompany } = usePersistence();
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [ratios, setRatios] = useState<{ name: string, value: string, target: string, desc: string, icon: any, color: string, bg: string }[]>([]);
+    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
         const calculateRatios = async () => {
             if (!provider || !activeCompany) return;
 
-            const [, lData, sData] = await Promise.all([
+            const [, lData, sData, vData] = await Promise.all([
+                // We need vouchers for accurate period calculation if not using pre-calculated services, 
+                // but ReportService uses ledgers + vouchers.
                 provider.read<Voucher[]>('vouchers.json', activeCompany.path),
                 provider.read<Ledger[]>('ledgers.json', activeCompany.path),
-                provider.read<StockItem[]>('stock_items.json', activeCompany.path)
+                provider.read<StockItem[]>('stock_items.json', activeCompany.path),
+                provider.read<Voucher[]>('vouchers.json', activeCompany.path) // Read vouchers
             ]);
 
             const ledgers = lData || [];
             const stockItems = sData || [];
+            const vouchers = vData || [];
 
-            const ca_ledgers = ledgers.filter(l => ACCT_GROUPS.ASSETS.includes(l.group));
-            const cl_ledgers = ledgers.filter(l => ACCT_GROUPS.LIABILITIES.includes(l.group));
+            // 1. Balance Sheet Items (As On End Date)
+            // Current Assets
+            const caGroups = ReportService.getAsOnGroupSummary(ledgers, vouchers, new Date(endDate), 'ASSETS');
+            // Filter specific CA groups if needed, but usually 'ASSETS' covers Fixed + Current. 
+            // We might need to approximate CA by excluding Fixed Assets if they are clearly separated.
+            // For now, let's assume 'Current Assets' is a specific sub-group or we use all Assets - Fixed Assets.
+            // Simplification: Use all Assets for Total Assets, but for Current Ratio?
+            // Let's use the provided ACCT_GROUPS to identify.
 
-            const closingStock = stockItems.reduce((sum, item) => {
-                const balance = item.currentBalance !== undefined ? item.currentBalance : item.openingStock;
-                const rate = item.currentRate !== undefined ? item.currentRate : item.openingRate;
-                return sum + (balance * rate);
-            }, 0);
+            // Actually, ReportService.getAsOnGroupSummary returns the top-level groups.
+            // We can iterate ledgers and check their group matches 'Current Assets', 'Bank Accounts', 'Cash-in-hand', 'Sundry Debtors', etc.
+            // But we need the balance AS ON `endDate`.
 
-            const totalCA = ca_ledgers.reduce((sum, l) => sum + l.balance, 0) + closingStock;
-            const totalCL = cl_ledgers.reduce((sum, l) => sum + l.balance, 0);
-            const quickAssets = totalCA - closingStock;
+            // To get balance of specific ledgers as on date:
+            // We can re-use the logic from ReportService but applied to specific ledgers?
+            // Or just use the GroupSummary result which sums up by group.
 
-            // GP and NP
-            const revenue = ledgers.filter(l => ACCT_GROUPS.INCOME.includes(l.group))
-                .reduce((sum, l) => sum + l.balance, 0);
-            const expenses = ledgers.filter(l => ACCT_GROUPS.EXPENSES.includes(l.group))
-                .reduce((sum, l) => sum + l.balance, 0);
+            // Let's try to find "Current Assets" and "Current Liabilities" from the summaries if possible.
+            // If the user's chart of accounts is standard:
+            // Assets = Fixed Assets + Current Assets
+            // Liabilities = Loans + Current Liabilities + Cap Account (Equity)
 
-            const netProfit = revenue - expenses;
-            const grossProfit = revenue - ledgers.filter(l => l.group === 'Direct Expenses' || l.group === 'Purchase Accounts')
-                .reduce((sum, l) => sum + l.balance, 0);
+            // Liabilities = Loans + Current Liabilities + Cap Account (Equity)
+
+            // Calculate balances As On endDate
+            const getBalanceAsOn = (ledger: Ledger) => {
+                // This is expensive to do for every ledger individually without the service optimization
+                // but let's do it for accuracy.
+                // Actually ReportService.getAsOnGroupSummary does it for all ledgers in the group.
+                return ReportService.getLedgerBalanceAsOn(ledger, vouchers, new Date(endDate));
+            };
+
+            // Current Assets: Cash, Bank, Debtors, Stock, etc.
+            // We will filter ledgers that belong to CA groups.
+            const caLedgers = ledgers.filter(l =>
+                ['Current Assets', 'Bank Accounts', 'Cash-in-hand', 'Sundry Debtors', 'Stock-in-hand'].includes(l.group) ||
+                l.group.includes('Bank') || l.group.includes('Cash') || l.group.includes('Debtor')
+            );
+            const totalCA = caLedgers.reduce((sum, l) => sum + getBalanceAsOn(l), 0) +
+                // Add Stock Value (Closing Stock)
+                stockItems.reduce((sum, item) => sum + (item.currentBalance || 0) * (item.currentRate || 0), 0); // Simplified stock
+
+            // Current Liabilities: Creditors, Duties & Taxes, Provisions
+            const clLedgers = ledgers.filter(l =>
+                ['Current Liabilities', 'Sundry Creditors', 'Duties & Taxes', 'Provisions', 'Bank OD A/c'].includes(l.group) ||
+                l.group.includes('Creditor') || l.group.includes('Tax')
+            );
+            const totalCL = clLedgers.reduce((sum, l) => sum + Math.abs(getBalanceAsOn(l)), 0); // Use Abs as liabilities are Credit
+
+
+            const quickAssets = totalCA - stockItems.reduce((sum, item) => sum + (item.currentBalance || 0) * (item.currentRate || 0), 0);
+
+            // 2. P&L Items (For the Period)
+            // Revenue (Direct Incomes + Sales)
+            const incomeSummaries = ReportService.getPeriodGroupSummary(ledgers, vouchers, new Date(startDate), new Date(endDate), 'INCOME');
+            const totalRevenue = Math.abs(incomeSummaries.reduce((sum, g) => sum + g.total, 0)); // Income is Cr
+
+            // Expenses (Direct + Indirect)
+            const expenseSummaries = ReportService.getPeriodGroupSummary(ledgers, vouchers, new Date(startDate), new Date(endDate), 'EXPENSES');
+            const totalExpenses = expenseSummaries.reduce((sum, g) => sum + g.total, 0); // Expense is Dr
+
+            const netProfit = totalRevenue - totalExpenses;
+
+            // Gross Profit (Revenue - Direct Expenses)
+            // We need to identify Direct Expenses (`Purchase Accounts`, `Direct Expenses`)
+            // ReportService.getPeriodGroupSummary returns groups. We can filter by group name.
+            const directExpenses = expenseSummaries
+                .filter(g => ['Purchase Accounts', 'Direct Expenses'].includes(g.groupName))
+                .reduce((sum, g) => sum + g.total, 0);
+
+            const grossProfit = totalRevenue - directExpenses;
 
             setRatios([
                 {
@@ -70,7 +126,7 @@ export default function RatioAnalysis() {
                 },
                 {
                     name: 'GP Margin',
-                    value: revenue !== 0 ? ((grossProfit / revenue) * 100).toFixed(2) + '%' : '0%',
+                    value: totalRevenue !== 0 ? ((grossProfit / totalRevenue) * 100).toFixed(2) + '%' : '0%',
                     target: '25%+',
                     desc: 'Profitability from core operations',
                     icon: TrendingUp,
@@ -79,7 +135,7 @@ export default function RatioAnalysis() {
                 },
                 {
                     name: 'Net Profit Margin',
-                    value: revenue !== 0 ? ((netProfit / revenue) * 100).toFixed(2) + '%' : '0%',
+                    value: totalRevenue !== 0 ? ((netProfit / totalRevenue) * 100).toFixed(2) + '%' : '0%',
                     target: '15%+',
                     desc: 'Bottom-line efficiency',
                     icon: Target,
@@ -90,7 +146,7 @@ export default function RatioAnalysis() {
             setLoading(false);
         };
         calculateRatios();
-    }, [provider, activeCompany]);
+    }, [provider, activeCompany, startDate, endDate]);
 
     if (loading) return <div className="p-20 text-center font-black uppercase tracking-widest animate-pulse">Calculating Financial Ratios...</div>;
 

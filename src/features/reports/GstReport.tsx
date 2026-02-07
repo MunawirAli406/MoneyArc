@@ -13,17 +13,31 @@ export default function GstReport() {
     const { provider, activeCompany } = usePersistence();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
+    // Period Filters
+    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), 3, 1).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
         const loadData = async () => {
             if (provider && activeCompany) {
+                setLoading(true);
                 const data = await provider.read<Voucher[]>('vouchers.json', activeCompany.path) || [];
-                setVouchers(data);
+
+                // Filter by Period
+                const start = new Date(startDate).setHours(0, 0, 0, 0);
+                const end = new Date(endDate).setHours(23, 59, 59, 999);
+
+                const filtered = data.filter(v => {
+                    const d = new Date(v.date).getTime();
+                    return d >= start && d <= end;
+                });
+
+                setVouchers(filtered);
                 setLoading(false);
             }
         };
         loadData();
-    }, [provider, activeCompany]);
+    }, [provider, activeCompany, startDate, endDate]);
 
     // Use centralized GstService for robust calculations
     const salesVouchers = vouchers.filter(v => v.type === 'Sales');
@@ -57,10 +71,26 @@ export default function GstReport() {
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">GST Overview</h1>
-                    <p className="text-muted-foreground font-medium uppercase tracking-widest text-[10px] mt-1">GSTR-3B Summary for {activeCompany?.name}</p>
+                    <h1 className="text-3xl font-black text-foreground tracking-tight">GST Report</h1>
+                    <p className="text-muted-foreground font-medium">Tax liability and credit summary for {activeCompany?.name}</p>
                 </div>
-                <div className="flex gap-3">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm no-print">
+                        <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">Period</label>
+                        <input
+                            type="date"
+                            className="bg-transparent text-xs font-bold outline-none text-foreground w-24"
+                            value={startDate}
+                            onChange={(e) => setStartDate(e.target.value)}
+                        />
+                        <span className="text-muted-foreground">-</span>
+                        <input
+                            type="date"
+                            className="bg-transparent text-xs font-bold outline-none text-foreground w-24"
+                            value={endDate}
+                            onChange={(e) => setEndDate(e.target.value)}
+                        />
+                    </div>
                     <button
                         onClick={() => window.print()}
                         className="no-print flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"

@@ -83,6 +83,128 @@ export class ReportService {
         });
     }
 
+    static getPeriodGroupSummary(ledgers: Ledger[], vouchers: any[], startDate: Date, endDate: Date, targetType: keyof typeof ACCT_GROUPS): GroupSummary[] {
+        const targetGroups = AccountGroupManager.getGroups(targetType);
+        const start = new Date(startDate).setHours(0, 0, 0, 0);
+        const end = new Date(endDate).setHours(23, 59, 59, 999);
+
+        // Filter vouchers within period
+        const periodVouchers = vouchers.filter(v => {
+            const date = new Date(v.date).getTime();
+            return date >= start && date <= end;
+        });
+
+        return targetGroups.map(group => {
+            const groupLedgers = ledgers.filter(l => l.group === group);
+            const isAssetOrExpense = AccountGroupManager.isAssetOrExpense(group);
+
+            const total = groupLedgers.reduce((sum, ledger) => {
+                // Calculate total transaction movement for this ledger in this period
+                let ledgerTotal = 0;
+
+                periodVouchers.forEach(v => {
+                    const row = v.rows.find((r: any) => r.account === ledger.name);
+                    if (row) {
+                        const amount = row.type === 'Dr' ? row.debit : row.credit;
+
+                        // For Asset/Expense: Dr is +, Cr is -
+                        // For Liab/Income: Cr is +, Dr is -
+                        if (isAssetOrExpense) {
+                            ledgerTotal += (row.type === 'Dr' ? amount : -amount);
+                        } else {
+                            ledgerTotal += (row.type === 'Cr' ? amount : -amount);
+                        }
+                    }
+                });
+
+                return sum + ledgerTotal;
+            }, 0);
+
+            // Clone ledgers and update balance for display in drill-down
+            const updatedLedgers = groupLedgers.map(l => {
+                let lTotal = 0;
+                periodVouchers.forEach(v => {
+                    const row = v.rows.find((r: any) => r.account === l.name);
+                    if (row) {
+                        const amount = row.type === 'Dr' ? row.debit : row.credit;
+                        if (isAssetOrExpense) {
+                            lTotal += (row.type === 'Dr' ? amount : -amount);
+                        } else {
+                            lTotal += (row.type === 'Cr' ? amount : -amount);
+                        }
+                    }
+                });
+                return { ...l, balance: Math.abs(lTotal), type: (lTotal >= 0 ? (isAssetOrExpense ? 'Dr' : 'Cr') : (isAssetOrExpense ? 'Cr' : 'Dr')) as 'Dr' | 'Cr' };
+            });
+
+            return {
+                groupName: group,
+                total,
+                ledgers: updatedLedgers
+            };
+        });
+    }
+
+    static getAsOnGroupSummary(ledgers: Ledger[], vouchers: any[], asOnDate: Date, targetType: keyof typeof ACCT_GROUPS): GroupSummary[] {
+        const targetGroups = AccountGroupManager.getGroups(targetType);
+        const end = new Date(asOnDate).setHours(23, 59, 59, 999);
+
+        // Filter vouchers strictly AFTER the as-on date (Future)
+        const futureVouchers = vouchers.filter(v => new Date(v.date).getTime() > end);
+
+        return targetGroups.map(group => {
+            const groupLedgers = ledgers.filter(l => l.group === group);
+            const isAssetOrExpense = AccountGroupManager.isAssetOrExpense(group);
+
+            const total = groupLedgers.reduce((sum, ledger) => {
+                // Start with signed current balance: Dr is positive, Cr is negative (internally here)
+                let signedBalance = (ledger.type === 'Dr' ? ledger.balance : -ledger.balance);
+
+                // Reverse future transactions
+                futureVouchers.forEach(v => {
+                    const row = v.rows.find((r: any) => r.account === ledger.name);
+                    if (row) {
+                        // Current = Previous + Dr - Cr
+                        // Previous = Current - Dr + Cr
+                        const drAmount = row.type === 'Dr' ? row.debit : 0;
+                        const crAmount = row.type === 'Cr' ? row.credit : 0;
+                        signedBalance = signedBalance - drAmount + crAmount;
+                    }
+                });
+
+                // Convert to Group nature sign
+                if (isAssetOrExpense) {
+                    return sum + signedBalance;
+                } else {
+                    return sum + (-signedBalance);
+                }
+            }, 0);
+
+            // Update ledgers for drill-down display
+            const updatedLedgers = groupLedgers.map(l => {
+                let signedBalance = (l.type === 'Dr' ? l.balance : -l.balance);
+                futureVouchers.forEach(v => {
+                    const row = v.rows.find((r: any) => r.account === l.name);
+                    if (row) {
+                        const drAmount = row.type === 'Dr' ? row.debit : 0;
+                        const crAmount = row.type === 'Cr' ? row.credit : 0;
+                        signedBalance = signedBalance - drAmount + crAmount;
+                    }
+                });
+
+                const finalBal = Math.abs(signedBalance);
+                const finalType = signedBalance >= 0 ? 'Dr' : 'Cr'; // Return generic Ledger object
+                return { ...l, balance: finalBal, type: finalType as 'Dr' | 'Cr' };
+            });
+
+            return {
+                groupName: group,
+                total,
+                ledgers: updatedLedgers
+            };
+        });
+    }
+
     static calculateTotal(summaries: GroupSummary[]): number {
         return summaries.reduce((sum, g) => sum + g.total, 0);
     }
@@ -91,6 +213,20 @@ export class ReportService {
         const income = this.calculateTotal(this.getGroupSummary(ledgers, 'INCOME'));
         const expenses = this.calculateTotal(this.getGroupSummary(ledgers, 'EXPENSES'));
         return income - expenses;
+    }
+
+    static getNetProfitPeriod(ledgers: Ledger[], vouchers: any[], startDate: Date, endDate: Date, stockItems: StockItem[]): number {
+        const income = this.calculateTotal(this.getPeriodGroupSummary(ledgers, vouchers, startDate, endDate, 'INCOME'));
+        const expenses = this.calculateTotal(this.getPeriodGroupSummary(ledgers, vouchers, startDate, endDate, 'EXPENSES'));
+
+        // Simplified Stock Logic for V1:
+        // Opening Stock: 0 (Assumed, unless Manual Stock Journal exists)
+        // Closing Stock: Current Value (Assumed)
+
+        const closingStock = this.getClosingStockValue(stockItems);
+        const openingStock = 0;
+
+        return (income + closingStock) - (expenses + openingStock);
     }
 
     static getNetProfitWithStock(ledgers: Ledger[], stockItems: StockItem[]): number {
@@ -116,12 +252,36 @@ export class ReportService {
         }, 0);
     }
 
-
     static getTrialBalanceDiff(ledgers: Ledger[]): number {
         return ledgers.reduce((sum, l) => {
             // Debit adds, Credit subtracts
             return sum + (l.type === 'Dr' ? l.balance : -l.balance);
         }, 0);
+    }
+
+    static getLedgerBalanceAsOn(ledger: Ledger, vouchers: any[], asOnDate: Date): number {
+        const end = new Date(asOnDate).setHours(23, 59, 59, 999);
+
+        // Start with signed current balance: Dr is positive, Cr is negative
+        let signedBalance = (ledger.type === 'Dr' ? ledger.balance : -ledger.balance);
+
+        // Filter vouchers strictly AFTER the as-on date (Future)
+        const futureVouchers = vouchers.filter(v => new Date(v.date).getTime() > end);
+
+        // Reverse future transactions
+        futureVouchers.forEach(v => {
+            const row = v.rows.find((r: any) => r.account === ledger.name);
+            if (row) {
+                // Current = Previous + Dr - Cr
+                // Previous = Current - Dr + Cr
+                const drAmount = row.type === 'Dr' ? row.debit : 0;
+                const crAmount = row.type === 'Cr' ? row.credit : 0;
+                signedBalance = signedBalance - drAmount + crAmount;
+            }
+        });
+
+        // Return signed balance (Dr +, Cr -)
+        return signedBalance;
     }
 }
 

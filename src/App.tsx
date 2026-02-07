@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Layout from './components/layout/Layout';
 import LoginPage from './features/auth/LoginPage';
 import SignUpPage from './features/auth/SignUpPage';
@@ -19,14 +20,15 @@ import RatioAnalysis from './features/reports/RatioAnalysis';
 import AuditLogViewer from './features/security/AuditLogViewer';
 import CashFlow from './features/reports/CashFlow';
 import FundFlow from './features/reports/FundFlow';
-import Daybook from './features/accounting/reports/Daybook';
+import Daybook from './features/reports/Daybook';
 import UnitList from './features/inventory/UnitList';
 import UnitForm from './features/inventory/UnitForm';
 
 import StockItemForm from './features/inventory/StockItemForm';
 import StockGroupList from './features/inventory/StockGroupList';
 import StockGroupForm from './features/inventory/StockGroupForm';
-import StockSummary from './features/inventory/StockSummary';
+import StockSummary from './features/reports/StockSummary';
+import StockVoucherReport from './features/reports/StockVoucherReport';
 import InventoryMaster from './features/inventory/InventoryMaster';
 import { PersistenceProvider } from './services/persistence/PersistenceContext';
 import { AuthProvider } from './features/auth/AuthContext';
@@ -53,7 +55,42 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AppContent() {
+  const navigate = useNavigate();
   console.log('AppContent: Rendering routes...');
+  // Global Keyboard Shortcuts
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Alt + Key combinations
+      if (e.altKey) {
+        switch (e.key.toLowerCase()) {
+          case 'v':
+            e.preventDefault();
+            navigate('/vouchers/new');
+            break;
+          case 'd':
+            e.preventDefault();
+            navigate('/reports/daybook');
+            break;
+          case 's':
+            e.preventDefault();
+            navigate('/reports/stock-summary');
+            break;
+          case 'b':
+            e.preventDefault();
+            navigate('/reports/balance-sheet');
+            break;
+          case 'h': // Home/Dashboard
+            e.preventDefault();
+            navigate('/dashboard');
+            break;
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [navigate]);
+
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
@@ -96,7 +133,8 @@ function AppContent() {
         <Route path="inventory/groups" element={<StockGroupList />} />
         <Route path="inventory/groups/new" element={<StockGroupForm />} />
         <Route path="inventory/groups/:id" element={<StockGroupForm />} />
-        <Route path="inventory/stock-summary" element={<StockSummary />} />
+        <Route path="reports/stock-summary" element={<StockSummary />} />
+        <Route path="reports/stock-voucher/:itemId" element={<StockVoucherReport />} />
 
         <Route path="settings" element={<SettingsPage />} />
       </Route>

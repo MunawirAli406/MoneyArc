@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, Calculator, TrendingUp, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Download, Calculator, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
@@ -12,6 +12,8 @@ export default function Gstr3bReport() {
     const navigate = useNavigate();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
+    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
         const loadData = async () => {
@@ -24,8 +26,15 @@ export default function Gstr3bReport() {
         loadData();
     }, [provider, activeCompany]);
 
-    const salesVouchers = vouchers.filter(v => v.type === 'Sales');
-    const purchaseVouchers = vouchers.filter(v => v.type === 'Purchase');
+    const filteredVouchers = vouchers.filter(v => {
+        const d = new Date(v.date).getTime();
+        const start = new Date(startDate).setHours(0, 0, 0, 0);
+        const end = new Date(endDate).setHours(23, 59, 59, 999);
+        return d >= start && d <= end;
+    });
+
+    const salesVouchers = filteredVouchers.filter(v => v.type === 'Sales');
+    const purchaseVouchers = filteredVouchers.filter(v => v.type === 'Purchase');
 
     const salesSummary = GstService.aggregateSummaries(salesVouchers);
     const purchaseSummary = GstService.aggregateSummaries(purchaseVouchers);
@@ -58,25 +67,43 @@ export default function Gstr3bReport() {
                         </p>
                     </div>
                 </div>
-                <button
-                    onClick={() => {
-                        const cols = ['Description', 'Amount'];
-                        const rows = [
-                            ['Total Taxable Value (Sales)', outwardTaxable],
-                            ['Total Outward Tax', outwardTax],
-                            ['Total Eligible ITC (Purchases)', eligibleItc],
-                            ['Net Tax Payable', netTaxPayable]
-                        ];
-                        ExportService.exportToExcel('GSTR-3B Summary', cols, rows);
-                    }}
-                    className="flex items-center gap-2 px-6 py-3 bg-card border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-muted transition-all"
-                >
-                    <Download className="w-4 h-4" />
-                    Export Excel
-                </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm no-print relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+                        <Calendar className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                        <div className="flex items-center gap-2">
+                            <input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => setStartDate(e.target.value)}
+                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
+                            />
+                            <span className="text-muted-foreground font-medium">-</span>
+                            <input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => setEndDate(e.target.value)}
+                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
+                            />
+                        </div>
+                    </div>
+                    <button
+                        onClick={() => {
+                            const cols = ['Description', 'Amount'];
+                            const rows = [
+                                ['Total Taxable Value (Sales)', outwardTaxable],
+                                ['Total Outward Tax', outwardTax],
+                                ['Total Eligible ITC (Purchases)', eligibleItc],
+                                ['Net Tax Payable', netTaxPayable]
+                            ];
+                            ExportService.exportToExcel('GSTR-3B Summary', cols, rows);
+                        }}
+                        className="flex items-center gap-2 px-6 py-3 bg-card border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-muted transition-all"
+                    >
+                        <Download className="w-4 h-4" />
+                        Export Excel
+                    </button>
+                </div>
+            </div>      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="bg-card p-8 rounded-[2.5rem] border border-border shadow-xl">
                     <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Total Outward Tax</p>
                     <p className="text-3xl font-black text-cyan-500">₹{outwardTax.toLocaleString()}</p>
