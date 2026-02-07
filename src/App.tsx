@@ -22,7 +22,7 @@ import FundFlow from './features/reports/FundFlow';
 import Daybook from './features/accounting/reports/Daybook';
 import UnitList from './features/inventory/UnitList';
 import UnitForm from './features/inventory/UnitForm';
-import StockItemList from './features/inventory/StockItemList';
+import StockManagement from './features/inventory/StockManagement';
 import StockItemForm from './features/inventory/StockItemForm';
 import StockGroupList from './features/inventory/StockGroupList';
 import StockGroupForm from './features/inventory/StockGroupForm';
@@ -88,7 +88,7 @@ function AppContent() {
         <Route path="inventory/units" element={<UnitList />} />
         <Route path="inventory/units/new" element={<UnitForm />} />
         <Route path="inventory/units/:id" element={<UnitForm />} />
-        <Route path="inventory/items" element={<StockItemList />} />
+        <Route path="inventory/items" element={<StockManagement />} />
         <Route path="inventory/items/new" element={<StockItemForm />} />
         <Route path="inventory/items/:id" element={<StockItemForm />} />
         <Route path="inventory/groups" element={<StockGroupList />} />

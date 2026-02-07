@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import type { StockItem, StockGroup, UnitOfMeasure } from '../../services/inventory/types';
-import { Package, Search, ArrowUpRight, FileDown } from 'lucide-react';
+import { Package, Search, ArrowUpRight, FileDown, FileText } from 'lucide-react';
 import { ExportService } from '../../services/reports/ExportService';
+import { useNavigate } from 'react-router-dom';
 
 export default function StockSummary() {
     const { provider, activeCompany } = usePersistence();
+    const navigate = useNavigate();
     const [items, setItems] = useState<StockItem[]>([]);
     const [groups, setGroups] = useState<StockGroup[]>([]);
     const [units, setUnits] = useState<UnitOfMeasure[]>([]);
@@ -135,11 +137,18 @@ export default function StockSummary() {
                                 const val = item.currentValue ?? item.openingValue;
 
                                 return (
-                                    <tr key={item.id} className="group hover:bg-muted/10 transition-colors">
+                                    <tr
+                                        key={item.id}
+                                        onClick={() => navigate(`/inventory/items?tab=vouchers&itemId=${item.id}`)}
+                                        className="group hover:bg-muted/10 transition-colors cursor-pointer"
+                                    >
                                         <td className="px-8 py-5">
-                                            <div>
-                                                <p className="font-black text-foreground text-sm uppercase tracking-tight">{item.name}</p>
-                                                {item.sku && <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{item.sku}</p>}
+                                            <div className="flex items-center gap-3">
+                                                <div>
+                                                    <p className="font-black text-foreground text-sm uppercase tracking-tight group-hover:text-primary transition-colors">{item.name}</p>
+                                                    {item.sku && <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{item.sku}</p>}
+                                                </div>
+                                                <FileText className="w-3 h-3 opacity-0 group-hover:opacity-100 text-primary/50 transition-opacity" />
                                             </div>
                                         </td>
                                         <td className="px-4 py-5">

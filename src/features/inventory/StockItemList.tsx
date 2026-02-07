@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Edit2, Trash2, Box } from 'lucide-react';
+import { Plus, Search, Edit2, Trash2, Box, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import type { StockItem, UnitOfMeasure } from '../../services/inventory/types';
 
-export default function StockItemList() {
+interface StockItemListProps {
+    onViewTransactions?: (itemId: string) => void;
+}
+
+export default function StockItemList({ onViewTransactions }: StockItemListProps) {
     const { provider, activeCompany } = usePersistence();
     const [items, setItems] = useState<StockItem[]>([]);
     const [units, setUnits] = useState<UnitOfMeasure[]>([]);
@@ -134,6 +138,15 @@ export default function StockItemList() {
                                         </td>
                                         <td className="px-4 py-2 text-center">
                                             <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                                                {onViewTransactions && (
+                                                    <button
+                                                        onClick={() => onViewTransactions(item.id)}
+                                                        className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
+                                                        title="View Transactions"
+                                                    >
+                                                        <FileText className="w-4 h-4" />
+                                                    </button>
+                                                )}
                                                 <Link
                                                     to={`/inventory/items/${item.id}`}
                                                     className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg"
