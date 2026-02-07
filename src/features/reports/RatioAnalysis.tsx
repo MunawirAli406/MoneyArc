@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, PieChart, TrendingUp, Target, Zap, ShieldCheck, FileDown, Calendar } from 'lucide-react';
+import { ArrowLeft, PieChart, TrendingUp, Target, Zap, ShieldCheck, FileDown } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
-import { ACCT_GROUPS, type Ledger, ReportService } from '../../services/accounting/ReportService';
+import { type Ledger, ReportService } from '../../services/accounting/ReportService';
+import PeriodSelector from '../../components/ui/PeriodSelector';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import type { StockItem } from '../../services/inventory/types';
 
@@ -13,29 +14,30 @@ export default function RatioAnalysis() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [ratios, setRatios] = useState<{ name: string, value: string, target: string, desc: string, icon: any, color: string, bg: string }[]>([]);
-    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(() => {
+        const today = new Date();
+        return new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
+    });
     const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
     useEffect(() => {
         const calculateRatios = async () => {
             if (!provider || !activeCompany) return;
 
-            const [, lData, sData, vData] = await Promise.all([
-                // We need vouchers for accurate period calculation if not using pre-calculated services, 
-                // but ReportService uses ledgers + vouchers.
+            const [vData, lData, sData] = await Promise.all([
                 provider.read<Voucher[]>('vouchers.json', activeCompany.path),
                 provider.read<Ledger[]>('ledgers.json', activeCompany.path),
                 provider.read<StockItem[]>('stock_items.json', activeCompany.path),
-                provider.read<Voucher[]>('vouchers.json', activeCompany.path) // Read vouchers
             ]);
 
+            const vouchers = vData || [];
             const ledgers = lData || [];
             const stockItems = sData || [];
-            const vouchers = vData || [];
 
             // 1. Balance Sheet Items (As On End Date)
             // Current Assets
-            const caGroups = ReportService.getAsOnGroupSummary(ledgers, vouchers, new Date(endDate), 'ASSETS');
+            // Filter specific CA groups if needed, but usually 'ASSETS' covers Fixed + Current. 
+
             // Filter specific CA groups if needed, but usually 'ASSETS' covers Fixed + Current. 
             // We might need to approximate CA by excluding Fixed Assets if they are clearly separated.
             // For now, let's assume 'Current Assets' is a specific sub-group or we use all Assets - Fixed Assets.
@@ -175,6 +177,14 @@ export default function RatioAnalysis() {
                         <FileDown className="w-4 h-4" />
                         Print / Save PDF
                     </button>
+                    <PeriodSelector
+                        startDate={startDate}
+                        endDate={endDate}
+                        onChange={(s, e) => {
+                            setStartDate(s);
+                            setEndDate(e);
+                        }}
+                    />
                 </div>
             </div>
 

@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, User, FileDown, ArrowLeft, Hash, Calendar } from 'lucide-react';
+import { Users, User, ArrowLeft, Hash } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import type { Ledger } from '../../services/accounting/ReportService';
 import type { StockItem } from '../../services/inventory/types';
 import { useNavigate } from 'react-router-dom';
 import { GstService } from '../../services/accounting/GstService';
+import PeriodSelector from '../../components/ui/PeriodSelector';
 
 export default function Gstr1Report() {
     const { provider, activeCompany } = usePersistence();
@@ -117,28 +117,18 @@ export default function Gstr1Report() {
                     </div>
                 </div>
                 <div className="flex gap-3">
-                    <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm no-print relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                        <Calendar className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
-                            />
-                            <span className="text-muted-foreground font-medium">-</span>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
-                            />
-                        </div>
-                    </div>
+                    <PeriodSelector
+                        startDate={startDate}
+                        endDate={endDate}
+                        onChange={(s, e) => {
+                            setStartDate(s);
+                            setEndDate(e);
+                        }}
+                    />
                     <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                         <Users className="w-5 h-5" />
                     </div>
-                    <h2 className="text-xs font-black uppercase tracking-widest">B2B Invoices (4A, 4B, 4C, 6B, 6C)</h2>
+                    <h2 className="text-xs font-black uppercase tracking-widest hidden md:block mt-3">B2B Invoices</h2>
                 </div>
             </div>
 

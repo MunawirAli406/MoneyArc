@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, Calculator, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { ArrowLeft, Download, Calculator, TrendingUp, TrendingDown } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { useNavigate } from 'react-router-dom';
 import { GstService } from '../../services/accounting/GstService';
+import PeriodSelector from '../../components/ui/PeriodSelector';
 
 export default function Gstr3bReport() {
     const { provider, activeCompany } = usePersistence();
@@ -68,24 +69,14 @@ export default function Gstr3bReport() {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm no-print relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                        <Calendar className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
-                            />
-                            <span className="text-muted-foreground font-medium">-</span>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
-                            />
-                        </div>
-                    </div>
+                    <PeriodSelector
+                        startDate={startDate}
+                        endDate={endDate}
+                        onChange={(s, e) => {
+                            setStartDate(s);
+                            setEndDate(e);
+                        }}
+                    />
                     <button
                         onClick={() => {
                             const cols = ['Description', 'Amount'];
