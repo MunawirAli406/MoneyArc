@@ -4,7 +4,7 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { type Ledger, LedgerReportCalculator, type LedgerReportData } from '../../services/accounting/ReportService';
 import { type Voucher } from '../../services/accounting/VoucherService';
 import { FileDown, Wallet } from 'lucide-react';
-import { ExportService } from '../../services/reports/ExportService';
+
 
 interface LedgerReportProps {
     externalSelectedLedgerId?: string;
@@ -73,27 +73,7 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
         return () => clearTimeout(timer);
     }, [provider, activeCompany, selectedLedgerId, startDate, endDate]);
 
-    const handleExport = () => {
-        if (!reportData) return;
 
-        const rows = [
-            ['From:', startDate, 'To:', endDate],
-            ['Opening Balance:', '', '', `${reportData.openingBalance.toFixed(2)} ${reportData.openingBalanceType}`],
-            ['Date', 'Particulars', 'Vch Type', 'Debit', 'Credit', 'Balance'],
-            ...reportData.rows.map(row => [
-                new Date(row.date).toLocaleDateString(),
-                row.particulars,
-                `${row.voucherType} #${row.voucherNo}`,
-                row.debit > 0 ? row.debit.toFixed(2) : '',
-                row.credit > 0 ? row.credit.toFixed(2) : '',
-                `${row.balance.toFixed(2)} ${row.balanceType}`
-            ]),
-            ['Total', '', '', reportData.totalDebit.toFixed(2), reportData.totalCredit.toFixed(2), ''],
-            ['Closing Balance:', '', '', '', '', `${reportData.closingBalance.toFixed(2)} ${reportData.closingBalanceType}`]
-        ];
-
-        ExportService.exportToPDF(`Ledger Report - ${reportData.ledgerName}`, [], rows, activeCompany);
-    };
 
     return (
         <motion.div
@@ -103,7 +83,7 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
         >
             {/* Header Controls */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-card p-6 rounded-2xl border border-border shadow-sm">
-                <div className="space-y-4 flex-1">
+                <div className="space-y-4 flex-1 no-print">
                     {!isEmbedded && (
                         <div>
                             <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
@@ -153,12 +133,12 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
 
                 <div className="flex items-end">
                     <button
-                        onClick={handleExport}
+                        onClick={() => window.print()}
                         disabled={!reportData}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10 disabled:opacity-50"
+                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10 disabled:opacity-50"
                     >
                         <FileDown className="w-4 h-4" />
-                        Export PDF
+                        Print / Save PDF
                     </button>
                 </div>
             </div>

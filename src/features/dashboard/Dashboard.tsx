@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, FileText, ShieldCheck } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, FileText, ShieldCheck, PieChart } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
@@ -223,6 +223,7 @@ export default function Dashboard() {
                             {[
                                 { label: 'New Voucher', icon: Wallet, color: 'text-cyan-500', bg: 'bg-cyan-500/10', path: '/vouchers/new' },
                                 { label: 'GSTR-1 Report', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-500/10', path: '/reports/gst/r1' },
+                                { label: 'Ratio Analysis', icon: PieChart, color: 'text-violet-500', bg: 'bg-violet-500/10', path: '/reports/ratios' },
                                 { label: 'Audit Trail', icon: ShieldCheck, color: 'text-rose-500', bg: 'bg-rose-500/10', path: '/security/audit' },
                             ].map((action, i) => (
                                 <button

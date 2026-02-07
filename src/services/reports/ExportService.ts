@@ -4,7 +4,7 @@ import * as XLSX from 'xlsx';
 import type { Company } from '../persistence/types';
 
 export class ExportService {
-    static exportToPDF(title: string, columns: string[], rows: (string | number)[][], company: Company | null) {
+    static exportToPDF(title: string, columns: string[], rows: (string | number)[][], company: Company | null, columnStyles?: any) {
         // ... existing PDF logic ...
         const doc = new jsPDF();
         const timestamp = new Date().toLocaleString();
@@ -13,6 +13,9 @@ export class ExportService {
         doc.setFontSize(22);
         doc.setTextColor(15, 23, 42); // slate-900
         doc.text("MoneyArc", 14, 20);
+
+        // ... (lines 17-38 remain same, omitted for brevity in thought, but must be careful in replacement)
+        // actually I will just replace the function signature and the autoTable call
 
         doc.setFontSize(10);
         doc.setTextColor(100, 116, 139); // slate-500
@@ -45,6 +48,7 @@ export class ExportService {
             theme: 'striped',
             headStyles: { fillColor: [15, 23, 42], fontStyle: 'bold' },
             styles: { fontSize: 8, cellPadding: 3 },
+            columnStyles: columnStyles || {},
             alternateRowStyles: { fillColor: [248, 250, 252] }
         });
 

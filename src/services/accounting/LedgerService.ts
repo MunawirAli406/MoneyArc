@@ -12,13 +12,15 @@ export class LedgerService {
             const newLedgers = [...ledgers];
             let changed = false;
 
-            // 1. Repair GST Ledgers (The 14,400 difference fix)
-            const gstFixes = [
-                { name: 'Central GST (CGST)', balance: 7200, type: 'Dr' as const },
-                { name: 'State GST (SGST)', balance: 7200, type: 'Dr' as const }
+            // 1. Repair GST Ledgers - REMOVED AUTOMATIC BALANCES
+            // We should only create empties if needed, but for now let's just leave it to user or create 0 balance.
+            const gstDefaults = [
+                { name: 'Central GST (CGST)', balance: 0, type: 'Dr' as const },
+                { name: 'State GST (SGST)', balance: 0, type: 'Dr' as const },
+                { name: 'Integrated GST (IGST)', balance: 0, type: 'Dr' as const }
             ];
 
-            gstFixes.forEach(fix => {
+            gstDefaults.forEach(fix => {
                 if (!newLedgers.find(l => l.name === fix.name)) {
                     newLedgers.push({
                         id: 'cgst-' + Date.now() + Math.random(),

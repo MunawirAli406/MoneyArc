@@ -4,7 +4,7 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ReportService, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
 import { type StockItem } from '../../services/inventory/types';
 import { TrendingUp, TrendingDown, FileDown } from 'lucide-react';
-import { ExportService } from '../../services/reports/ExportService';
+
 
 export default function ProfitAndLoss() {
     const { provider, activeCompany } = usePersistence();
@@ -70,45 +70,13 @@ export default function ProfitAndLoss() {
                 </div>
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => {
-                            const rows: string[][] = [];
-
-                            // Expenses Group
-                            rows.push(['EXPENSES', '']);
-                            expenses.forEach(g => {
-                                if (g.total > 0) {
-                                    rows.push([g.groupName.toUpperCase(), g.total.toFixed(2)]);
-                                    g.ledgers.forEach(l => rows.push([`  ${l.name}`, l.balance.toFixed(2)]));
-                                }
-                            });
-
-                            if (netProfit > 0) {
-                                rows.push(['NET PROFIT (Transfer)', netProfit.toFixed(2)]);
-                            }
-
-                            rows.push(['---', '---']);
-
-                            // Incomes Group
-                            rows.push(['REVENUE / INCOME', '']);
-                            incomes.forEach(g => {
-                                if (g.total > 0) {
-                                    rows.push([g.groupName.toUpperCase(), g.total.toFixed(2)]);
-                                    g.ledgers.forEach(l => rows.push([`  ${l.name}`, l.balance.toFixed(2)]));
-                                }
-                            });
-
-                            if (netProfit < 0) {
-                                rows.push(['NET LOSS', Math.abs(netProfit).toFixed(2)]);
-                            }
-
-                            ExportService.exportToPDF('Profit & Loss Statement', ['Particulars', 'Amount (INR)'], rows, activeCompany);
-                        }}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
                     >
                         <FileDown className="w-4 h-4" />
-                        Export PDF
+                        Print / Save PDF
                     </button>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4 no-print">
                         <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm">
                             <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">Period</label>
                             <input

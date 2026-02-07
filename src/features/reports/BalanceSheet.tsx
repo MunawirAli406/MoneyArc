@@ -4,7 +4,7 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ReportService, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
 import { type StockItem } from '../../services/inventory/types';
 import { Calendar, FileDown } from 'lucide-react';
-import { ExportService } from '../../services/reports/ExportService';
+
 
 export default function BalanceSheet() {
     const { provider, activeCompany } = usePersistence();
@@ -81,7 +81,7 @@ export default function BalanceSheet() {
                     <p className="text-muted-foreground font-medium">Financial health of {activeCompany?.name}</p>
                 </div>
                 {/* Export Buttons Code ... */}
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 no-print">
                     <div className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-1.5 shadow-sm">
                         <label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mr-1">As On</label>
                         <input
@@ -92,38 +92,11 @@ export default function BalanceSheet() {
                         />
                     </div>
                     <button
-                        onClick={() => {
-                            // ... existing export code ... 
-                            const rows: string[][] = [];
-                            liabilities.forEach(g => {
-                                if (g.total > 0) {
-                                    rows.push([g.groupName.toUpperCase(), g.total.toFixed(2)]);
-                                    g.ledgers.forEach(l => rows.push([`  ${l.name}`, l.balance.toFixed(2)]));
-                                }
-                            });
-                            // Add TB Diff to export if exists
-                            if (tbDiff > 0) {
-                                rows.push(['DIFF. IN OPENING BALANCES', tbDiff.toFixed(2)]);
-                            }
-                            rows.push(['---', '---']);
-                            // .. assets export ...
-                            assets.forEach(g => {
-                                if (g.total > 0) {
-                                    rows.push([g.groupName.toUpperCase(), g.total.toFixed(2)]);
-                                    g.ledgers.forEach(l => rows.push([`  ${l.name}`, l.balance.toFixed(2)]));
-                                }
-                            });
-                            // Add TB Diff (Credit surplus case) to export
-                            if (tbDiff < 0) {
-                                rows.push(['DIFF. IN OPENING BALANCES', Math.abs(tbDiff).toFixed(2)]);
-                            }
-
-                            ExportService.exportToPDF('Balance Sheet', ['Particulars', 'Amount (INR)'], rows, activeCompany);
-                        }}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
                     >
                         <FileDown className="w-4 h-4" />
-                        Export PDF
+                        Print / Save PDF
                     </button>
                     <div className="flex items-center gap-2 px-4 py-2 bg-muted rounded-xl text-xs font-bold text-muted-foreground uppercase tracking-widest border border-border">
                         <Calendar className="w-4 h-4" />

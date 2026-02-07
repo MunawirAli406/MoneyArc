@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { TrendingUp, TrendingDown, Landmark, IndianRupee, FileDown } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { ExportService } from '../../services/reports/ExportService';
+
 import type { Voucher } from '../../services/accounting/VoucherService';
 
 export default function CashFlow() {
@@ -68,20 +68,11 @@ export default function CashFlow() {
                 </div>
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => {
-                            const rows = [
-                                ['A. Operating Activities', `INR ${operating.toLocaleString()}`],
-                                ['B. Investing Activities', `INR ${investing.toLocaleString()}`],
-                                ['C. Financing Activities', `INR ${financing.toLocaleString()}`],
-                                ['---', '---'],
-                                ['NET INCREASE IN CASH', `INR ${(operating + investing + financing).toLocaleString()}`],
-                            ];
-                            ExportService.exportToPDF('Cash Flow Statement', ['Activity', 'Amount'], rows, activeCompany);
-                        }}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
                     >
                         <FileDown className="w-4 h-4" />
-                        Export PDF
+                        Print / Save PDF
                     </button>
                     <div className="bg-card px-6 py-3 rounded-2xl border border-border shadow-sm">
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Net Change in Cash</p>

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, FileText, Wallet, TrendingUp, PieChart, Building2, LogOut, Package } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, Wallet, TrendingUp, PieChart, Building2, LogOut, Layers } from 'lucide-react';
 import clsx from 'clsx';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useAuth } from '../../features/auth/AuthContext.provider';
@@ -15,9 +15,7 @@ const navItems = [
     { icon: FileText, label: 'GST Reports', path: '/reports/gst' },
     { icon: Wallet, label: 'Cash Flow', path: '/reports/cash-flow' },
     { icon: TrendingUp, label: 'Fund Flow', path: '/reports/fund-flow' },
-    { icon: Package, label: 'Stock Items', path: '/inventory/items' },
-    { icon: Package, label: 'Stock Groups', path: '/inventory/groups' },
-    { icon: Package, label: 'Units', path: '/inventory/units' },
+    { icon: Layers, label: 'Inventory Master', path: '/inventory/master' },
     { icon: TrendingUp, label: 'Stock Summary', path: '/inventory/stock-summary' },
 ];
 

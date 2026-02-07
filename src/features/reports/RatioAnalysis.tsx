@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, PieChart, TrendingUp, Target, Zap, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, PieChart, TrendingUp, Target, Zap, ShieldCheck, FileDown } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
 import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
@@ -103,13 +103,22 @@ export default function RatioAnalysis() {
             <div className="flex items-center gap-4">
                 <button
                     onClick={() => navigate('/dashboard')}
-                    className="p-3 hover:bg-muted rounded-2xl transition-all"
+                    className="p-3 hover:bg-muted rounded-2xl transition-all no-print"
                 >
                     <ArrowLeft className="w-5 h-5" />
                 </button>
                 <div>
                     <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">Ratio Analysis</h1>
                     <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-1">Financial Performance Health-check</p>
+                </div>
+                <div className="ml-auto no-print">
+                    <button
+                        onClick={() => window.print()}
+                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
+                    >
+                        <FileDown className="w-4 h-4" />
+                        Print / Save PDF
+                    </button>
                 </div>
             </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
-import { ExportService } from '../../../services/reports/ExportService';
+
 import { VoucherService, type Voucher } from '../../../services/accounting/VoucherService';
 import { Calendar, FileDown, Printer, Edit, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -43,19 +43,7 @@ export default function Daybook() {
         loadData();
     }, [provider, activeCompany]);
 
-    const handleExport = () => {
-        const rows = vouchers.map(v => {
-            const amount = v.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0);
-            return [
-                new Date(v.date).toLocaleDateString(),
-                v.rows[0]?.account || 'Journal Entry',
-                `${v.type} #${v.voucherNo}`,
-                amount.toFixed(2),
-                amount.toFixed(2)
-            ];
-        });
-        ExportService.exportToPDF('Daybook', ['Date', 'Particulars', 'Voucher', 'Debit', 'Credit'], rows, activeCompany);
-    };
+
 
     if (loading) return (
         <div className="flex items-center justify-center p-12">
@@ -76,19 +64,22 @@ export default function Daybook() {
                 </div>
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={handleExport}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
                     >
                         <FileDown className="w-4 h-4" />
-                        Export PDF
+                        Print / Save PDF
                     </button>
-                    <div className="relative group">
+                    <div className="relative group no-print">
                         <Calendar className="w-4 h-4 text-muted-foreground absolute left-3.5 top-1/2 -translate-y-1/2 group-focus-within:text-primary transition-colors" />
                         <input
-                            type="date"
+                            type="text"
+                            onFocus={(e) => (e.target.type = 'date')} // Trick to show date picker only on focus for cleaner look if desired, or just keep type='date'
+                            onBlur={(e) => (e.target.type = 'text')}
+                            placeholder={selectedDate} // Show selected date as placeholder
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary outline-none transition-all"
+                            className="pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl text-sm font-bold focus:ring-2 focus:ring-primary outline-none transition-all w-32"
                         />
                     </div>
                 </div>
@@ -129,7 +120,7 @@ export default function Daybook() {
                                         <td className="px-8 py-5 text-right font-mono font-bold text-foreground">
                                             <div className="flex items-center justify-end gap-2">
                                                 <span>{amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
-                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-4">
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all ml-4 no-print">
                                                     {v.type === 'Sales' && (
                                                         <button
                                                             onClick={(e) => {

@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import type { StockItem, StockGroup, UnitOfMeasure } from '../../services/inventory/types';
 import { Package, Search, ArrowUpRight, FileDown, FileText } from 'lucide-react';
-import { ExportService } from '../../services/reports/ExportService';
+
 import { useNavigate } from 'react-router-dom';
 
 export default function StockSummary() {
@@ -66,21 +66,11 @@ export default function StockSummary() {
                 </div>
                 <div className="flex items-center gap-3">
                     <button
-                        onClick={() => {
-                            const data = filteredItems.map(i => [
-                                i.name,
-                                getGroupName(i.groupId),
-                                (i.currentBalance ?? i.openingStock).toString(),
-                                getUnitName(i.unitId),
-                                (i.currentRate ?? i.openingRate).toFixed(2),
-                                (i.currentValue ?? i.openingValue).toFixed(2)
-                            ]);
-                            ExportService.exportToPDF('Stock Summary', ['Item Name', 'Group', 'Qty', 'Unit', 'Rate', 'Value'], data, activeCompany);
-                        }}
-                        className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all"
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all"
                     >
                         <FileDown className="w-4 h-4" />
-                        Export PDF
+                        Print / Save PDF
                     </button>
                 </div>
             </div>
@@ -104,7 +94,7 @@ export default function StockSummary() {
                         <p className="text-2xl font-black text-foreground">₹{totalValue.toLocaleString()}</p>
                     </div>
                 </div>
-                <div className="bg-card p-6 rounded-3xl border border-border shadow-sm flex items-center gap-4">
+                <div className="bg-card p-6 rounded-3xl border border-border shadow-sm flex items-center gap-4 no-print">
                     <div className="flex-1 relative">
                         <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
                         <input

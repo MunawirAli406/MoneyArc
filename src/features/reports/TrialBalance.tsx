@@ -73,13 +73,16 @@ export default function TrialBalance() {
         </div>
     );
 
-    const renderGroupRows = (summary: GroupSummary) => {
+    const renderGroupRows = (summary: GroupSummary, isDebitNature: boolean) => {
         const isExpanded = expandedGroups.includes(summary.groupName);
         const filteredLedgers = summary.ledgers.filter(l =>
             l.name.toLowerCase().includes(searchQuery.toLowerCase())
         );
 
         if (filteredLedgers.length === 0 && searchQuery) return null;
+
+        const showInDebit = (isDebitNature && summary.total > 0) || (!isDebitNature && summary.total < 0);
+        const showInCredit = (isDebitNature && summary.total < 0) || (!isDebitNature && summary.total > 0);
 
         return (
             <div key={summary.groupName} className="border-b border-border/50 last:border-0">
@@ -95,14 +98,14 @@ export default function TrialBalance() {
                             {summary.groupName}
                         </span>
                     </div>
-                    <div className="flex gap-12 text-sm font-mono font-bold w-64 justify-end">
+                    <div className="flex gap-8 text-sm font-mono font-bold w-96 justify-end">
                         {summary.total !== 0 && (
-                            <div className="flex gap-12">
-                                <span className={clsx("w-24 text-right", summary.total > 0 ? "text-foreground" : "opacity-0")}>
-                                    {summary.total > 0 ? summary.total.toLocaleString() : ""}
+                            <div className="flex gap-8">
+                                <span className={clsx("w-40 text-right", showInDebit ? "text-foreground" : "opacity-0")}>
+                                    {showInDebit ? Math.abs(summary.total).toLocaleString() : ""}
                                 </span>
-                                <span className={clsx("w-24 text-right", summary.total < 0 ? "text-foreground" : "opacity-0")}>
-                                    {summary.total < 0 ? Math.abs(summary.total).toLocaleString() : ""}
+                                <span className={clsx("w-40 text-right", showInCredit ? "text-foreground" : "opacity-0")}>
+                                    {showInCredit ? Math.abs(summary.total).toLocaleString() : ""}
                                 </span>
                             </div>
                         )}
@@ -130,11 +133,11 @@ export default function TrialBalance() {
                                             </span>
                                             <FileText className="w-3 h-3 opacity-0 group-hover/row:opacity-100 text-primary/50 transition-opacity" />
                                         </div>
-                                        <div className="flex gap-12 text-sm font-mono font-medium w-64 justify-end">
-                                            <span className={clsx("w-24 text-right", ledger.type === 'Dr' ? "text-muted-foreground/80" : "opacity-0")}>
+                                        <div className="flex gap-8 text-sm font-mono font-medium w-96 justify-end">
+                                            <span className={clsx("w-40 text-right", ledger.type === 'Dr' ? "text-muted-foreground/80" : "opacity-0")}>
                                                 {ledger.type === 'Dr' ? ledger.balance.toLocaleString() : ""}
                                             </span>
-                                            <span className={clsx("w-24 text-right", ledger.type === 'Cr' ? "text-muted-foreground/80" : "opacity-0")}>
+                                            <span className={clsx("w-40 text-right", ledger.type === 'Cr' ? "text-muted-foreground/80" : "opacity-0")}>
                                                 {ledger.type === 'Cr' ? ledger.balance.toLocaleString() : ""}
                                             </span>
                                         </div>
@@ -163,7 +166,7 @@ export default function TrialBalance() {
                 </div>
 
                 <div className="flex items-center gap-4">
-                    <div className="relative group">
+                    <div className="relative group no-print">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                         <input
                             type="text"
@@ -177,14 +180,30 @@ export default function TrialBalance() {
                     <button
                         onClick={() => {
                             const rows: string[][] = [];
-                            [...groups.liabilities, ...groups.assets, ...groups.income, ...groups.expenses].forEach(g => {
-                                rows.push([g.groupName.toUpperCase(), "", ""]);
+                            // Liabilities & Equity (Credit Nature)
+                            const processGroup = (g: GroupSummary, isDebitNature: boolean) => {
+                                const total = g.total;
+                                const isDebit = (isDebitNature && total > 0) || (!isDebitNature && total < 0);
+                                const isCredit = (isDebitNature && total < 0) || (!isDebitNature && total > 0);
+                                const debitVal = isDebit ? Math.abs(total).toFixed(2) : "";
+                                const creditVal = isCredit ? Math.abs(total).toFixed(2) : "";
+
+                                rows.push([g.groupName.toUpperCase(), debitVal, creditVal]);
                                 g.ledgers.forEach(l => {
                                     rows.push([`  ${l.name}`, l.type === 'Dr' ? l.balance.toFixed(2) : "", l.type === 'Cr' ? l.balance.toFixed(2) : ""]);
                                 });
-                            });
+                            };
+
+                            groups.liabilities.forEach(g => processGroup(g, false));
+                            groups.assets.forEach(g => processGroup(g, true));
+                            groups.income.forEach(g => processGroup(g, false));
+                            groups.expenses.forEach(g => processGroup(g, true));
+
                             rows.push(["TOTAL", totalDebit.toFixed(2), totalCredit.toFixed(2)]);
-                            ExportService.exportToPDF('Trial Balance', ['Particulars', 'Debit', 'Credit'], rows, activeCompany);
+                            ExportService.exportToPDF('Trial Balance', ['Particulars', 'Debit', 'Credit'], rows, activeCompany, {
+                                1: { halign: 'right' },
+                                2: { halign: 'right' }
+                            });
                         }}
                         className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all"
                     >
@@ -195,39 +214,41 @@ export default function TrialBalance() {
             </div>
 
             <div className="bg-card rounded-[2.5rem] shadow-2xl border border-border overflow-hidden">
-                <div className="bg-muted/30 px-6 py-4 border-b border-border grid grid-cols-1 md:grid-cols-2">
-                    <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest px-10">Particulars</div>
-                    <div className="hidden md:flex gap-12 text-[10px] font-black text-muted-foreground uppercase tracking-widest justify-end pr-6">
-                        <span className="w-24 text-right">Debit (Dr)</span>
-                        <span className="w-24 text-right">Credit (Cr)</span>
+                <div className="bg-muted/30 px-6 py-4 border-b border-border flex items-center justify-between gap-4">
+                    <div className="flex-1 text-[10px] font-black text-muted-foreground uppercase tracking-widest px-4">Particulars</div>
+                    <div className="hidden md:flex gap-8 text-[10px] font-black text-muted-foreground uppercase tracking-widest w-96 justify-end">
+                        <span className="w-40 text-right">Debit (Dr)</span>
+                        <span className="w-40 text-right">Credit (Cr)</span>
                     </div>
                 </div>
 
                 <div className="divide-y divide-border">
                     <div className="bg-primary/[0.02] px-6 py-2 text-[10px] font-black text-primary uppercase tracking-widest">Liabilities & Equity</div>
-                    {groups.liabilities.map(renderGroupRows)}
+                    {groups.liabilities.map(g => renderGroupRows(g, false))}
 
                     <div className="bg-cyan-500/[0.02] px-6 py-2 text-[10px] font-black text-cyan-500 uppercase tracking-widest">Assets</div>
-                    {groups.assets.map(renderGroupRows)}
+                    {groups.assets.map(g => renderGroupRows(g, true))}
 
                     <div className="bg-emerald-500/[0.02] px-6 py-2 text-[10px] font-black text-emerald-500 uppercase tracking-widest">Income</div>
-                    {groups.income.map(renderGroupRows)}
+                    {groups.income.map(g => renderGroupRows(g, false))}
 
                     <div className="bg-amber-500/[0.02] px-6 py-2 text-[10px] font-black text-amber-500 uppercase tracking-widest">Expenses</div>
-                    {groups.expenses.map(renderGroupRows)}
+                    {groups.expenses.map(g => renderGroupRows(g, true))}
                 </div>
 
                 <div className="bg-muted/50 p-8 border-t border-border mt-auto">
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                         <div className="flex-1">
-                            <div className="flex justify-between md:justify-end gap-12 text-sm font-black uppercase tracking-tighter pr-6">
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] text-muted-foreground tracking-widest mb-1">Grand Total Debit</span>
-                                    <span className="text-2xl font-mono">{totalDebit.toLocaleString()}</span>
-                                </div>
-                                <div className="flex flex-col items-end">
-                                    <span className="text-[10px] text-muted-foreground tracking-widest mb-1">Grand Total Credit</span>
-                                    <span className="text-2xl font-mono">{totalCredit.toLocaleString()}</span>
+                            <div className="flex justify-between md:justify-end gap-8 text-sm font-black uppercase tracking-tighter w-full">
+                                <div className="flex gap-8 w-96 justify-end">
+                                    <div className="flex flex-col items-end w-40">
+                                        <span className="text-[10px] text-muted-foreground tracking-widest mb-1">Grand Total Debit</span>
+                                        <span className="text-2xl font-mono">{totalDebit.toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex flex-col items-end w-40">
+                                        <span className="text-[10px] text-muted-foreground tracking-widest mb-1">Grand Total Credit</span>
+                                        <span className="text-2xl font-mono">{totalCredit.toLocaleString()}</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>

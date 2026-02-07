@@ -62,20 +62,11 @@ export default function GstReport() {
                 </div>
                 <div className="flex gap-3">
                     <button
-                        onClick={() => {
-                            const rows = [
-                                ['Total Output Tax', `INR ${totalOutputTax.toLocaleString()}`],
-                                ['Eligible ITC', `INR ${totalInputTax.toLocaleString()}`],
-                                ['Net Tax Payable', `INR ${Math.max(0, totalOutputTax - totalInputTax).toLocaleString()}`],
-                                ['CGST (Central)', `INR ${(totalOutputTax * 0.5).toLocaleString()}`],
-                                ['SGST (State)', `INR ${(totalOutputTax * 0.5).toLocaleString()}`],
-                            ];
-                            ExportService.exportToPDF('GST Overview', ['Component', 'Value'], rows, activeCompany);
-                        }}
-                        className="flex items-center gap-2 px-5 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
                     >
                         <FileDown className="w-4 h-4" />
-                        Export PDF
+                        Print / Save PDF
                     </button>
                     <button
                         onClick={() => {

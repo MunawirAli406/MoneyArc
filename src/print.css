@@ -1,0 +1,43 @@
+@media print {
+
+    .no-print,
+    nav,
+    aside,
+    button,
+    [role="button"],
+    .fixed,
+    .sticky {
+        display: none !important;
+    }
+
+    body {
+        background: white !important;
+        color: black !important;
+    }
+
+    /* Expand main content */
+    main,
+    .flex-1 {
+        width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Ensure tables/grids break nicely */
+    table,
+    .grid {
+        break-inside: auto;
+    }
+
+    tr,
+    .card {
+        break-inside: avoid;
+        break-after: auto;
+    }
+
+    /* Force print background colors (for our colored stripes) */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+}
