@@ -1,4 +1,4 @@
-import { Bell, Sun, Moon, Building2, ChevronDown, LogOut, Sparkles, Calculator } from 'lucide-react';
+import { Bell, Sun, Moon, Building2, ChevronDown, LogOut, Sparkles, Calculator, Settings } from 'lucide-react';
 import { useTheme } from '../../features/settings/useTheme';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useState } from 'react';
@@ -91,7 +91,14 @@ export default function Header({ onToggleGemini, onToggleCalculator }: HeaderPro
                     {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
                 </button>
                 <div className="w-px h-6 bg-border mx-1" />
-                <button className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-xl transition-all active:scale-90">
+                <button
+                    onClick={() => navigate('/settings')}
+                    className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-xl transition-all active:scale-90"
+                    title="Settings"
+                >
+                    <Settings className="w-5 h-5" />
+                </button>
+                <button className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-accent rounded-xl transition-all active:scale-90" title="Notifications">
                     <Bell className="w-5 h-5" />
                 </button>
             </div>
