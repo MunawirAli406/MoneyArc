@@ -11,6 +11,7 @@ import LedgerForm from './features/accounting/masters/LedgerForm';
 import VoucherEntry from './features/accounting/vouchers/VoucherEntry';
 import BalanceSheet from './features/reports/BalanceSheet';
 import ProfitAndLoss from './features/reports/ProfitAndLoss';
+import TrialBalance from './features/reports/TrialBalance';
 import GstReport from './features/reports/GstReport';
 import Gstr1Report from './features/reports/Gstr1Report';
 import Gstr3bReport from './features/reports/Gstr3bReport';
@@ -73,6 +74,7 @@ function AppContent() {
         <Route path="vouchers/edit/:id" element={<VoucherEntry />} />
         <Route path="reports/balance-sheet" element={<BalanceSheet />} />
         <Route path="reports/profit-loss" element={<ProfitAndLoss />} />
+        <Route path="reports/trial-balance" element={<TrialBalance />} />
         <Route path="reports/gst" element={<GstReport />} />
         <Route path="reports/gst/r1" element={<Gstr1Report />} />
         <Route path="reports/gst/r3b" element={<Gstr3bReport />} />
