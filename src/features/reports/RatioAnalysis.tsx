@@ -107,8 +107,8 @@ export default function RatioAnalysis() {
                     target: '2.00',
                     desc: 'Ability to pay short-term obligations',
                     icon: ShieldCheck,
-                    color: 'text-accent-500',
-                    bg: 'bg-accent-500/10'
+                    color: 'text-primary',
+                    bg: 'bg-primary/10'
                 },
                 {
                     name: 'Quick Ratio',

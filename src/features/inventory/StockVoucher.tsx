@@ -248,27 +248,27 @@ export default function StockVoucher({ externalSelectedItemId, onItemChange, isE
                 ) : selectedItem ? (
                     <div className="flex flex-col">
                         {/* Summary */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-muted/30 border-b border-border">
-                            <div className="space-y-1">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-muted/10 border-b border-border">
+                            <div className="space-y-1 p-4 rounded-2xl bg-card border border-border shadow-sm">
                                 <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Opening Qty</span>
                                 <div className="font-mono font-bold text-lg text-foreground">
                                     {openingQty.toLocaleString()} <span className="text-xs text-muted-foreground">{getUnitName(selectedItem.unitId)}</span>
                                 </div>
                             </div>
-                            <div className="space-y-1 text-emerald-600">
-                                <span className="text-[10px] uppercase font-black opacity-70 tracking-widest">Total Inwards (+)</span>
+                            <div className="space-y-1 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 shadow-sm text-emerald-600">
+                                <span className="text-[10px] uppercase font-black opacity-70 tracking-widest">Inwards (+)</span>
                                 <div className="font-mono font-bold text-lg">
                                     {totalInward.toLocaleString()}
                                 </div>
                             </div>
-                            <div className="space-y-1 text-rose-600">
-                                <span className="text-[10px] uppercase font-black opacity-70 tracking-widest">Total Outwards (-)</span>
+                            <div className="space-y-1 p-4 rounded-2xl bg-rose-500/5 border border-rose-500/10 shadow-sm text-rose-600">
+                                <span className="text-[10px] uppercase font-black opacity-70 tracking-widest">Outwards (-)</span>
                                 <div className="font-mono font-bold text-lg">
                                     {totalOutward.toLocaleString()}
                                 </div>
                             </div>
-                            <div className="space-y-1">
-                                <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Closing Balance</span>
+                            <div className="space-y-1 p-4 rounded-2xl bg-primary/5 border border-primary/20 shadow-sm amber-glow">
+                                <span className="text-[10px] uppercase font-black text-primary tracking-widest">Closing Balance</span>
                                 <div className="font-mono font-bold text-lg text-primary">
                                     {(openingQty + totalInward - totalOutward).toLocaleString()} <span className="text-xs text-muted-foreground">{getUnitName(selectedItem.unitId)}</span>
                                 </div>

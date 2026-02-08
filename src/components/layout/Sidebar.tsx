@@ -68,7 +68,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                             )}
                         >
-                            <item.icon className={clsx('w-5 h-5 transition-transform group-hover:scale-110', isActive ? 'text-primary-foreground' : 'text-primary/70')} />
+                            <item.icon className={clsx('w-5 h-5 transition-transform group-hover:scale-110', isActive ? 'text-primary-foreground' : 'text-primary')} />
                             <span className="font-semibold text-sm">{item.label}</span>
                         </Link>
                     );

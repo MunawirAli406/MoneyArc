@@ -46,7 +46,7 @@ export default function SignUpPage() {
         <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden font-sans">
             {/* Background Decorative Elements */}
             <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-teal-900/20 rounded-full blur-[120px]" />
+            <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -150,7 +150,7 @@ export default function SignUpPage() {
                                 <button
                                     type="submit"
                                     disabled={isLoadingLocal}
-                                    className="w-full py-5 bg-gradient-to-r from-primary to-teal-600 text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] hover:shadow-2xl hover:shadow-primary/30 active:scale-[0.98] transition-all disabled:opacity-50 mt-4 flex items-center justify-center gap-3"
+                                    className="w-full py-5 bg-gradient-to-r from-primary to-primary/80 text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] hover:shadow-2xl hover:shadow-primary/30 active:scale-[0.98] transition-all disabled:opacity-50 mt-4 flex items-center justify-center gap-3"
                                 >
                                     {isLoadingLocal ? (
                                         <Loader2 className="w-5 h-5 animate-spin" />
@@ -199,7 +199,7 @@ export default function SignUpPage() {
                 </div>
 
                 <p className="text-center mt-8 text-sm text-slate-500 font-medium">
-                    Already registered? <Link to="/login" className="text-primary font-black uppercase tracking-widest text-xs ml-2 hover:text-teal-400 transition-colors">Log in</Link>
+                    Already registered? <Link to="/login" className="text-primary font-black uppercase tracking-widest text-xs ml-2 hover:text-primary/70 transition-colors">Log in</Link>
                 </p>
 
                 <div className="mt-8 pt-8 border-t border-white/5 flex justify-center items-center gap-3">

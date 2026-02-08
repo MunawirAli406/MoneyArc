@@ -50,7 +50,7 @@ export default function LoginPage() {
         <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden">
             {/* Background Decorative Elements */}
             <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-teal-900/20 rounded-full blur-[120px]" />
+            <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
 
             <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -154,7 +154,7 @@ export default function LoginPage() {
                                 <button
                                     type="submit"
                                     disabled={isLoadingLocal}
-                                    className="w-full py-4 bg-gradient-to-r from-primary to-teal-600 text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+                                    className="w-full py-4 bg-gradient-to-r from-primary to-primary/80 text-white rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
                                 >
                                     {isLoadingLocal ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                                         <>
@@ -202,7 +202,7 @@ export default function LoginPage() {
 
                 <div className="mt-8 text-center space-y-4">
                     <p className="text-slate-500 text-sm font-medium">
-                        Need to establish a new vault? <Link to="/signup" className="text-primary font-black hover:text-teal-400 transition-colors uppercase tracking-widest ml-1">Create Account</Link>
+                        Need to establish a new vault? <Link to="/signup" className="text-primary font-black hover:text-primary/70 transition-colors uppercase tracking-widest ml-1">Create Account</Link>
                     </p>
                 </div>
             </motion.div>

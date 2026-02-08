@@ -16,7 +16,7 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [greeting, setGreeting] = useState('');
     const [stats, setStats] = useState([
-        { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: DollarSign, color: 'text-accent-500', bg: 'bg-accent-500/10', sparkData: [] as any[] },
+        { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10', sparkData: [] as any[] },
         { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10', sparkData: [] as any[] },
         { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sparkData: [] as any[] },
         { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', sparkData: [] as any[] },
@@ -144,7 +144,7 @@ export default function Dashboard() {
 
 
             setStats([
-                { label: bTheme.revenueLabel, value: `${activeCompany?.symbol || '₹'}${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-accent-500', bg: 'bg-accent-500/10', sparkData: sparkLines.rev },
+                { label: bTheme.revenueLabel, value: `${activeCompany?.symbol || '₹'}${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10', sparkData: sparkLines.rev },
                 { label: bTheme.expenseLabel, value: `${activeCompany?.symbol || '₹'}${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10', sparkData: sparkLines.exp },
                 { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}${(revenue + closingStockValue - (expenses + openingStockValue)).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sparkData: sparkLines.profit },
                 { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', sparkData: sparkLines.vouchers },
@@ -278,10 +278,10 @@ export default function Dashboard() {
                                         <Area
                                             type="monotone"
                                             dataKey="value"
-                                            stroke={index === 1 ? '#f43f5e' : (index === 0 ? '#06b6d4' : (index === 2 ? '#10b981' : '#8b5cf6'))}
+                                            stroke={index === 1 ? '#f43f5e' : (index === 0 ? '#f59e0b' : (index === 2 ? '#10b981' : '#8b5cf6'))}
                                             strokeWidth={2}
                                             fillOpacity={0.1}
-                                            fill={index === 1 ? '#f43f5e' : (index === 0 ? '#06b6d4' : (index === 2 ? '#10b981' : '#8b5cf6'))}
+                                            fill={index === 1 ? '#f43f5e' : (index === 0 ? '#f59e0b' : (index === 2 ? '#10b981' : '#8b5cf6'))}
                                         />
                                     </AreaChart>
                                 </ResponsiveContainer>
@@ -309,7 +309,7 @@ export default function Dashboard() {
                         </div>
                         <div className="flex gap-4 p-1.5 bg-muted/20 rounded-2xl border border-border/50 backdrop-blur-sm">
                             {[
-                                { label: 'Sales', color: 'bg-accent-500' },
+                                { label: 'Sales', color: 'bg-primary' },
                                 { label: 'Purchases', color: 'bg-rose-500' }
                             ].map(l => (
                                 <div key={l.label} className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/5 transition-colors">
@@ -325,8 +325,8 @@ export default function Dashboard() {
                             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                                     </linearGradient>
                                     <linearGradient id="colorPurchases" x1="0" y1="0" x2="0" y2="1">
                                         <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
@@ -352,7 +352,7 @@ export default function Dashboard() {
                                         padding: '16px'
                                     }}
                                 />
-                                <Area type="monotone" dataKey="sales" stroke="#06b6d4" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
+                                <Area type="monotone" dataKey="sales" stroke="#f59e0b" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
                                 <Area type="monotone" dataKey="purchases" stroke="#f43f5e" strokeWidth={4} fillOpacity={1} fill="url(#colorPurchases)" />
                             </AreaChart>
                         </ResponsiveContainer>
@@ -364,7 +364,7 @@ export default function Dashboard() {
                     <h2 className="text-xl font-black tracking-tight mb-8 uppercase text-muted-foreground/50 border-b border-border/50 pb-4">Command Center</h2>
                     <div className="grid grid-cols-2 gap-4">
                         {[
-                            { label: 'Voucher', icon: Wallet, color: 'text-accent-500', bg: 'bg-accent-500/10', path: '/vouchers/new', desc: 'New Entry' },
+                            { label: 'Voucher', icon: Wallet, color: 'text-primary', bg: 'bg-primary/10', path: '/vouchers/new', desc: 'New Entry' },
                             { label: 'Ratios', icon: Activity, color: 'text-amber-500', bg: 'bg-amber-500/10', path: '/reports/ratios', desc: 'Analysis' },
                             { label: 'Daybook', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-500/10', path: '/reports/daybook', desc: 'Audit' },
                             { label: 'Stock', icon: PieIcon, color: 'text-violet-500', bg: 'bg-violet-500/10', path: '/reports/stock-summary', desc: 'Inventory' },
@@ -397,7 +397,7 @@ export default function Dashboard() {
                             <div className="flex justify-between items-end mb-3">
                                 <div>
                                     <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest">Liquid Ratio</span>
-                                    <span className="text-2xl font-black text-accent-500">{vitals.liquidRatio}</span>
+                                    <span className="text-2xl font-black text-primary">{vitals.liquidRatio}</span>
                                 </div>
                                 <span className={clsx(
                                     "text-[10px] font-black px-2 py-1 rounded-md",
@@ -411,7 +411,7 @@ export default function Dashboard() {
                                 <motion.div
                                     initial={{ width: 0 }}
                                     animate={{ width: `${Math.min(vitals.liquidRatio * 40, 100)}%` }} // 2.5 is 100%
-                                    className="h-full bg-gradient-to-r from-accent-600 to-accent-400 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.5)]"
+                                    className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]"
                                 />
                             </div>
                         </div>
@@ -441,14 +441,14 @@ export default function Dashboard() {
                     {/* Stock Watch List */}
                     <div className="glass-panel rounded-[3rem] p-8 border-primary/10 shadow-xl">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
-                            <PieIcon className="w-4 h-4 text-accent-500" />
+                            <PieIcon className="w-4 h-4 text-primary" />
                             Inventory Watch
                         </h3>
                         <div className="space-y-4">
                             {stockWatch.slice(0, 3).map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/item hover:bg-white/5 p-2 rounded-xl transition-colors">
                                     <span className="text-[10px] font-black uppercase tracking-tight text-foreground/70 truncate max-w-[80px]">{item.name}</span>
-                                    <span className="text-xs font-black tabular-nums text-accent-500">{activeCompany?.symbol || '₹'}{((item.currentBalance || item.openingStock) * (item.currentRate || item.openingRate)).toLocaleString()}</span>
+                                    <span className="text-xs font-black tabular-nums text-primary">{activeCompany?.symbol || '₹'}{((item.currentBalance || item.openingStock) * (item.currentRate || item.openingRate)).toLocaleString()}</span>
                                 </div>
                             ))}
                         </div>

@@ -112,14 +112,14 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                         )}
                         <button
                             onClick={onToggleCalculator}
-                            className="p-2.5 text-muted-foreground hover:text-orange-500 hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
+                            className="p-2.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-90"
                             title="Calculator"
                         >
                             <Calculator className="w-5 h-5" />
                         </button>
                         <button
                             onClick={onToggleGemini}
-                            className="p-2.5 text-muted-foreground hover:text-indigo-500 hover:bg-indigo-500/10 rounded-xl transition-all active:scale-90"
+                            className="p-2.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-90"
                             title="AI Assistant"
                         >
                             <Sparkles className="w-5 h-5" />
@@ -231,7 +231,7 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
                             className="flex items-center gap-3 p-1 pr-3 rounded-[2rem] hover:bg-muted/50 dark:hover:bg-white/5 border border-transparent hover:border-border/50 transition-all active:scale-95"
                         >
-                            <div className="w-10 h-10 rounded-2xl teal-gradient flex items-center justify-center text-white font-bold shadow-lg shadow-primary/10">
+                            <div className="w-10 h-10 rounded-2xl amber-gradient flex items-center justify-center text-white font-bold shadow-lg shadow-primary/10">
                                 {user?.name?.[0] || user?.email?.[0] || 'U'}
                             </div>
                             <div className="text-left hidden lg:block">
@@ -247,7 +247,7 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                                 <div className="absolute top-full right-0 mt-4 w-64 bg-card/90 dark:bg-card/90 backdrop-blur-2xl border border-border dark:border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] overflow-hidden z-20 animate-in fade-in slide-in-from-top-4 duration-300">
                                     <div className="p-6 bg-primary/5 border-b border-border dark:border-white/5">
                                         <div className="flex items-center gap-4 mb-4">
-                                            <div className="w-12 h-12 rounded-2xl teal-gradient flex items-center justify-center text-white text-lg font-black shadow-lg">
+                                            <div className="w-12 h-12 rounded-2xl amber-gradient flex items-center justify-center text-white text-lg font-black shadow-lg">
                                                 {user?.name?.[0] || user?.email?.[0] || 'U'}
                                             </div>
                                             <div>
