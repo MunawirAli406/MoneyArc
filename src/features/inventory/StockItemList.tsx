@@ -3,7 +3,7 @@ import { Plus, Search, Edit2, Trash2, Box, FileText } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import type { StockItem, UnitOfMeasure } from '../../services/inventory/types';
+import type { StockItem, UnitOfMeasure, StockGroup } from '../../services/inventory/types';
 
 interface StockItemListProps {
     onViewTransactions?: (itemId: string) => void;
@@ -13,6 +13,7 @@ export default function StockItemList({ onViewTransactions }: StockItemListProps
     const { provider, activeCompany } = usePersistence();
     const [items, setItems] = useState<StockItem[]>([]);
     const [units, setUnits] = useState<UnitOfMeasure[]>([]);
+    const [groups, setGroups] = useState<StockGroup[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -21,8 +22,10 @@ export default function StockItemList({ onViewTransactions }: StockItemListProps
                 try {
                     const itemData = await provider.read<StockItem[]>('stock_items.json', activeCompany.path);
                     const unitData = await provider.read<UnitOfMeasure[]>('units.json', activeCompany.path);
+                    const groupData = await provider.read<StockGroup[]>('stock_groups.json', activeCompany.path);
                     setItems(itemData || []);
                     setUnits(unitData || []);
+                    setGroups(groupData || []);
                 } catch (error) {
                     console.error('Failed to load stock data:', error);
                 } finally {
@@ -35,6 +38,10 @@ export default function StockItemList({ onViewTransactions }: StockItemListProps
 
     const getUnitName = (unitId: string) => {
         return units.find(u => u.id === unitId)?.name || 'Unit';
+    };
+
+    const getGroupName = (groupId: string) => {
+        return groups.find(g => g.id === groupId)?.name || 'Primary';
     };
 
     const handleDelete = async (id: string) => {
@@ -117,7 +124,7 @@ export default function StockItemList({ onViewTransactions }: StockItemListProps
                                         </td>
                                         <td className="px-4 py-2">
                                             <span className="px-2.5 py-1 rounded-lg bg-muted text-[10px] font-black uppercase tracking-wider text-muted-foreground">
-                                                {item.groupId || 'Primary'}
+                                                {getGroupName(item.groupId)}
                                             </span>
                                         </td>
                                         <td className="px-4 py-2">
