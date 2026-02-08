@@ -69,13 +69,19 @@ export default function SignUpPage() {
                     {!provider ? (
                         <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] text-center">
                             <FolderOpen className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse" />
-                            <h4 className="text-white font-bold text-lg mb-2">Target Directory Missing</h4>
-                            <p className="text-slate-400 text-xs mb-8 leading-relaxed">Account data must be anchored to a physical directory. Please initialize your storage vault.</p>
+                            <h4 className="text-white font-bold text-lg mb-2">
+                                {'showDirectoryPicker' in window ? 'Target Directory Missing' : 'Initialize Mobile Storage'}
+                            </h4>
+                            <p className="text-slate-400 text-xs mb-8 leading-relaxed">
+                                {'showDirectoryPicker' in window
+                                    ? 'Account data must be anchored to a physical directory. Please initialize your storage vault.'
+                                    : 'Mobile usage detected. Data will be stored securely in this browser instance and cannot be accessed externally.'}
+                            </p>
                             <button
                                 onClick={handleSelectDir}
                                 className="w-full py-4.5 bg-primary text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[10px] hover:shadow-2xl hover:shadow-primary/30 transition-all flex items-center justify-center gap-3 shadow-xl"
                             >
-                                Initialize Vault
+                                {'showDirectoryPicker' in window ? 'Initialize Vault' : 'Initialize Local Storage'}
                                 <ArrowRight className="w-4 h-4" />
                             </button>
                         </div>

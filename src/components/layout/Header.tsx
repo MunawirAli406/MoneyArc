@@ -1,4 +1,4 @@
-import { Bell, Sun, Moon, ChevronDown, LogOut, Sparkles, Calculator, Settings, Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2 } from 'lucide-react';
+import { Bell, Sun, Moon, ChevronDown, LogOut, Sparkles, Calculator, Settings, Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2, Menu } from 'lucide-react';
 import { useTheme } from '../../features/settings/useTheme';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useAuth } from '../../features/auth/AuthContext.provider';
@@ -10,9 +10,10 @@ import GoToSearch from './GoToSearch';
 interface HeaderProps {
     onToggleGemini: () => void;
     onToggleCalculator: () => void;
+    onMenuToggle: () => void;
 }
 
-export default function Header({ onToggleGemini, onToggleCalculator }: HeaderProps) {
+export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggle }: HeaderProps) {
     const { theme, toggleTheme } = useTheme();
     const { activeCompany, selectCompany } = usePersistence();
     const { user, logout } = useAuth();
@@ -26,6 +27,13 @@ export default function Header({ onToggleGemini, onToggleCalculator }: HeaderPro
     return (
         <header className="h-20 bg-card/60 dark:bg-card/60 backdrop-blur-xl border-b border-border/50 dark:border-white/5 px-8 flex items-center justify-between transition-all duration-500 sticky top-0 z-40">
             <div className="flex items-center gap-12 flex-1">
+                <button
+                    onClick={onMenuToggle}
+                    className="p-2 -ml-2 mr-2 md:hidden text-muted-foreground hover:text-foreground"
+                >
+                    <Menu className="w-6 h-6" />
+                </button>
+
                 {/* Company Switcher */}
                 <div className="relative">
                     <button

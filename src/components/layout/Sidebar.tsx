@@ -22,7 +22,11 @@ const navItems = [
     { icon: FileText, label: 'Audit Trail', path: '/security/audit' },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+    onClose?: () => void;
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
     const location = useLocation();
     const { activeCompany } = usePersistence();
     const { } = useAuth();
@@ -31,7 +35,7 @@ export default function Sidebar() {
     const BusinessIcon = activeCompany?.businessType ? (ICON_MAP[activeCompany.businessType] || Building2) : Building2;
 
     return (
-        <div className="w-64 bg-card border-r border-border flex flex-col transition-colors duration-300 flex-shrink-0">
+        <div className="w-64 h-full bg-card border-r border-border flex flex-col transition-colors duration-300 flex-shrink-0">
             <div className="h-24 flex flex-col justify-center px-6 border-b border-border bg-muted/20">
                 <div className="mb-2">
                     <Logo size={32} />
@@ -56,6 +60,7 @@ export default function Sidebar() {
                         <Link
                             key={item.path}
                             to={item.path}
+                            onClick={onClose}
                             className={clsx(
                                 'flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group',
                                 isActive
