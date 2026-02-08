@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { Trash2, Plus, Save, FileText, Calendar, Tag, AlertTriangle, Package, Keyboard, Box } from 'lucide-react';
+import { Keyboard, Box, Plus, Trash2, FileText, AlertTriangle, Save, Tag, Package } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import { VoucherService, type Voucher, type VoucherRow, type InventoryEntry } from '../../../services/accounting/VoucherService';
 import type { Ledger } from '../../../services/accounting/ReportService';
+import DatePicker from '../../../components/ui/DatePicker';
 import type { StockItem, UnitOfMeasure } from '../../../services/inventory/types';
 import { useNavigate, useParams } from 'react-router-dom';
 import QuickLedgerForm from '../masters/QuickLedgerForm';
@@ -403,16 +404,11 @@ export default function VoucherEntry() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Effective Date</label>
-                                <div className="relative">
-                                    <input
-                                        type="date"
-                                        value={date}
-                                        onChange={(e) => setDate(e.target.value)}
-                                        className="w-full pl-12 pr-5 py-3.5 bg-background border border-border rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm"
-                                    />
-                                    <Calendar className="w-5 h-5 text-primary absolute left-4 top-1/2 -translate-y-1/2" />
-                                </div>
+                                <DatePicker
+                                    label="Effective Date"
+                                    value={date}
+                                    onChange={setDate}
+                                />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Reference / External Doc #</label>
@@ -773,11 +769,11 @@ export default function VoucherEntry() {
                                                             className="w-full bg-background border border-border rounded-lg px-2 py-1 text-[10px] uppercase font-black"
                                                             placeholder="BATCH #"
                                                         />
-                                                        <input
-                                                            type="date"
+                                                        <DatePicker
                                                             value={alloc.expiryDate || ''}
-                                                            onChange={(e) => updateInventoryRow(alloc.id, 'expiryDate', e.target.value)}
-                                                            className="w-full bg-background border border-border rounded-lg px-2 py-1 text-[10px] font-bold"
+                                                            onChange={(date: string) => updateInventoryRow(alloc.id, 'expiryDate', date)}
+                                                            className="w-full"
+                                                            label="Expiry"
                                                         />
                                                     </td>
                                                     <td className="py-4 px-4">

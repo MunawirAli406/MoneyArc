@@ -5,6 +5,7 @@ import type { StockItem, UnitOfMeasure } from '../../services/inventory/types';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { Package, FileDown } from 'lucide-react';
 import { ExportService } from '../../services/reports/ExportService';
+import DatePicker from '../../components/ui/DatePicker';
 
 interface StockVoucherProps {
     externalSelectedItemId?: string;
@@ -210,21 +211,17 @@ export default function StockVoucher({ externalSelectedItemId, onItemChange, isE
                             </select>
                         </div>
                         <div className="space-y-1">
-                            <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Start Date</label>
-                            <input
-                                type="date"
+                            <DatePicker
+                                label="Start Date"
                                 value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full p-2.5 rounded-xl bg-muted/50 border border-border font-medium text-sm outline-none"
+                                onChange={setStartDate}
                             />
                         </div>
                         <div className="space-y-1">
-                            <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">End Date</label>
-                            <input
-                                type="date"
+                            <DatePicker
+                                label="End Date"
                                 value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full p-2.5 rounded-xl bg-muted/50 border border-border font-medium text-sm outline-none"
+                                onChange={setEndDate}
                             />
                         </div>
                     </div>
