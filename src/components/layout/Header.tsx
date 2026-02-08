@@ -1,7 +1,8 @@
-import { Bell, Sun, Moon, ChevronDown, LogOut, Sparkles, Calculator, Settings, Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2, Menu } from 'lucide-react';
+import { Bell, Sun, Moon, ChevronDown, LogOut, Sparkles, Calculator, Settings, Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2, Menu, RefreshCcw } from 'lucide-react';
 import { useTheme } from '../../features/settings/useTheme';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useAuth } from '../../features/auth/AuthContext.provider';
+import { useNotifications } from '../../services/notifications/NotificationContext';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
@@ -15,7 +16,8 @@ interface HeaderProps {
 
 export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggle }: HeaderProps) {
     const { theme, toggleTheme } = useTheme();
-    const { activeCompany, selectCompany } = usePersistence();
+    const { activeCompany, selectCompany, storageType, isSyncing, sync } = usePersistence();
+    const { hasUnread } = useNotifications();
     const { user, logout } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -23,6 +25,11 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
 
     const ICON_MAP: Record<string, any> = { Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2 };
     const BusinessIcon = activeCompany?.businessType ? (ICON_MAP[activeCompany.businessType] || Building2) : Building2;
+
+    const handleSync = async () => {
+        if (isSyncing) return;
+        await sync();
+    };
 
     return (
         <header className="h-20 bg-card/60 dark:bg-card/60 backdrop-blur-xl border-b border-border/50 dark:border-white/5 px-8 flex items-center justify-between transition-all duration-500 sticky top-0 z-40">
@@ -89,6 +96,19 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
             <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
                     <div className="flex items-center gap-1 bg-muted/50 dark:bg-muted/30 p-1.5 rounded-2xl border border-border/50">
+                        {storageType === 'github' && (
+                            <button
+                                onClick={handleSync}
+                                disabled={isSyncing}
+                                className={clsx(
+                                    "p-2.5 rounded-xl transition-all active:scale-90",
+                                    isSyncing ? "text-primary animate-spin" : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                )}
+                                title="Sync with GitHub"
+                            >
+                                <RefreshCcw className="w-5 h-5" />
+                            </button>
+                        )}
                         <button
                             onClick={onToggleCalculator}
                             className="p-2.5 text-muted-foreground hover:text-orange-500 hover:bg-orange-500/10 rounded-xl transition-all active:scale-90"
@@ -122,8 +142,13 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                             <Settings className="w-5 h-5" />
                         </button>
                         <button className="p-3 text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-white/10 rounded-2xl transition-all active:scale-90 relative" title="Notifications">
-                            <Bell className="w-5 h-5" />
-                            <span className="absolute top-3 right-3 w-2 h-2 bg-primary rounded-full ring-2 ring-card" />
+                            <Bell className={clsx("w-5 h-5", isSyncing && "animate-bounce text-primary")} />
+                            {(hasUnread || isSyncing) && (
+                                <span className={clsx(
+                                    "absolute top-3 right-3 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-card",
+                                    isSyncing && "animate-pulse"
+                                )} />
+                            )}
                         </button>
                     </div>
 

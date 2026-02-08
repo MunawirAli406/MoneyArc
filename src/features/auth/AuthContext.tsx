@@ -2,6 +2,7 @@ import { useState, useEffect, type ReactNode } from 'react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { type User, AUTH_KEY } from './types';
 import { AuthContext } from './AuthContext.provider';
+import { AuditService } from '../../services/security/AuditService';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
@@ -14,7 +15,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const savedUser = localStorage.getItem(AUTH_KEY);
             if (savedUser) {
                 console.log('AuthProvider: User found in localStorage.');
-                setUser(JSON.parse(savedUser));
+                const parsedUser = JSON.parse(savedUser);
+                setUser(parsedUser);
+                AuditService.setCurrentUser({ ...parsedUser, name: parsedUser.name || 'User' });
             } else {
                 console.log('AuthProvider: No user in localStorage.');
             }
@@ -50,6 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 const userSafe = { ...foundUser };
                 delete userSafe.password;
                 setUser(userSafe as User);
+                AuditService.setCurrentUser({ ...userSafe, name: userSafe.name || 'User' });
                 localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
             } else {
                 throw new Error('Invalid credentials or user not found in this directory.');
@@ -77,6 +81,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const userSafe = { ...newUser } as User;
             delete userSafe.password;
             setUser(userSafe);
+            AuditService.setCurrentUser({ ...userSafe, name: userSafe.name || 'User' });
             localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
         } finally {
             setIsLoading(false);
@@ -85,6 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = () => {
         setUser(null);
+        AuditService.setCurrentUser(null);
         localStorage.removeItem(AUTH_KEY);
     };
 

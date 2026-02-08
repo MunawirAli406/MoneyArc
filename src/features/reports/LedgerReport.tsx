@@ -5,8 +5,11 @@ import { type Ledger, LedgerReportCalculator, type LedgerReportData } from '../.
 import { type Voucher } from '../../services/accounting/VoucherService';
 import { FileDown, Wallet } from 'lucide-react';
 import PeriodSelector from '../../components/ui/PeriodSelector';
+import Select from '../../components/ui/Select';
 import { useReportDates } from './DateContext';
 
+
+import { useNavigate } from 'react-router-dom';
 
 interface LedgerReportProps {
     externalSelectedLedgerId?: string;
@@ -16,6 +19,7 @@ interface LedgerReportProps {
 
 export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange, isEmbedded }: LedgerReportProps) {
     const { provider, activeCompany } = usePersistence();
+    const navigate = useNavigate();
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
     const [selectedLedgerId, setSelectedLedgerId] = useState<string>(externalSelectedLedgerId || '');
     const [reportData, setReportData] = useState<LedgerReportData | null>(null);
@@ -98,18 +102,20 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                     <div className="flex flex-wrap items-center gap-4">
                         <div className="space-y-1 flex-1 min-w-[240px]">
                             <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Select Ledger</label>
-                            <select
+                            <Select
                                 value={selectedLedgerId}
-                                onChange={(e) => {
-                                    setSelectedLedgerId(e.target.value);
-                                    if (onLedgerChange) onLedgerChange(e.target.value);
+                                onChange={(val) => {
+                                    setSelectedLedgerId(val);
+                                    if (onLedgerChange) onLedgerChange(val);
                                 }}
-                                className="w-full p-2.5 rounded-xl bg-muted/50 border border-border font-medium text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                            >
-                                {ledgers.map(l => (
-                                    <option key={l.id} value={l.id}>{l.name}</option>
-                                ))}
-                            </select>
+                                options={ledgers.map(l => ({
+                                    value: l.id,
+                                    label: l.name,
+                                    description: l.group,
+                                    icon: Wallet
+                                }))}
+                                className="w-full"
+                            />
                         </div>
                         <div className="space-y-1">
                             <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Reporting Period</label>
@@ -199,11 +205,15 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                                         </tr>
                                     ) : (
                                         reportData.rows.map((row, idx) => (
-                                            <tr key={idx} className="group hover:bg-muted/30 transition-colors">
+                                            <tr
+                                                key={idx}
+                                                onClick={() => navigate(`/vouchers/edit/${row.id}`)}
+                                                className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                                            >
                                                 <td className="px-6 py-3 font-medium text-foreground whitespace-nowrap">
                                                     {new Date(row.date).toLocaleDateString()}
                                                 </td>
-                                                <td className="px-6 py-3 font-medium text-foreground/80 group-hover:text-primary transition-colors cursor-pointer">
+                                                <td className="px-6 py-3 font-medium text-foreground/80 group-hover:text-primary transition-colors">
                                                     {row.particulars}
                                                 </td>
                                                 <td className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">

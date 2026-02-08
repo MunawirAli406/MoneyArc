@@ -35,6 +35,8 @@ import { AuthProvider } from './features/auth/AuthContext';
 import { useAuth } from './features/auth/AuthContext.provider';
 import { ThemeProvider } from './features/settings/ThemeContext';
 import { DateProvider } from './features/reports/DateContext';
+import { NotificationProvider } from './services/notifications/NotificationContext';
+import DynamicBackground from './components/layout/DynamicBackground';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -147,19 +149,21 @@ function AppContent() {
 
 function App() {
   return (
-    <PersistenceProvider>
-      <ThemeProvider>
-        <AuthProvider>
-          <DateProvider>
-            <BrowserRouter>
-              <AppContent />
-            </BrowserRouter>
-          </DateProvider>
-        </AuthProvider>
-      </ThemeProvider>
-    </PersistenceProvider>
+    <NotificationProvider>
+      <PersistenceProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <DateProvider>
+              <DynamicBackground />
+              <BrowserRouter>
+                <AppContent />
+              </BrowserRouter>
+            </DateProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </PersistenceProvider>
+    </NotificationProvider>
   );
 }
 
 export default App;
-

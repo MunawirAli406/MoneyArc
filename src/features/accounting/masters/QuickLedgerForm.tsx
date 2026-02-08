@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Wallet } from 'lucide-react';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import { motion } from 'framer-motion';
+import Select from '../../../components/ui/Select';
 import type { Ledger } from '../../../services/accounting/ReportService';
 
 const GROUPS = [
@@ -80,14 +81,17 @@ export default function QuickLedgerForm({ onClose, onSuccess, initialName = '' }
 
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Under Group</label>
-                        <select
+                        <Select
                             value={group}
-                            onChange={e => setGroup(e.target.value)}
-                            className="w-full px-3 py-2 bg-background border border-border rounded-lg font-bold"
-                        >
-                            <option value="">Select Group...</option>
-                            {GROUPS.sort().map(g => <option key={g} value={g}>{g}</option>)}
-                        </select>
+                            onChange={setGroup}
+                            options={GROUPS.sort().map(g => ({
+                                value: g,
+                                label: g,
+                                icon: Wallet
+                            }))}
+                            placeholder="Select Group..."
+                            className="w-full"
+                        />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
@@ -103,14 +107,15 @@ export default function QuickLedgerForm({ onClose, onSuccess, initialName = '' }
                         </div>
                         <div className="space-y-1">
                             <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Type</label>
-                            <select
+                            <Select
                                 value={balanceType}
-                                onChange={e => setBalanceType(e.target.value)}
-                                className="w-full px-3 py-2 bg-background border border-border rounded-lg font-bold"
-                            >
-                                <option value="Dr">Dr</option>
-                                <option value="Cr">Cr</option>
-                            </select>
+                                onChange={setBalanceType}
+                                options={[
+                                    { value: 'Dr', label: 'Dr' },
+                                    { value: 'Cr', label: 'Cr' },
+                                ]}
+                                className="w-full"
+                            />
                         </div>
                     </div>
                 </div>

@@ -103,6 +103,43 @@ export class VoucherService {
         });
     }
 
+    static async getNextVoucherNumber(provider: StorageProvider, voucherType: string, companyPath?: string): Promise<string> {
+        if (!provider) return '1';
+        const vouchers = await provider.read<Voucher[]>('vouchers.json', companyPath) || [];
+
+        // Filter by type
+        const typeVouchers = vouchers.filter(v => v.type === voucherType);
+
+        if (typeVouchers.length === 0) return '1';
+
+        // Sort by ID descending (assuming time-based or incremental IDs) to get the latest
+        typeVouchers.sort((a, b) => b.id.localeCompare(a.id));
+        const lastVoucher = typeVouchers[0];
+
+        // Regex to match "Prefix" + "Suffix Number"
+        // ^(.*?) matches any prefix (non-greedy)
+        // (\d+)$ matches the trailing digits
+        const match = lastVoucher.voucherNo.match(/^(.*?)(\d+)$/);
+
+        if (match) {
+            const prefix = match[1];
+            const numberStr = match[2];
+            const currentNum = parseInt(numberStr);
+            let nextNumStr = (currentNum + 1).toString();
+
+            // Preserve padding (e.g., 005 -> 006)
+            while (nextNumStr.length < numberStr.length) {
+                nextNumStr = "0" + nextNumStr;
+            }
+
+            return `${prefix}${nextNumStr}`;
+        }
+
+        // Fallback: If no trailing number, append "1" (e.g., "INV" -> "INV-1")
+        // Check if it already has a separator?
+        return `${lastVoucher.voucherNo}-1`;
+    }
+
     private static async applyImpact(provider: StorageProvider, voucher: Voucher, multiplier: 1 | -1, companyPath?: string): Promise<void> {
         // 1. Update Ledger Balances
         const ledgers = await provider.read<Ledger[]>('ledgers.json', companyPath) || [];

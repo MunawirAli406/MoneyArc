@@ -5,6 +5,7 @@ import { usePersistence } from '../../../services/persistence/PersistenceContext
 import type { Ledger } from '../../../services/accounting/ReportService';
 import QuickGroupForm, { type CustomGroup } from './QuickGroupForm';
 import QuickCategoryForm, { type CustomCategory } from './QuickCategoryForm';
+import Select from '../../../components/ui/Select';
 import { AccountGroupManager } from '../../../services/accounting/ReportService';
 import { INDIAN_STATES } from '../../../data/indian_states';
 
@@ -192,37 +193,27 @@ export default function LedgerForm() {
                                         <Plus className="w-3 h-3" /> New (Alt+C)
                                     </button>
                                 </div>
-                                <div className="relative">
-                                    <select
-                                        value={formData.group}
-                                        onChange={(e) => {
-                                            const newGroup = e.target.value;
-                                            if (newGroup === 'CREATE_NEW') {
-                                                setShowGroupModal(true);
-                                            } else {
-                                                // Auto-detect Balance Type
-                                                const isAssetOrExpense = AccountGroupManager.isAssetOrExpense(newGroup);
-                                                setFormData({
-                                                    ...formData,
-                                                    group: newGroup,
-                                                    balanceType: isAssetOrExpense ? 'Dr' : 'Cr'
-                                                });
-                                            }
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.altKey && e.key.toLowerCase() === 'c') {
-                                                e.preventDefault();
-                                                setShowGroupModal(true);
-                                            }
-                                        }}
-                                        className="input-premium w-full appearance-none"
-                                    >
-                                        <option value="">Select Group</option>
-                                        <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Group</option>
-                                        <option disabled>──────────</option>
-                                        {availableGroups.map(g => <option key={g} value={g}>{g}</option>)}
-                                    </select>
-                                </div>
+                                <Select
+                                    value={formData.group}
+                                    onChange={(val) => {
+                                        if (val === 'CREATE_NEW') {
+                                            setShowGroupModal(true);
+                                        } else {
+                                            const isAssetOrExpense = AccountGroupManager.isAssetOrExpense(val);
+                                            setFormData({
+                                                ...formData,
+                                                group: val,
+                                                balanceType: isAssetOrExpense ? 'Dr' : 'Cr'
+                                            });
+                                        }
+                                    }}
+                                    options={[
+                                        { value: '', label: 'Select Group' },
+                                        { value: 'CREATE_NEW', label: '+ Create New Group', icon: Plus },
+                                        ...availableGroups.map(g => ({ value: g, label: g }))
+                                    ]}
+                                    className="w-full"
+                                />
                             </div>
                             <div className="space-y-2">
                                 <div className="flex justify-between">
@@ -234,30 +225,22 @@ export default function LedgerForm() {
                                         <Plus className="w-3 h-3" /> New (Alt+C)
                                     </button>
                                 </div>
-                                <div className="relative">
-                                    <select
-                                        value={formData.category}
-                                        onChange={(e) => {
-                                            if (e.target.value === 'CREATE_NEW') {
-                                                setShowCategoryModal(true);
-                                            } else {
-                                                setFormData({ ...formData, category: e.target.value });
-                                            }
-                                        }}
-                                        onKeyDown={(e) => {
-                                            if (e.altKey && e.key.toLowerCase() === 'c') {
-                                                e.preventDefault();
-                                                setShowCategoryModal(true);
-                                            }
-                                        }}
-                                        className="input-premium w-full appearance-none"
-                                    >
-                                        <option value="">Select Category</option>
-                                        <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Category</option>
-                                        <option disabled>──────────</option>
-                                        {availableCategories.map(c => <option key={c} value={c}>{c}</option>)}
-                                    </select>
-                                </div>
+                                <Select
+                                    value={formData.category}
+                                    onChange={(val) => {
+                                        if (val === 'CREATE_NEW') {
+                                            setShowCategoryModal(true);
+                                        } else {
+                                            setFormData({ ...formData, category: val });
+                                        }
+                                    }}
+                                    options={[
+                                        { value: '', label: 'Select Category' },
+                                        { value: 'CREATE_NEW', label: '+ Create New Category', icon: Plus },
+                                        ...availableCategories.map(c => ({ value: c, label: c }))
+                                    ]}
+                                    className="w-full"
+                                />
                             </div>
                         </div>
 
@@ -271,14 +254,15 @@ export default function LedgerForm() {
                                     className="input-premium flex-1"
                                     placeholder="0.00"
                                 />
-                                <select
+                                <Select
                                     value={formData.balanceType}
-                                    onChange={(e) => setFormData({ ...formData, balanceType: e.target.value })}
-                                    className="input-premium w-32 text-center"
-                                >
-                                    <option value="Dr">Debit</option>
-                                    <option value="Cr">Credit</option>
-                                </select>
+                                    onChange={(val) => setFormData({ ...formData, balanceType: val })}
+                                    options={[
+                                        { value: 'Dr', label: 'Debit' },
+                                        { value: 'Cr', label: 'Credit' },
+                                    ]}
+                                    className="w-32"
+                                />
                             </div>
                         </div>
                     </div>
@@ -308,16 +292,15 @@ export default function LedgerForm() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1">Registration State</label>
-                                <select
+                                <Select
                                     value={formData.state}
-                                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
-                                >
-                                    <option value="">Select State</option>
-                                    {INDIAN_STATES.map((state) => (
-                                        <option key={state} value={state}>{state}</option>
-                                    ))}
-                                </select>
+                                    onChange={(val) => setFormData({ ...formData, state: val })}
+                                    options={[
+                                        { value: '', label: 'Select State' },
+                                        ...INDIAN_STATES.map((state) => ({ value: state, label: state }))
+                                    ]}
+                                    className="w-full"
+                                />
                             </div>
                         </div>
                     </div>

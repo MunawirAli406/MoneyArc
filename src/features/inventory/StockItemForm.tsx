@@ -3,6 +3,7 @@ import { Save, Info, Target, Calculator, Plus } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import type { StockItem, UnitOfMeasure, StockGroup } from '../../services/inventory/types';
+import Select from '../../components/ui/Select';
 import QuickStockGroupForm from './QuickStockGroupForm';
 import QuickUnitForm from './QuickUnitForm';
 
@@ -204,25 +205,19 @@ export default function StockItemForm() {
                                         <Plus className="w-3 h-3" /> New (Alt+C)
                                     </button>
                                 </div>
-                                <select
+                                <Select
                                     value={formData.groupId}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'CREATE_NEW') setShowGroupModal(true);
-                                        else setFormData({ ...formData, groupId: e.target.value });
+                                    onChange={(val) => {
+                                        if (val === 'CREATE_NEW') setShowGroupModal(true);
+                                        else setFormData({ ...formData, groupId: val });
                                     }}
-                                    onKeyDown={(e) => {
-                                        if (e.altKey && e.key.toLowerCase() === 'c') {
-                                            e.preventDefault();
-                                            setShowGroupModal(true);
-                                        }
-                                    }}
-                                    className="w-full px-5 py-4 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
-                                >
-                                    <option value="">Primary</option>
-                                    <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Group</option>
-                                    <option disabled>──────────</option>
-                                    {groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                                </select>
+                                    options={[
+                                        { value: '', label: 'Primary' },
+                                        { value: 'CREATE_NEW', label: '+ Create New Group', icon: Plus },
+                                        ...groups.map(g => ({ value: g.id, label: g.name }))
+                                    ]}
+                                    className="w-full"
+                                />
                             </div>
                             <div className="space-y-2">
                                 <div className="flex justify-between">
@@ -235,26 +230,19 @@ export default function StockItemForm() {
                                         <Plus className="w-3 h-3" /> New (Alt+U)
                                     </button>
                                 </div>
-                                <select
-                                    required
+                                <Select
                                     value={formData.unitId}
-                                    onChange={(e) => {
-                                        if (e.target.value === 'CREATE_NEW') setShowUnitModal(true);
-                                        else setFormData({ ...formData, unitId: e.target.value });
+                                    onChange={(val) => {
+                                        if (val === 'CREATE_NEW') setShowUnitModal(true);
+                                        else setFormData({ ...formData, unitId: val });
                                     }}
-                                    onKeyDown={(e) => {
-                                        if (e.altKey && e.key.toLowerCase() === 'u') {
-                                            e.preventDefault();
-                                            setShowUnitModal(true);
-                                        }
-                                    }}
-                                    className="w-full px-5 py-4 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
-                                >
-                                    <option value="">Select Unit</option>
-                                    <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Unit</option>
-                                    <option disabled>──────────</option>
-                                    {units.map(u => <option key={u.id} value={u.id}>{u.name} ({u.formalName})</option>)}
-                                </select>
+                                    options={[
+                                        { value: '', label: 'Select Unit' },
+                                        { value: 'CREATE_NEW', label: '+ Create New Unit', icon: Plus },
+                                        ...units.map(u => ({ value: u.id, label: u.name, description: u.formalName }))
+                                    ]}
+                                    className="w-full"
+                                />
                             </div>
                         </div>
                     </div>
@@ -301,17 +289,18 @@ export default function StockItemForm() {
                         <div className="space-y-6">
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">GST Rate (%)</label>
-                                <select
-                                    value={formData.gstRate}
-                                    onChange={(e) => setFormData({ ...formData, gstRate: parseFloat(e.target.value) || 0 })}
-                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
-                                >
-                                    <option value="0">0% (Exempt)</option>
-                                    <option value="5">5%</option>
-                                    <option value="12">12%</option>
-                                    <option value="18">18%</option>
-                                    <option value="28">28%</option>
-                                </select>
+                                <Select
+                                    value={formData.gstRate.toString()}
+                                    onChange={(val) => setFormData({ ...formData, gstRate: parseFloat(val) || 0 })}
+                                    options={[
+                                        { value: '0', label: '0% (Exempt)' },
+                                        { value: '5', label: '5%' },
+                                        { value: '12', label: '12%' },
+                                        { value: '18', label: '18%' },
+                                        { value: '28', label: '28%' },
+                                    ]}
+                                    className="w-full"
+                                />
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Re-order Level</label>

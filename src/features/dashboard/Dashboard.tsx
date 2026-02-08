@@ -20,10 +20,7 @@ export default function Dashboard() {
         { label: 'Net Profit', value: '₹0.00', change: '0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sparkData: [] as any[] },
         { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', sparkData: [] as any[] },
     ]);
-    const [extraStats, setExtraStats] = useState({
-        netWorth: '₹0.00',
-        cashPosition: '₹0.00'
-    });
+
 
     useEffect(() => {
         const hour = new Date().getHours();
@@ -142,35 +139,7 @@ export default function Dashboard() {
                 return sum + (item.openingStock * item.openingRate);
             }, 0);
 
-            // Asset/Liability Balance Calc for Net Worth
-            let totalAssets = closingStockValue;
-            let totalLiabilities = 0;
-            let cashPosition = 0;
 
-            const ledgerBalances: Record<string, number> = {};
-            ledgers.forEach(l => {
-                ledgerBalances[l.name] = l.balance * (l.type === 'Dr' ? 1 : -1);
-            });
-
-            vouchers.forEach(v => {
-                v.rows.forEach(r => {
-                    const impact = r.type === 'Dr' ? r.debit : -r.credit;
-                    ledgerBalances[r.account] = (ledgerBalances[r.account] || 0) + impact;
-                });
-            });
-
-            ledgers.forEach(l => {
-                const group = l.group;
-                const balance = ledgerBalances[l.name];
-                if (ACCT_GROUPS.ASSETS.includes(group)) {
-                    totalAssets += balance;
-                    if (['Cash-in-hand', 'Bank Accounts'].includes(group)) {
-                        cashPosition += balance;
-                    }
-                } else if (ACCT_GROUPS.LIABILITIES.includes(group)) {
-                    totalLiabilities -= balance; // Liabilities are Credit balance usually
-                }
-            });
 
             setStats([
                 { label: bTheme.revenueLabel, value: `₹${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10', sparkData: sparkLines.rev },
@@ -179,10 +148,7 @@ export default function Dashboard() {
                 { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', sparkData: sparkLines.vouchers },
             ]);
 
-            setExtraStats({
-                netWorth: `₹${(totalAssets - totalLiabilities).toLocaleString()}`,
-                cashPosition: `₹${cashPosition.toLocaleString()}`
-            });
+
 
             const currentMonth = new Date().getMonth();
             const last6Months = [];
@@ -238,19 +204,18 @@ export default function Dashboard() {
                             <p className="text-muted-foreground font-black uppercase tracking-widest text-[10px] bg-muted/30 px-2 py-1 rounded-md">
                                 FY {activeCompany?.financialYear || '2023-24'}
                             </p>
+                            {activeCompany?.gstin && (
+                                <>
+                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
+                                    <p className="text-primary font-black uppercase tracking-widest text-[10px] bg-primary/10 border border-primary/20 px-2 py-1 rounded-md">
+                                        GSTIN: {activeCompany?.gstin}
+                                    </p>
+                                </>
+                            )}
                         </div>
                     </div>
 
-                    <div className="flex gap-4">
-                        <div className="px-8 py-5 glass-card rounded-[2rem] flex flex-col items-center border-emerald-500/20 shadow-emerald-500/5">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 opacity-60">Net Worth</span>
-                            <span className="text-2xl font-black text-emerald-500 tabular-nums">{extraStats.netWorth}</span>
-                        </div>
-                        <div className="px-8 py-5 glass-card rounded-[2rem] flex flex-col items-center border-cyan-500/20 shadow-cyan-500/5">
-                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1 opacity-60">Liquid Cash</span>
-                            <span className="text-2xl font-black text-cyan-500 tabular-nums">{extraStats.cashPosition}</span>
-                        </div>
-                    </div>
+
                 </div>
             </motion.div>
 

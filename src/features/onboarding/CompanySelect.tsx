@@ -3,7 +3,9 @@ import { Building2, Plus, Search, Calendar, ChevronRight, Loader2 } from 'lucide
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../../services/persistence/types';
+import Select from '../../components/ui/Select';
 import { INDIAN_STATES } from '../../data/indian_states';
+import { BACKGROUNDS, BASE_GRADIENT } from '../../components/layout/backgrounds';
 
 export default function CompanySelect() {
     // Verified Dark Mode Support: 2026-02-05
@@ -28,17 +30,20 @@ export default function CompanySelect() {
         registrationType: 'Regular',
         businessType: 'General'
     });
+    const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
 
     const loadCompanies = useCallback(async () => {
         if (!provider) return;
         setIsLoading(true);
+        setError(null);
         try {
             await new Promise<void>((resolve) => { setTimeout(() => { resolve(); }, 800); });
             const list = await provider.listCompanies();
             setCompanies(list);
         } catch (error) {
             console.error("Failed to load companies", error);
+            setError("Failed to load companies. Please retry.");
         } finally {
             setIsLoading(false);
         }
@@ -53,8 +58,13 @@ export default function CompanySelect() {
     }, [provider, loadCompanies, navigate]);
 
     const handleSelect = async (company: Company) => {
-        await selectCompany(company);
-        navigate('/dashboard');
+        try {
+            await selectCompany(company);
+            navigate('/dashboard');
+        } catch (err) {
+            console.error("Failed to select company", err);
+            setError("Failed to select company.");
+        }
     };
 
     const handleEdit = (company: Company) => {
@@ -74,6 +84,7 @@ export default function CompanySelect() {
             businessType: company.businessType || 'General'
         });
         setEditingCompanyId(company.id);
+        setError(null);
         setShowCreateForm(true);
     };
 
@@ -94,6 +105,7 @@ export default function CompanySelect() {
             businessType: 'General'
         });
         setEditingCompanyId(null);
+        setError(null);
         setShowCreateForm(false);
     };
 
@@ -101,6 +113,7 @@ export default function CompanySelect() {
         e.preventDefault();
         if (!provider) return;
         setIsLoading(true);
+        setError(null);
         try {
             if (editingCompanyId) {
                 const companyToEdit = companies.find(c => c.id === editingCompanyId);
@@ -114,6 +127,7 @@ export default function CompanySelect() {
             resetForm();
         } catch (error) {
             console.error("Failed to save company", error);
+            setError((error as Error).message || "Failed to save company");
         } finally {
             setIsLoading(false);
         }
@@ -124,7 +138,15 @@ export default function CompanySelect() {
     );
 
     return (
-        <div className="min-h-screen bg-background p-8">
+        <div className="min-h-screen bg-background p-8 relative isolate">
+            {/* Live Background Preview */}
+            {showCreateForm && (
+                <div
+                    className={`${BASE_GRADIENT} ${BACKGROUNDS[newCompany.businessType || 'General'] || BACKGROUNDS['General']}`}
+                    style={{ zIndex: -10 }}
+                />
+            )}
+
             <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
                     <div>
@@ -229,6 +251,11 @@ export default function CompanySelect() {
                             </button>
                         </div>
                         <form onSubmit={handleCreate} className="p-8 space-y-8">
+                            {error && (
+                                <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-lg text-sm font-bold">
+                                    {error}
+                                </div>
+                            )}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 <div className="space-y-6">
                                     <h3 className="text-xs font-black text-muted-foreground uppercase tracking-widest border-b border-border pb-2">Basic Information</h3>
@@ -247,14 +274,15 @@ export default function CompanySelect() {
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-bold text-foreground mb-1">Financial Year</label>
-                                                <select
+                                                <Select
                                                     value={newCompany.financialYear}
-                                                    onChange={(e) => setNewCompany({ ...newCompany, financialYear: e.target.value })}
-                                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground"
-                                                >
-                                                    <option value="2025-26">2025-26</option>
-                                                    <option value="2024-25">2024-25</option>
-                                                </select>
+                                                    onChange={(val) => setNewCompany({ ...newCompany, financialYear: val })}
+                                                    options={[
+                                                        { value: '2025-26', label: '2025-26' },
+                                                        { value: '2024-25', label: '2024-25' },
+                                                    ]}
+                                                    className="w-full"
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-foreground mb-1">Currency</label>
@@ -284,31 +312,40 @@ export default function CompanySelect() {
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold text-foreground mb-1">Registration Type</label>
-                                            <select
-                                                value={newCompany.registrationType}
-                                                onChange={(e) => setNewCompany({ ...newCompany, registrationType: e.target.value as any })}
-                                                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground"
-                                            >
-                                                <option value="Regular">Regular</option>
-                                                <option value="Composition">Composition</option>
-                                                <option value="Unregistered">Unregistered</option>
-                                            </select>
+                                            <Select
+                                                value={newCompany.registrationType || 'Regular'}
+                                                onChange={(val) => setNewCompany({ ...newCompany, registrationType: val as any })}
+                                                options={[
+                                                    { value: 'Regular', label: 'Regular' },
+                                                    { value: 'Composition', label: 'Composition' },
+                                                    { value: 'Unregistered', label: 'Unregistered' },
+                                                ]}
+                                                className="w-full"
+                                            />
                                         </div>
                                         <div>
                                             <label className="block text-sm font-bold text-foreground mb-1">Business Type</label>
-                                            <select
-                                                value={newCompany.businessType}
-                                                onChange={(e) => setNewCompany({ ...newCompany, businessType: e.target.value as any })}
-                                                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground"
-                                            >
-                                                <option value="General">General Business</option>
-                                                <option value="Hotel">Hotel & Hospitality</option>
-                                                <option value="Automobile">Automobile & Garage</option>
-                                                <option value="Textiles">Textiles & Garments</option>
-                                                <option value="Restaurant">Restaurant & Cafe</option>
-                                                <option value="School">School & Education</option>
-                                                <option value="Hospital">Hospital & Healthcare</option>
-                                            </select>
+                                            <Select
+                                                value={newCompany.businessType || 'General'}
+                                                onChange={(val) => setNewCompany({ ...newCompany, businessType: val as any })}
+                                                options={[
+                                                    { value: 'General', label: 'General Business' },
+                                                    { value: 'Retail', label: 'Retail & Shop' },
+                                                    { value: 'Manufacturing', label: 'Manufacturing & Factory' },
+                                                    { value: 'Service', label: 'Service & Consulting' },
+                                                    { value: 'Hotel', label: 'Hotel & Hospitality' },
+                                                    { value: 'Restaurant', label: 'Restaurant & Cafe' },
+                                                    { value: 'Automobile', label: 'Automobile & Garage' },
+                                                    { value: 'Textiles', label: 'Textiles & Garments' },
+                                                    { value: 'School', label: 'School & Education' },
+                                                    { value: 'Hospital', label: 'Hospital & Healthcare' },
+                                                    { value: 'RealEstate', label: 'Real Estate & Construction' },
+                                                    { value: 'Technology', label: 'Technology & IT' },
+                                                    { value: 'Logistics', label: 'Logistics & Transport' },
+                                                    { value: 'Agriculture', label: 'Agriculture & Farming' },
+                                                ]}
+                                                className="w-full"
+                                            />
                                         </div>
                                     </div>
                                 </div>
@@ -331,16 +368,15 @@ export default function CompanySelect() {
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <label className="block text-sm font-bold text-foreground mb-1">State</label>
-                                                <select
-                                                    value={newCompany.state}
-                                                    onChange={(e) => setNewCompany({ ...newCompany, state: e.target.value })}
-                                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground appearance-none"
-                                                >
-                                                    <option value="">Select State</option>
-                                                    {INDIAN_STATES.map((state) => (
-                                                        <option key={state} value={state}>{state}</option>
-                                                    ))}
-                                                </select>
+                                                <Select
+                                                    value={newCompany.state || ''}
+                                                    onChange={(val) => setNewCompany({ ...newCompany, state: val })}
+                                                    options={[
+                                                        { value: '', label: 'Select State' },
+                                                        ...INDIAN_STATES.map((state) => ({ value: state, label: state }))
+                                                    ]}
+                                                    className="w-full"
+                                                />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-foreground mb-1">Country</label>

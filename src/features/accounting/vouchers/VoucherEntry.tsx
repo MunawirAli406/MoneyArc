@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Keyboard, Box, Plus, Trash2, FileText, AlertTriangle, Save, Tag, Package } from 'lucide-react';
+import { Keyboard, Box, Plus, Trash2, FileText, AlertTriangle, Save, Tag, Package, Coins } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import { VoucherService, type Voucher, type VoucherRow, type InventoryEntry } from '../../../services/accounting/VoucherService';
 import type { Ledger } from '../../../services/accounting/ReportService';
 import DatePicker from '../../../components/ui/DatePicker';
+import Select from '../../../components/ui/Select';
 import type { StockItem, UnitOfMeasure } from '../../../services/inventory/types';
 import { useNavigate, useParams } from 'react-router-dom';
 import QuickLedgerForm from '../masters/QuickLedgerForm';
@@ -82,6 +83,17 @@ export default function VoucherEntry() {
         };
         loadData();
     }, [provider, activeCompany, id]);
+
+    // Auto-numbering Effect
+    useEffect(() => {
+        const fetchNextNumber = async () => {
+            if (provider && activeCompany && !id) {
+                const nextNo = await VoucherService.getNextVoucherNumber(provider, voucherType, activeCompany.path);
+                setVoucherNo(nextNo);
+            }
+        };
+        fetchNextNumber();
+    }, [voucherType, provider, activeCompany, id]);
 
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -424,16 +436,17 @@ export default function VoucherEntry() {
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Currency</label>
-                                    <select
+                                    <Select
                                         value={currency}
-                                        onChange={(e) => setCurrency(e.target.value)}
-                                        className="w-full px-5 py-3.5 bg-background border border-border rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm appearance-none"
-                                    >
-                                        <option value="INR">INR</option>
-                                        <option value="USD">USD</option>
-                                        <option value="EUR">EUR</option>
-                                        <option value="GBP">GBP</option>
-                                    </select>
+                                        onChange={setCurrency}
+                                        options={[
+                                            { value: 'INR', label: 'INR', icon: Coins },
+                                            { value: 'USD', label: 'USD', icon: Coins },
+                                            { value: 'EUR', label: 'EUR', icon: Coins },
+                                            { value: 'GBP', label: 'GBP', icon: Coins },
+                                        ]}
+                                        className="w-full"
+                                    />
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Ex. Rate</label>
@@ -466,14 +479,15 @@ export default function VoucherEntry() {
                                 {rows.map((row) => (
                                     <tr key={row.id} className="group hover:bg-muted/10 transition-colors relative">
                                         <td className="py-0.5 px-2 align-top">
-                                            <select
+                                            <Select
                                                 value={row.type}
-                                                onChange={(e) => updateRow(row.id, 'type', e.target.value)}
-                                                className="w-full bg-transparent font-bold text-sm text-primary outline-none cursor-pointer uppercase py-1"
-                                            >
-                                                <option value="Dr">Dr</option>
-                                                <option value="Cr">Cr</option>
-                                            </select>
+                                                onChange={(val) => updateRow(row.id, 'type', val)}
+                                                options={[
+                                                    { value: 'Dr', label: 'Dr', description: 'Debit' },
+                                                    { value: 'Cr', label: 'Cr', description: 'Credit' },
+                                                ]}
+                                                className="w-20"
+                                            />
                                         </td>
                                         <td className="py-0.5 px-2 relative align-top">
                                             <div className="flex flex-col gap-1">
@@ -515,12 +529,14 @@ export default function VoucherEntry() {
                                                                 .filter(l => {
                                                                     const search = row.account.toLowerCase();
                                                                     if (!l.name.toLowerCase().includes(search)) return false;
-                                                                    if (voucherType === 'Contra') return l.group === 'Bank Accounts' || l.group === 'Cash-in-hand';
-                                                                    if (rows.length === 2 && row.id === rows[0].id && voucherType === 'Payment') return l.group === 'Bank Accounts' || l.group === 'Cash-in-hand'; // First row in payment is Source (Bank/Cash) usually? Tally logic is debatable. Let's keep general.
-                                                                    // Actually Tally allows anything anywhere often, but filters types.
-                                                                    // Let's keep logic simple for now.
-                                                                    if (voucherType === 'Sales' && row.type === 'Cr') return l.group === 'Sales Accounts' || l.group === 'Direct Incomes';
-                                                                    if (voucherType === 'Purchase' && row.type === 'Dr') return l.group === 'Purchase Accounts' || l.group === 'Direct Expenses';
+
+                                                                    // Only maintain Contra restrictions (strictly Bank/Cash)
+                                                                    if (voucherType === 'Contra') {
+                                                                        return l.group === 'Bank Accounts' || l.group === 'Cash-in-hand';
+                                                                    }
+
+                                                                    // Remove restrictive filters for Payment, Sales, Purchase
+                                                                    // to allow for all accounting scenarios (Tax, expenses, etc.)
                                                                     return true;
                                                                 })
                                                                 .map(l => (
@@ -644,7 +660,7 @@ export default function VoucherEntry() {
                                 onChange={(e) => setNarration(e.target.value)}
                                 rows={3}
                                 className="input-premium w-full resize-none min-h-[100px]"
-                                placeholder="Type full transaction ವಿವರ (description)..."
+                                placeholder="Type full transaction description..."
                             />
                         </div>
                         <div className="flex flex-col justify-end gap-6">
@@ -750,16 +766,18 @@ export default function VoucherEntry() {
                                             {tempAllocations.map((alloc) => (
                                                 <tr key={alloc.id} className="hover:bg-muted/5 transition-all">
                                                     <td className="py-4 px-10">
-                                                        <select
+                                                        <Select
                                                             value={alloc.itemId}
-                                                            onChange={(e) => updateInventoryRow(alloc.id, 'itemId', e.target.value)}
-                                                            className="w-full bg-transparent font-bold text-sm outline-none focus:text-primary transition-all appearance-none"
-                                                        >
-                                                            <option value="">Select Stock Item...</option>
-                                                            {stockItems.map(item => (
-                                                                <option key={item.id} value={item.id}>{item.name} ({units.find(u => u.id === item.unitId)?.name})</option>
-                                                            ))}
-                                                        </select>
+                                                            onChange={(val) => updateInventoryRow(alloc.id, 'itemId', val)}
+                                                            placeholder="Select Stock Item..."
+                                                            options={stockItems.map(item => ({
+                                                                value: item.id,
+                                                                label: item.name,
+                                                                description: units.find(u => u.id === item.unitId)?.name || 'Units',
+                                                                icon: Package
+                                                            }))}
+                                                            className="w-full"
+                                                        />
                                                     </td>
                                                     <td className="py-4 px-4 space-y-1">
                                                         <input
@@ -884,12 +902,11 @@ export default function VoucherEntry() {
                     <QuickStockItemForm
                         onClose={() => setShowQuickItem(false)}
                         initialName=""
-                        onSuccess={(itemName, itemId) => {
+                        onSuccess={(_itemName, _itemId) => {
                             // Refresh items
                             if (provider && activeCompany) {
                                 provider.read<StockItem[]>('stock_items.json', activeCompany.path).then(data => setStockItems(data || []));
                             }
-                            console.log('Item created:', itemName, itemId);
                         }}
                     />
                 )

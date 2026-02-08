@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { X, Ruler } from 'lucide-react';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import { motion } from 'framer-motion';
+import Select from '../../../components/ui/Select';
 import type { StockItem, UnitOfMeasure } from '../../../services/inventory/types';
 
 interface QuickStockItemFormProps {
@@ -82,14 +83,18 @@ export default function QuickStockItemForm({ onClose, onSuccess, initialName = '
 
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Unit</label>
-                        <select
+                        <Select
                             value={unitId}
-                            onChange={e => setUnitId(e.target.value)}
-                            className="w-full px-3 py-2 bg-background border border-border rounded-lg font-bold"
-                        >
-                            <option value="">Select Unit...</option>
-                            {units.map(u => <option key={u.id} value={u.id}>{u.name} ({u.formalName})</option>)}
-                        </select>
+                            onChange={setUnitId}
+                            placeholder="Select Unit..."
+                            options={units.map(u => ({
+                                value: u.id,
+                                label: u.name,
+                                description: u.formalName,
+                                icon: Ruler
+                            }))}
+                            className="w-full"
+                        />
                         {units.length === 0 && <p className="text-[10px] text-rose-500">No units found. Create units in Masters first.</p>}
                     </div>
                 </div>

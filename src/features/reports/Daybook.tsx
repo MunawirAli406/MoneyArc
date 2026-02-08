@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { FileDown, Search, Trash2, Edit2, FileText, ChevronRight } from 'lucide-react';
+import { FileDown, Search, Trash2, Edit2, FileText } from 'lucide-react';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { VoucherService } from '../../services/accounting/VoucherService';
 import { useNavigate } from 'react-router-dom';
 import { useReportDates } from './DateContext';
 import LedgerQuickView from './LedgerQuickView';
 import PeriodSelector from '../../components/ui/PeriodSelector';
+import Select from '../../components/ui/Select';
 
 export default function Daybook() {
     const { provider, activeCompany } = usePersistence();
@@ -155,21 +156,21 @@ export default function Daybook() {
                         className="w-full pl-12 pr-4 py-3.5 bg-muted/20 rounded-2xl border-none outline-none font-black text-sm focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50 transition-all"
                     />
                 </div>
-                <div className="relative w-full md:w-auto min-w-[240px]">
-                    <select
+                <div className="w-full md:w-auto min-w-[240px]">
+                    <Select
                         value={typeFilter}
-                        onChange={(e) => setTypeFilter(e.target.value)}
-                        className="w-full pl-5 pr-10 py-3.5 bg-muted/20 rounded-2xl border-none outline-none font-black text-sm uppercase tracking-widest text-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
-                    >
-                        <option value="ALL">All Vouchers</option>
-                        <option value="Sales">Sales</option>
-                        <option value="Purchase">Purchase</option>
-                        <option value="Payment">Payment</option>
-                        <option value="Receipt">Receipt</option>
-                        <option value="Contra">Contra</option>
-                        <option value="Journal">Journal</option>
-                    </select>
-                    <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary rotate-90 pointer-events-none" />
+                        onChange={setTypeFilter}
+                        options={[
+                            { value: 'ALL', label: 'All Vouchers', icon: FileText },
+                            { value: 'Sales', label: 'Sales', icon: FileText },
+                            { value: 'Purchase', label: 'Purchase', icon: FileText },
+                            { value: 'Payment', label: 'Payment', icon: FileText },
+                            { value: 'Receipt', label: 'Receipt', icon: FileText },
+                            { value: 'Contra', label: 'Contra', icon: FileText },
+                            { value: 'Journal', label: 'Journal', icon: FileText },
+                        ]}
+                        className="w-full"
+                    />
                 </div>
                 <button
                     onClick={() => {
@@ -308,7 +309,7 @@ export default function Daybook() {
                                                 <td className="px-8 py-6 text-center">
                                                     <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
                                                         <button
-                                                            onClick={() => navigate(`/vouchers/${v.id}`)}
+                                                            onClick={() => navigate(`/vouchers/edit/${v.id}`)}
                                                             className="p-3 hover:bg-primary/10 text-primary rounded-xl transition-all"
                                                             title="Modify Transaction"
                                                         >

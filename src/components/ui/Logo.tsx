@@ -6,61 +6,133 @@ interface LogoProps {
     showText?: boolean;
 }
 
-export default function Logo({ className = "", size = 40, showText = true }: LogoProps) {
+export default function Logo({ className = "", size = 42, showText = true }: LogoProps) {
+    const nodeRadius = 5;
+    const bridgeStroke = 3;
+
     return (
-        <div className={`flex items-center gap-3 ${className}`}>
-            <motion.div
-                className="relative flex items-center justify-center"
-                initial={{ rotate: -10, opacity: 0 }}
-                animate={{ rotate: 0, opacity: 1 }}
-                whileHover={{ scale: 1.05 }}
-                style={{ width: size, height: size }}
-            >
-                <svg
-                    viewBox="0 0 100 100"
-                    className="w-full h-full"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
+        <div className={`flex items-center gap-4 ${className}`}>
+            <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
+                {/* Background Ambient Glow */}
+                <motion.div
+                    className="absolute inset-[-10%] bg-primary/15 blur-2xl rounded-full"
+                    animate={{
+                        scale: [1, 1.2, 1],
+                        opacity: [0.3, 0.5, 0.3],
+                    }}
+                    transition={{
+                        duration: 4,
+                        repeat: Infinity,
+                        ease: "easeInOut",
+                    }}
+                />
+
+                <motion.div
+                    className="relative w-full h-full flex items-center justify-center"
+                    initial={{ scale: 0.9, opacity: 0 }}
+                    animate={{
+                        scale: [1, 1.02, 1],
+                        opacity: 1
+                    }}
+                    whileHover={{ scale: 1.08 }}
+                    transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 20
+                    }}
                 >
-                    {/* Minimalist Arc Path */}
-                    <motion.path
-                        d="M 25 75 A 35 35 0 1 1 75 75"
-                        stroke="hsl(174 100% 33%)"
-                        strokeWidth="10"
-                        strokeLinecap="round"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: 1 }}
-                        transition={{ duration: 1, ease: "easeInOut" }}
-                    />
+                    <svg
+                        viewBox="0 0 100 100"
+                        className="w-full h-full relative z-10"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                    >
+                        {/* The Nexus Arc (The Bridge) */}
+                        <motion.path
+                            d="M 20 70 C 20 30 80 30 80 70"
+                            stroke="currentColor"
+                            className="text-primary/40"
+                            strokeWidth={bridgeStroke}
+                            strokeLinecap="round"
+                            initial={{ pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ duration: 1, ease: "easeInOut" }}
+                        />
 
-                    {/* Accenting Dot for "Focus" */}
-                    <motion.circle
-                        cx="75"
-                        cy="75"
-                        r="5"
-                        fill="hsl(174 100% 33%)"
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        transition={{ delay: 0.8, duration: 0.4 }}
-                    />
-                </svg>
+                        {/* Interconnected Nodes with Pulse Effect */}
+                        {[
+                            { cx: 20, cy: 70, delay: 0 },
+                            { cx: 50, cy: 35, delay: 0.3 },
+                            { cx: 80, cy: 70, delay: 0.6 }
+                        ].map((node, i) => (
+                            <g key={i}>
+                                {/* Node Glow */}
+                                <motion.circle
+                                    cx={node.cx} cy={node.cy} r={nodeRadius * 2.5}
+                                    fill="currentColor"
+                                    className="text-primary/20"
+                                    animate={{
+                                        scale: [1, 1.4, 1],
+                                        opacity: [0.3, 0.6, 0.3]
+                                    }}
+                                    transition={{
+                                        duration: 2,
+                                        repeat: Infinity,
+                                        delay: node.delay,
+                                        ease: "easeInOut"
+                                    }}
+                                />
+                                {/* Solid Node Core */}
+                                <motion.circle
+                                    cx={node.cx} cy={node.cy} r={nodeRadius}
+                                    fill="white"
+                                    initial={{ scale: 0 }}
+                                    animate={{ scale: 1 }}
+                                    transition={{ delay: node.delay, type: "spring", stiffness: 300 }}
+                                />
+                                {/* Teal Accent ring around core */}
+                                <circle
+                                    cx={node.cx} cy={node.cy} r={nodeRadius + 1}
+                                    stroke="currentColor"
+                                    className="text-primary"
+                                    strokeWidth="1.5"
+                                />
+                            </g>
+                        ))}
 
-                {/* Glow Effect */}
-                <div className="absolute inset-0 bg-primary/20 blur-xl rounded-full -z-10 animate-pulse" />
-            </motion.div>
+                        {/* Connection Lines (Inner Core Bridge) */}
+                        <motion.path
+                            d="M 20 70 L 50 35 L 80 70"
+                            stroke="white"
+                            strokeOpacity="0.15"
+                            strokeWidth="1.5"
+                            initial={{ pathLength: 0 }}
+                            animate={{ pathLength: 1 }}
+                            transition={{ duration: 1.2, delay: 0.8 }}
+                        />
+                    </svg>
+                </motion.div>
+            </div>
 
             {showText && (
                 <motion.div
                     initial={{ x: -10, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
-                    transition={{ delay: 0.3 }}
+                    transition={{ delay: 0.2 }}
+                    className="flex flex-col justify-center items-center text-center select-none"
                 >
-                    <span className="text-xl font-black tracking-tighter text-foreground">
-                        MONEY<span className="text-primary">ARC</span>
-                    </span>
-                    <p className="text-[8px] font-bold tracking-[0.3em] uppercase text-muted-foreground leading-none -mt-0.5">
-                        Enterprise Suite
-                    </p>
+                    <div className="text-2xl font-black tracking-tight text-foreground leading-none flex items-baseline justify-center">
+                        <span>Money</span>
+                        <span className="text-primary ml-0.5">Arc</span>
+                    </div>
+                    <motion.p
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 0.5 }}
+                        className="text-[10px] font-bold tracking-[0.3em] uppercase text-muted-foreground/50 leading-none mt-2"
+                    >
+                        Intelligent Wealth
+                    </motion.p>
                 </motion.div>
             )}
         </div>

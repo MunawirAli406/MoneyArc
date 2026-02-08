@@ -352,6 +352,7 @@ export class ReportService {
 }
 
 export interface LedgerReportRow {
+    id: string;
     date: string;
     voucherNo: string;
     voucherType: string;
@@ -505,6 +506,7 @@ export class LedgerReportCalculator {
             currentRun += change;
 
             reportRows.push({
+                id: v.id,
                 date: v.date,
                 voucherNo: v.voucherNo,
                 voucherType: v.type,

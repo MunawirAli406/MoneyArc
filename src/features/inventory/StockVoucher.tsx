@@ -6,6 +6,7 @@ import type { Voucher } from '../../services/accounting/VoucherService';
 import { Package, FileDown } from 'lucide-react';
 import { ExportService } from '../../services/reports/ExportService';
 import DatePicker from '../../components/ui/DatePicker';
+import Select from '../../components/ui/Select';
 
 interface StockVoucherProps {
     externalSelectedItemId?: string;
@@ -197,18 +198,19 @@ export default function StockVoucher({ externalSelectedItemId, onItemChange, isE
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="space-y-1">
                             <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Select Item</label>
-                            <select
+                            <Select
                                 value={selectedItemId}
-                                onChange={(e) => {
-                                    setSelectedItemId(e.target.value);
-                                    if (onItemChange) onItemChange(e.target.value);
+                                onChange={(val) => {
+                                    setSelectedItemId(val);
+                                    if (onItemChange) onItemChange(val);
                                 }}
-                                className="w-full p-2.5 rounded-xl bg-muted/50 border border-border font-medium text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                            >
-                                {items.map(i => (
-                                    <option key={i.id} value={i.id}>{i.name}</option>
-                                ))}
-                            </select>
+                                options={items.map(i => ({
+                                    value: i.id,
+                                    label: i.name,
+                                    icon: Package
+                                }))}
+                                className="w-full"
+                            />
                         </div>
                         <div className="space-y-1">
                             <DatePicker

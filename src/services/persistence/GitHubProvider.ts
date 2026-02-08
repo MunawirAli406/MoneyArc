@@ -116,4 +116,10 @@ export class GitHubProvider implements StorageProvider {
     async write<T>(_filename: string, _data: T, _companyPath?: string): Promise<void> {
         throw new Error('GitHub provider is read-only. Export your data manually if needed.');
     }
+
+    async sync(): Promise<void> {
+        // Since we use no-store by default, every read is already a "sync".
+        // But we provide this method to allow explicit refresh and UI feedback.
+        await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate work
+    }
 }

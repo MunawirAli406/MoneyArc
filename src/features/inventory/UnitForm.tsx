@@ -3,6 +3,7 @@ import { Save } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import type { UnitOfMeasure } from '../../services/inventory/types';
+import Select from '../../components/ui/Select';
 
 export default function UnitForm() {
     const { id } = useParams();
@@ -153,16 +154,19 @@ export default function UnitForm() {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Base Unit</label>
-                                <select
+                                <Select
                                     value={formData.baseUnitId}
-                                    onChange={(e) => setFormData({ ...formData, baseUnitId: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
-                                >
-                                    <option value="">Select Base Unit</option>
-                                    {units.filter(u => u.id !== id && !u.isCompound).map(u => (
-                                        <option key={u.id} value={u.id}>{u.name} ({u.formalName})</option>
-                                    ))}
-                                </select>
+                                    onChange={(val) => setFormData({ ...formData, baseUnitId: val })}
+                                    options={[
+                                        { value: '', label: 'Select Base Unit' },
+                                        ...units.filter(u => u.id !== id && !u.isCompound).map(u => ({
+                                            value: u.id,
+                                            label: u.name,
+                                            description: u.formalName
+                                        }))
+                                    ]}
+                                    className="w-full"
+                                />
                             </div>
                         </div>
                         <div className="space-y-2">

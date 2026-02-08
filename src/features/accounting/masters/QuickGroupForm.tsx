@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import { motion } from 'framer-motion';
 import { ACCT_GROUPS, AccountGroupManager } from '../../../services/accounting/ReportService';
+import Select from '../../../components/ui/Select';
 
 interface QuickGroupFormProps {
     onClose: () => void;
@@ -85,16 +86,17 @@ export default function QuickGroupForm({ onClose, onSuccess, initialName = '' }:
 
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nature of Group</label>
-                        <select
+                        <Select
                             value={parentType}
-                            onChange={e => setParentType(e.target.value as keyof typeof ACCT_GROUPS)}
-                            className="w-full px-3 py-2 bg-background border border-border rounded-lg font-bold"
-                        >
-                            <option value="ASSETS">Assets</option>
-                            <option value="LIABILITIES">Liabilities</option>
-                            <option value="INCOME">Income</option>
-                            <option value="EXPENSES">Expenses</option>
-                        </select>
+                            onChange={(val) => setParentType(val as keyof typeof ACCT_GROUPS)}
+                            options={[
+                                { value: 'ASSETS', label: 'Assets' },
+                                { value: 'LIABILITIES', label: 'Liabilities' },
+                                { value: 'INCOME', label: 'Income' },
+                                { value: 'EXPENSES', label: 'Expenses' },
+                            ]}
+                            className="w-full"
+                        />
                         <p className="text-[10px] text-muted-foreground mt-1">This determines where the group appears in reports.</p>
                     </div>
                 </div>

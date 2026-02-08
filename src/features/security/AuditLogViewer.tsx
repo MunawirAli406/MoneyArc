@@ -9,6 +9,7 @@ export default function AuditLogViewer() {
     const [logs, setLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('');
+    const [processingClaim, setProcessingClaim] = useState(false);
 
     useEffect(() => {
         const loadLogs = async () => {
@@ -20,6 +21,15 @@ export default function AuditLogViewer() {
         };
         loadLogs();
     }, [provider, activeCompany]);
+
+    const refreshLogs = async () => {
+        if (provider && activeCompany) {
+            setLoading(true);
+            const data = await AuditService.getLogs(provider, activeCompany.path);
+            setLogs(data);
+            setLoading(false);
+        }
+    };
 
     const filteredLogs = logs.filter(l =>
         l.details.toLowerCase().includes(filter.toLowerCase()) ||
@@ -38,17 +48,51 @@ export default function AuditLogViewer() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
                     <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">Audit Trail</h1>
-                    <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-1">System Compliance & Security Logs</p>
+                    <div className="flex items-center gap-2 mt-1">
+                        <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px]">System Compliance & Security Logs</p>
+                        <span className="text-muted-foreground/30">•</span>
+                        <p className="text-primary font-black uppercase tracking-widest text-[10px]">
+                            Logged in as: {AuditService.getCurrentUser()?.name || 'Unknown'}
+                        </p>
+                    </div>
                 </div>
-                <div className="relative group min-w-[300px]">
-                    <Search className="w-4 h-4 text-muted-foreground absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-primary transition-colors" />
-                    <input
-                        type="text"
-                        placeholder="SEARCH LOGS..."
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        className="w-full pl-12 pr-6 py-3.5 bg-card border border-border rounded-2xl text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-primary outline-none transition-all shadow-sm"
-                    />
+                <div className="relative group min-w-[300px] flex items-center gap-2">
+                    <button
+                        onClick={async () => {
+                            if (!provider || !activeCompany) return;
+                            const currentUser = AuditService.getCurrentUser();
+                            if (!currentUser) return;
+
+                            if (confirm(`Update all logs currently marked as "SYSTEM" to show "${currentUser.name}"? This will not affect logs already attributed to other users.`)) {
+                                setProcessingClaim(true);
+                                try {
+                                    await AuditService.updateAllLogsToUser(provider, activeCompany.path, currentUser.name);
+                                    await refreshLogs();
+                                    alert("System logs claimed successfully!");
+                                } catch (e) {
+                                    console.error(e);
+                                    alert("Failed to update logs.");
+                                } finally {
+                                    setProcessingClaim(false);
+                                }
+                            }
+                        }}
+                        disabled={processingClaim}
+                        className="px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-[10px] font-black uppercase tracking-widest transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Claim unattributed (SYSTEM) logs"
+                    >
+                        {processingClaim ? 'Processing...' : 'Claim History'}
+                    </button>
+                    <div className="relative flex-1">
+                        <Search className="w-4 h-4 text-muted-foreground absolute left-4 top-1/2 -translate-y-1/2 group-focus-within:text-primary transition-colors" />
+                        <input
+                            type="text"
+                            placeholder="SEARCH LOGS..."
+                            value={filter}
+                            onChange={(e) => setFilter(e.target.value)}
+                            className="w-full pl-12 pr-6 py-3.5 bg-card border border-border rounded-2xl text-xs font-black uppercase tracking-widest focus:ring-2 focus:ring-primary outline-none transition-all shadow-sm"
+                        />
+                    </div>
                 </div>
             </div>
 
@@ -98,7 +142,7 @@ export default function AuditLogViewer() {
                                     <td className="px-10 py-5 text-right">
                                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-muted/50 rounded-lg text-[10px] font-black uppercase tracking-widest">
                                             <Shield className="w-3 h-3 text-muted-foreground" />
-                                            SYSTEM
+                                            {log.userId || 'SYSTEM'}
                                         </div>
                                     </td>
                                 </tr>

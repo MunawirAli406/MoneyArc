@@ -92,7 +92,7 @@ export default function ShortcutHelp() {
 
                         <div className="mt-8 pt-6 border-t border-border flex justify-center">
                             <p className="text-[10px] font-black text-muted-foreground/40 uppercase tracking-[0.2em] flex items-center gap-2">
-                                Efficiency is Built-in <ArrowRight className="w-3 h-3" /> MoneyArc v1.0
+                                Efficiency is Built-in <ArrowRight className="w-3 h-3" /> MoneyArc v0.0.01
                             </p>
                         </div>
                     </motion.div>

@@ -3,6 +3,7 @@ import { Save, X, Layers } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { motion } from 'framer-motion';
 import type { StockGroup } from '../../services/inventory/types';
+import Select from '../../components/ui/Select';
 
 interface QuickStockGroupFormProps {
     onClose: () => void;
@@ -77,16 +78,15 @@ export default function QuickStockGroupForm({ onClose, onSuccess, initialName = 
 
                     <div className="space-y-1">
                         <label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Parent Group</label>
-                        <select
+                        <Select
                             value={parentGroupId}
-                            onChange={e => setParentGroupId(e.target.value)}
-                            className="w-full px-3 py-2 bg-background border border-border rounded-lg font-bold"
-                        >
-                            <option value="">Primary</option>
-                            {groups.map(g => (
-                                <option key={g.id} value={g.id}>{g.name}</option>
-                            ))}
-                        </select>
+                            onChange={setParentGroupId}
+                            options={[
+                                { value: '', label: 'Primary' },
+                                ...groups.map(g => ({ value: g.id, label: g.name }))
+                            ]}
+                            className="w-full"
+                        />
                     </div>
                 </div>
 

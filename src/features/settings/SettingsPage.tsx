@@ -1,10 +1,12 @@
-import { Moon, Sun, Palette, Bell, Shield, Info } from 'lucide-react';
+import { Moon, Sun, Palette, Bell, Shield, Info, Clock } from 'lucide-react';
 import { useTheme } from './useTheme';
 import { motion } from 'framer-motion';
+import Select from '../../components/ui/Select';
+import { useState } from 'react';
 
 export default function SettingsPage() {
-    const { setTheme } = useTheme();
-    const { theme } = useTheme();
+    const { setTheme, theme } = useTheme();
+    const [sessionTimeout, setSessionTimeout] = useState('30m');
 
     const sections = [
         {
@@ -63,11 +65,16 @@ export default function SettingsPage() {
                     label: 'Session Timeout',
                     description: 'Automatically log out after inactivity.',
                     content: (
-                        <select className="bg-background border border-input rounded-lg px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-primary">
-                            <option>30 Minutes</option>
-                            <option>1 Hour</option>
-                            <option>Never</option>
-                        </select>
+                        <Select
+                            value={sessionTimeout}
+                            onChange={setSessionTimeout}
+                            options={[
+                                { value: '30m', label: '30 Minutes', icon: Clock, description: 'Standard security' },
+                                { value: '1h', label: '1 Hour', icon: Clock, description: 'Flexible focus' },
+                                { value: 'never', label: 'Never', icon: Shield, description: 'High risk' },
+                            ]}
+                            className="w-48"
+                        />
                     )
                 }
             ]
@@ -85,13 +92,11 @@ export default function SettingsPage() {
                 {
                     label: 'Version',
                     description: 'Current build',
-                    content: <span className="font-mono text-sm bg-muted px-2 py-1 rounded">0.00</span>
+                    content: <span className="font-mono text-sm bg-muted px-2 py-1 rounded">0.0.01</span>
                 }
             ]
         }
     ];
-
-
 
     return (
         <motion.div
@@ -99,7 +104,6 @@ export default function SettingsPage() {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-4xl mx-auto space-y-8 pb-12"
         >
-            {/* Header ... */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
                 <p className="text-muted-foreground mt-1">Manage your application preferences and account settings.</p>

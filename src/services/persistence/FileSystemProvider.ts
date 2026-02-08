@@ -72,9 +72,11 @@ export class FileSystemProvider implements StorageProvider {
         const companies: Company[] = [];
 
         if (this.isVirtual) {
+            console.log('FileSystemProvider: Listing companies from Virtual FS');
             // Virtual FS: Scan IDB keys for company.json files
             // Format: moneyarc_vfs_{companyPath}_company.json
             const allKeys = await keys();
+            console.log('FileSystemProvider: Found IDB keys:', allKeys);
             for (const key of allKeys) {
                 if (typeof key === 'string' && key.startsWith(VIRTUAL_FS_PREFIX) && key.endsWith('company.json')) {
                     try {
@@ -90,6 +92,7 @@ export class FileSystemProvider implements StorageProvider {
                     }
                 }
             }
+            console.log('FileSystemProvider: Parsed companies:', companies);
         } else {
             // Native FS
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -126,9 +129,11 @@ export class FileSystemProvider implements StorageProvider {
         };
 
         if (this.isVirtual) {
+            console.log('FileSystemProvider: Creating company in Virtual FS:', companyData);
             // Virtual FS: Write to IDB
             const key = `${VIRTUAL_FS_PREFIX}${folderName}_company.json`;
             await set(key, JSON.stringify(companyData, null, 2));
+            console.log('FileSystemProvider: Company saved to IDB key:', key);
         } else {
             // Native FS
             if (!this.dirHandle) throw new Error("Native handle missing");

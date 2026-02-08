@@ -3,6 +3,7 @@ import { Save, Layers } from 'lucide-react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import type { StockGroup } from '../../services/inventory/types';
+import Select from '../../components/ui/Select';
 
 export default function StockGroupForm() {
     const { id } = useParams();
@@ -100,16 +101,15 @@ export default function StockGroupForm() {
                     </div>
                     <div className="space-y-2">
                         <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Parent Group (Optional)</label>
-                        <select
+                        <Select
                             value={formData.parentGroupId}
-                            onChange={(e) => setFormData({ ...formData, parentGroupId: e.target.value })}
-                            className="w-full px-5 py-4 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
-                        >
-                            <option value="">Primary</option>
-                            {groups.filter(g => g.id !== id).map(g => (
-                                <option key={g.id} value={g.id}>{g.name}</option>
-                            ))}
-                        </select>
+                            onChange={(val) => setFormData({ ...formData, parentGroupId: val })}
+                            options={[
+                                { value: '', label: 'Primary' },
+                                ...groups.filter(g => g.id !== id).map(g => ({ value: g.id, label: g.name }))
+                            ]}
+                            className="w-full"
+                        />
                     </div>
                 </div>
 

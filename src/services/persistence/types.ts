@@ -13,7 +13,7 @@ export interface Company {
     currency: string;
     symbol: string;
     registrationType?: 'Regular' | 'Composition' | 'Unregistered';
-    businessType?: 'General' | 'Hotel' | 'Automobile' | 'Textiles' | 'Restaurant' | 'School' | 'Hospital';
+    businessType?: 'General' | 'Hotel' | 'Automobile' | 'Textiles' | 'Restaurant' | 'School' | 'Hospital' | 'Retail' | 'Manufacturing' | 'Service' | 'RealEstate' | 'Technology' | 'Logistics' | 'Agriculture';
 }
 
 export interface StorageProvider {
@@ -46,6 +46,11 @@ export interface StorageProvider {
      * Write data to a file
      */
     write<T>(filename: string, data: T, companyPath?: string): Promise<void>;
+
+    /**
+     * Optional sync method for remote providers
+     */
+    sync?(): Promise<void>;
 
     /**
      * Check if storage is ready
