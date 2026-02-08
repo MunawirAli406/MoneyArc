@@ -9,6 +9,11 @@ All notable changes to the **MoneyArc** project will be documented in this file.
 - **Theme-Aware Dashboard Charts**: Financial Trends and Expense Distribution charts now dynamically adapt to Light and Dark modes.
 - **Glassmorphism Refinement**: Refactored `.glass-panel` and `.glass-card` utilities for better contrast and theme scaling.
 
+### 🚀 Added
+- **Mobile Responsiveness**: Implemented a collapsible sidebar drawer and mobile header menu for smaller screens.
+- **Offline Mobile Support**: Added a virtual file system fallback (IndexedDB) for mobile devices where the File System Access API is unavailable.
+- **Improved Navigation**: Navigation sidebar now automatically closes on selection in mobile view.
+
 ### 🛠️ Changed
 - **Branding Refresh**: Updated the Logo and user profile gradients to use the refined Teal (`hsl(174 100% 33%)`).
 - **Sidebar Persistence**: Added `flex-shrink-0` to the navigation sidebar to ensure layout stability across different viewport sizes.
