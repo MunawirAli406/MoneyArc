@@ -85,7 +85,7 @@ export default function Gstr3bReport() {
             </div>      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="bg-card p-8 rounded-[2.5rem] border border-border shadow-xl">
                     <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Total Outward Tax</p>
-                    <p className="text-3xl font-black text-cyan-500">{activeCompany?.symbol || '₹'}{outwardTax.toLocaleString()}</p>
+                    <p className="text-3xl font-black text-accent-500">{activeCompany?.symbol || '₹'}{outwardTax.toLocaleString()}</p>
                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-muted-foreground">
                         <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
                         Liability

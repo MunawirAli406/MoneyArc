@@ -170,7 +170,7 @@ export default function ProfitAndLoss() {
 
                     {/* Income Side */}
                     <div className="flex flex-col">
-                        <div className="p-6 bg-muted/30 border-b border-border font-black text-cyan-500 uppercase text-[10px] tracking-[0.2em] text-center">
+                        <div className="p-6 bg-muted/30 border-b border-border font-black text-accent-500 uppercase text-[10px] tracking-[0.2em] text-center">
                             Revenue & Income
                         </div>
                         <div className="p-8 space-y-8 flex-1">
@@ -183,9 +183,9 @@ export default function ProfitAndLoss() {
                                         >
                                             <div className="flex items-center gap-3">
                                                 {expandedGroups.has(group.groupName) ? (
-                                                    <ChevronDown className="w-4 h-4 text-cyan-500" />
+                                                    <ChevronDown className="w-4 h-4 text-accent-500" />
                                                 ) : (
-                                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-cyan-500 transition-colors" />
+                                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-accent-500 transition-colors" />
                                                 )}
                                                 <span className="text-sm font-black text-foreground uppercase tracking-tight">{group.groupName}</span>
                                             </div>
@@ -198,7 +198,7 @@ export default function ProfitAndLoss() {
                                                     initial={{ height: 0, opacity: 0 }}
                                                     animate={{ height: 'auto', opacity: 1 }}
                                                     exit={{ height: 0, opacity: 0 }}
-                                                    className="overflow-hidden space-y-1 border-l-2 border-cyan-500/20 pl-4 ml-2"
+                                                    className="overflow-hidden space-y-1 border-l-2 border-accent-500/20 pl-4 ml-2"
                                                 >
                                                     {group.ledgers.map(l => (
                                                         <div key={l.id} className="flex justify-between items-center text-xs font-bold text-muted-foreground/80 hover:text-foreground transition-colors py-1">
@@ -218,7 +218,7 @@ export default function ProfitAndLoss() {
                             {closingStock > 0 && (
                                 <div className="p-2 -mx-2">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm font-black text-foreground uppercase tracking-tight hover:text-cyan-500 transition-colors">Closing Stock</span>
+                                        <span className="text-sm font-black text-foreground uppercase tracking-tight hover:text-accent-500 transition-colors">Closing Stock</span>
                                         <span className="font-mono font-black text-foreground text-base">{activeCompany?.symbol || '₹'}{closingStock.toLocaleString()}</span>
                                     </div>
                                 </div>

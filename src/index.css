@@ -7,52 +7,54 @@
 
 @layer base {
   :root {
-    /* Refined Teal & Charcoal Palette - Light Mode */
-    --primary: 174 100% 33%;
-    /* Vibrant, Premium Teal */
+    /* Amber, Teal & Gray Palette - Light Mode */
+    --primary: 38 92% 50%;
+    /* Vibrant Amber */
     --primary-foreground: 0 0% 100%;
 
     --background: 210 20% 98%;
-    /* Clean, almost white background */
-    --foreground: 222 47% 11%;
-    /* Charcoal Gray foreground */
+    /* Light Gray Base */
+    --foreground: 215 25% 15%;
+    /* Dark Gray Text */
 
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 215 25% 15%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 25% 45%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
 
-    --accent: 174 100% 95%;
-    --accent-foreground: 174 100% 33%;
+    --accent: 174 100% 33%;
+    /* Premium Teal Accent */
+    --accent-foreground: 0 0% 100%;
 
     --radius: 0.75rem;
   }
 
   .dark {
-    --primary: 174 100% 40%;
-    /* Slightly brighter Teal for Dark Mode */
+    --primary: 45 93% 47%;
+    /* Brighter Amber for Dark Mode */
     --primary-foreground: 0 0% 100%;
 
-    --background: 222 47% 6%;
-    /* Deeper Charcoal Background */
+    --background: 220 30% 6%;
+    /* Deep Gray-Black Background */
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 10%;
-    /* Smooth Charcoal Card */
+    --card: 220 30% 10%;
+    /* Deep Gray Card */
     --card-foreground: 210 40% 98%;
 
-    --border: 222 47% 15%;
-    --input: 222 47% 15%;
+    --border: 220 30% 15%;
+    --input: 220 30% 15%;
 
-    --muted: 222 47% 12%;
+    --muted: 220 30% 12%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 174 100% 15%;
-    --accent-foreground: 174 100% 90%;
+    --accent: 174 100% 40%;
+    /* Brighter Teal Accent */
+    --accent-foreground: 0 0% 100%;
   }
 }
 
@@ -67,7 +69,7 @@
   }
 }
 
-/* Custom Scrollbar for a premium feel */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -86,11 +88,15 @@
   @apply bg-card/70 dark:bg-card/40 backdrop-blur-md border border-border/20 dark:border-white/10;
 }
 
-.teal-gradient {
+.amber-gradient {
   background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
 }
 
-.cyan-glow {
+.teal-gradient {
+  background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent) / 0.8) 100%);
+}
+
+.amber-glow {
   box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
 }
 
@@ -133,11 +139,11 @@
   .mesh-gradient {
     @apply bg-background transition-colors duration-700;
     background-image:
-      radial-gradient(at 0% 0%, hsla(174, 100%, 33%, 0.1) 0px, transparent 50%),
-      radial-gradient(at 50% 0%, hsla(222, 47%, 11%, 0.1) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(174, 100%, 33%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 0%, hsla(38, 92%, 50%, 0.08) 0px, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(174, 100%, 33%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(38, 92%, 50%, 0.08) 0px, transparent 50%),
       radial-gradient(at 0% 100%, hsla(174, 100%, 33%, 0.05) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(222, 47%, 11%, 0.05) 0px, transparent 50%);
+      radial-gradient(at 100% 100%, hsla(38, 92%, 50%, 0.05) 0px, transparent 50%);
     background-attachment: fixed;
   }
 

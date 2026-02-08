@@ -86,7 +86,7 @@ export default function StockSummary() {
                     </div>
                 </div>
                 <div className="bg-card p-6 rounded-3xl border border-border shadow-sm flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center text-cyan-500">
+                    <div className="w-12 h-12 rounded-2xl bg-accent-500/10 flex items-center justify-center text-accent-500">
                         <ArrowUpRight className="w-6 h-6" />
                     </div>
                     <div>

@@ -128,7 +128,7 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
                                             </span>
                                         </td>
                                         <td className="px-4 py-2 text-right font-mono font-bold">
-                                            <span className={ledger.type === 'Cr' ? 'text-rose-500' : 'text-cyan-500'}>
+                                            <span className={ledger.type === 'Cr' ? 'text-rose-500' : 'text-accent-500'}>
                                                 {ledger.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {ledger.type}
                                             </span>
                                         </td>
@@ -137,7 +137,7 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
                                                 {onViewTransactions && (
                                                     <button
                                                         onClick={() => onViewTransactions(ledger.id)}
-                                                        className="p-2 text-muted-foreground hover:text-cyan-500 hover:bg-cyan-500/10 rounded-lg transition-colors"
+                                                        className="p-2 text-muted-foreground hover:text-accent-500 hover:bg-accent-500/10 rounded-lg transition-colors"
                                                         title="View Vouchers"
                                                     >
                                                         <FileText className="w-4 h-4" />

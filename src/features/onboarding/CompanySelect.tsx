@@ -225,7 +225,7 @@ export default function CompanySelect() {
                                                 <div className="px-2 py-0.5 bg-primary/10 rounded text-[10px] font-bold uppercase tracking-wider text-primary whitespace-nowrap">
                                                     {company.businessType || 'General'}
                                                 </div>
-                                                <div className="px-2 py-0.5 bg-cyan-500/10 rounded text-[10px] font-black tracking-wider text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
+                                                <div className="px-2 py-0.5 bg-accent-500/10 rounded text-[10px] font-black tracking-wider text-accent-600 dark:text-accent-400 whitespace-nowrap">
                                                     {company.currency} ({company.symbol})
                                                 </div>
                                             </div>

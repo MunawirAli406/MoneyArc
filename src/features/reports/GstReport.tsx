@@ -152,7 +152,7 @@ export default function GstReport() {
                 <div className="p-8 border-b border-border bg-muted/20 flex items-center justify-between">
                     <h2 className="text-sm font-black uppercase tracking-widest text-foreground">Tax Component Breakup</h2>
                     <div className="flex gap-2">
-                        <span className="px-3 py-1 bg-cyan-500/10 text-cyan-500 text-[10px] font-bold rounded-full uppercase tracking-widest">ITC Verified</span>
+                        <span className="px-3 py-1 bg-accent-500/10 text-accent-500 text-[10px] font-bold rounded-full uppercase tracking-widest">ITC Verified</span>
                     </div>
                 </div>
                 <div className="p-8">
