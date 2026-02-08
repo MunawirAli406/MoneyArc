@@ -153,8 +153,8 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                                             <div className="text-[9px] text-muted-foreground font-bold mt-1">BATCH: {(item as any).batchNo || '-'} // EXP: {(item as any).expiryDate || '-'}</div>
                                         </td>
                                         <td className="py-6 text-right font-bold text-foreground">{(item as any).quantity}</td>
-                                        <td className="py-6 text-right font-bold text-foreground">₹{(item as any).rate.toLocaleString()}</td>
-                                        <td className="py-6 text-right font-black text-foreground">₹{(item as any).amount.toLocaleString()}</td>
+                                        <td className="py-6 text-right font-bold text-foreground">{company.symbol || '₹'}{(item as any).rate.toLocaleString()}</td>
+                                        <td className="py-6 text-right font-black text-foreground">{company.symbol || '₹'}{(item as any).amount.toLocaleString()}</td>
                                     </tr>
                                 ))
                             ) : (
@@ -166,7 +166,7 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                                             <div className="text-[9px] text-muted-foreground font-bold mt-1 uppercase tracking-wider">{row.type === 'Dr' ? 'Debit' : 'Credit'}</div>
                                         </td>
                                         {/* Empty cells for Qty/Rate if generic table structure used, but we are conditionally rendering headers, so no need */}
-                                        <td className="py-6 text-right font-black text-foreground">₹{(row.type === 'Dr' ? row.debit : row.credit).toLocaleString()}</td>
+                                        <td className="py-6 text-right font-black text-foreground">{company.symbol || '₹'}{(row.type === 'Dr' ? row.debit : row.credit).toLocaleString()}</td>
                                     </tr>
                                 ))
                             )}
@@ -181,24 +181,24 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                                 <>
                                     <div className="flex justify-between text-sm">
                                         <span className="font-bold text-muted-foreground uppercase tracking-widest">Taxable Value</span>
-                                        <span className="font-black text-foreground">₹{taxableValue.toLocaleString()}</span>
+                                        <span className="font-black text-foreground">{company.symbol || '₹'}{taxableValue.toLocaleString()}</span>
                                     </div>
                                     {cgst > 0 && (
                                         <div className="flex justify-between text-sm">
                                             <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">CGST</span>
-                                            <span className="font-black text-foreground">₹{cgst.toLocaleString()}</span>
+                                            <span className="font-black text-foreground">{company.symbol || '₹'}{cgst.toLocaleString()}</span>
                                         </div>
                                     )}
                                     {sgst > 0 && (
                                         <div className="flex justify-between text-sm">
                                             <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">SGST</span>
-                                            <span className="font-black text-foreground">₹{sgst.toLocaleString()}</span>
+                                            <span className="font-black text-foreground">{company.symbol || '₹'}{sgst.toLocaleString()}</span>
                                         </div>
                                     )}
                                     {igst > 0 && (
                                         <div className="flex justify-between text-sm">
                                             <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">IGST</span>
-                                            <span className="font-black text-foreground">₹{igst.toLocaleString()}</span>
+                                            <span className="font-black text-foreground">{company.symbol || '₹'}{igst.toLocaleString()}</span>
                                         </div>
                                     )}
                                 </>
@@ -206,7 +206,7 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
 
                             <div className="flex justify-between items-center pt-4 border-t-2 border-foreground">
                                 <span className="text-sm font-black uppercase tracking-widest text-foreground">Total Amount</span>
-                                <span className="text-2xl font-black text-foreground tracking-tighter">₹{totalAmount.toLocaleString()}</span>
+                                <span className="text-2xl font-black text-foreground tracking-tighter">{company.symbol || '₹'}{totalAmount.toLocaleString()}</span>
                             </div>
                         </div>
                     </div>

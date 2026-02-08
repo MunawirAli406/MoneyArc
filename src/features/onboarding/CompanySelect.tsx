@@ -6,10 +6,11 @@ import type { Company } from '../../services/persistence/types';
 import Select from '../../components/ui/Select';
 import { INDIAN_STATES } from '../../data/indian_states';
 import { BACKGROUNDS, BASE_GRADIENT } from '../../components/layout/backgrounds';
+import { CURRENCIES } from '../../data/currencies';
 
 export default function CompanySelect() {
     // Verified Dark Mode Support: 2026-02-05
-    const { provider, selectCompany } = usePersistence();
+    const { provider, selectCompany, activeCompany } = usePersistence();
     const [companies, setCompanies] = useState<Company[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -118,7 +119,10 @@ export default function CompanySelect() {
             if (editingCompanyId) {
                 const companyToEdit = companies.find(c => c.id === editingCompanyId);
                 if (companyToEdit) {
-                    await provider.updateCompany(editingCompanyId, companyToEdit.path, newCompany);
+                    const updated = await provider.updateCompany(editingCompanyId, companyToEdit.path, newCompany);
+                    if (activeCompany?.id === editingCompanyId) {
+                        await selectCompany(updated);
+                    }
                 }
             } else {
                 await provider.createCompany(newCompany);
@@ -208,18 +212,21 @@ export default function CompanySelect() {
                                                 <ChevronRight className="text-muted-foreground group-hover:translate-x-1 transition-transform" />
                                             </div>
                                             <h3 className="text-lg font-bold text-foreground mb-1">{company.name}</h3>
-                                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pr-24">
                                                 <div className="flex items-center gap-1">
                                                     <Calendar size={14} />
                                                     {company.financialYear}
                                                 </div>
                                                 {company.gstin && (
-                                                    <div className="px-2 py-0.5 bg-muted rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                                    <div className="px-2 py-0.5 bg-muted rounded text-[10px] font-bold uppercase tracking-wider text-muted-foreground whitespace-nowrap">
                                                         GST: {company.gstin}
                                                     </div>
                                                 )}
-                                                <div className="px-2 py-0.5 bg-primary/10 rounded text-[10px] font-bold uppercase tracking-wider text-primary">
+                                                <div className="px-2 py-0.5 bg-primary/10 rounded text-[10px] font-bold uppercase tracking-wider text-primary whitespace-nowrap">
                                                     {company.businessType || 'General'}
+                                                </div>
+                                                <div className="px-2 py-0.5 bg-cyan-500/10 rounded text-[10px] font-black tracking-wider text-cyan-600 dark:text-cyan-400 whitespace-nowrap">
+                                                    {company.currency} ({company.symbol})
                                                 </div>
                                             </div>
                                         </div>
@@ -286,11 +293,18 @@ export default function CompanySelect() {
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-foreground mb-1">Currency</label>
-                                                <input
-                                                    type="text"
+                                                <Select
                                                     value={newCompany.currency}
-                                                    onChange={(e) => setNewCompany({ ...newCompany, currency: e.target.value })}
-                                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground"
+                                                    onChange={(val) => {
+                                                        const currency = CURRENCIES.find(c => c.code === val);
+                                                        setNewCompany({
+                                                            ...newCompany,
+                                                            currency: val,
+                                                            symbol: currency?.symbol || '₹'
+                                                        });
+                                                    }}
+                                                    options={CURRENCIES.map(c => ({ value: c.code, label: c.label }))}
+                                                    className="w-full"
                                                 />
                                             </div>
                                         </div>

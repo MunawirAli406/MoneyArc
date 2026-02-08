@@ -149,25 +149,25 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                             <div className="space-y-1">
                                 <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Opening Balance</span>
                                 <div className="font-mono font-bold text-lg text-foreground">
-                                    {reportData.openingBalance.toLocaleString()} <span className="text-xs text-muted-foreground">{reportData.openingBalanceType}</span>
+                                    {activeCompany?.symbol || '₹'}{reportData.openingBalance.toLocaleString()} <span className="text-xs text-muted-foreground">{reportData.openingBalanceType}</span>
                                 </div>
                             </div>
                             <div className="space-y-1">
                                 <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Total Debits</span>
                                 <div className="font-mono font-bold text-lg text-foreground">
-                                    {reportData.totalDebit.toLocaleString()}
+                                    {activeCompany?.symbol || '₹'}{reportData.totalDebit.toLocaleString()}
                                 </div>
                             </div>
                             <div className="space-y-1">
                                 <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Total Credits</span>
                                 <div className="font-mono font-bold text-lg text-foreground">
-                                    {reportData.totalCredit.toLocaleString()}
+                                    {activeCompany?.symbol || '₹'}{reportData.totalCredit.toLocaleString()}
                                 </div>
                             </div>
                             <div className="space-y-1">
                                 <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Closing Balance</span>
                                 <div className={`font-mono font-bold text-lg ${reportData.closingBalanceType === 'Dr' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                    {reportData.closingBalance.toLocaleString()} <span className="text-xs">{reportData.closingBalanceType}</span>
+                                    {activeCompany?.symbol || '₹'}{reportData.closingBalance.toLocaleString()} <span className="text-xs">{reportData.closingBalanceType}</span>
                                 </div>
                             </div>
                         </div>
@@ -180,9 +180,9 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                                         <th className="px-6 py-4">Date</th>
                                         <th className="px-6 py-4 w-1/3">Particulars</th>
                                         <th className="px-6 py-4">Vch Type</th>
-                                        <th className="px-6 py-4 text-right">Debit</th>
-                                        <th className="px-6 py-4 text-right">Credit</th>
-                                        <th className="px-6 py-4 text-right">Balance</th>
+                                        <th className="px-6 py-4 text-right">Debit ({activeCompany?.symbol || '₹'})</th>
+                                        <th className="px-6 py-4 text-right">Credit ({activeCompany?.symbol || '₹'})</th>
+                                        <th className="px-6 py-4 text-right">Balance ({activeCompany?.symbol || '₹'})</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
@@ -234,8 +234,8 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                                     {/* Footer Total Row */}
                                     <tr className="bg-muted/20 font-black border-t-2 border-border text-foreground">
                                         <td className="px-6 py-4" colSpan={3}>Total</td>
-                                        <td className="px-6 py-4 font-mono text-right">{reportData.totalDebit.toLocaleString()}</td>
-                                        <td className="px-6 py-4 font-mono text-right">{reportData.totalCredit.toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-right font-mono">{activeCompany?.symbol || '₹'}{reportData.totalDebit.toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-right font-mono">{activeCompany?.symbol || '₹'}{reportData.totalCredit.toLocaleString()}</td>
                                         <td className="px-6 py-4"></td>
                                     </tr>
                                 </tbody>

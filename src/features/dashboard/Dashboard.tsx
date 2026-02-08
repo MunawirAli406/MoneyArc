@@ -5,6 +5,7 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useTheme } from '../../features/settings/useTheme';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import clsx from 'clsx';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
 import { BUSINESS_THEMES } from '../settings/businessThemes';
@@ -15,9 +16,9 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [greeting, setGreeting] = useState('');
     const [stats, setStats] = useState([
-        { label: 'Total Revenue', value: '₹0.00', change: '0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10', sparkData: [] as any[] },
-        { label: 'Total Expenses', value: '₹0.00', change: '0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10', sparkData: [] as any[] },
-        { label: 'Net Profit', value: '₹0.00', change: '0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sparkData: [] as any[] },
+        { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10', sparkData: [] as any[] },
+        { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10', sparkData: [] as any[] },
+        { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sparkData: [] as any[] },
         { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', sparkData: [] as any[] },
     ]);
 
@@ -38,6 +39,7 @@ export default function Dashboard() {
     const [recentVouchers, setRecentVouchers] = useState<Voucher[]>([]);
     const [stockWatch, setStockWatch] = useState<any[]>([]);
     const [chartData, setChartData] = useState<ChartData[]>([]);
+    const [vitals, setVitals] = useState({ liquidRatio: 0, netMargin: 0, status: 'Healthy' });
 
     useEffect(() => {
         const loadDashboardData = async () => {
@@ -142,9 +144,9 @@ export default function Dashboard() {
 
 
             setStats([
-                { label: bTheme.revenueLabel, value: `₹${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10', sparkData: sparkLines.rev },
-                { label: bTheme.expenseLabel, value: `₹${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10', sparkData: sparkLines.exp },
-                { label: 'Net Profit', value: `₹${(revenue + closingStockValue - (expenses + openingStockValue)).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sparkData: sparkLines.profit },
+                { label: bTheme.revenueLabel, value: `${activeCompany?.symbol || '₹'}${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-cyan-500', bg: 'bg-cyan-500/10', sparkData: sparkLines.rev },
+                { label: bTheme.expenseLabel, value: `${activeCompany?.symbol || '₹'}${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10', sparkData: sparkLines.exp },
+                { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}${(revenue + closingStockValue - (expenses + openingStockValue)).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sparkData: sparkLines.profit },
                 { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', sparkData: sparkLines.vouchers },
             ]);
 
@@ -158,6 +160,30 @@ export default function Dashboard() {
             }
 
             setChartData(last6Months);
+
+            // Calculate Vitals
+            // Liquid Ratio = Liquid Assets / Current Liabilities
+            // Liquid Assets ≈ Cash + Bank + Debtors
+            // Current Liabilities ≈ Creditors + Duties & Taxes + Current Liabilities
+            const liquidAssets = ledgers
+                .filter(l => ['Bank Accounts', 'Cash-in-hand', 'Sundry Debtors'].includes(l.group))
+                .reduce((sum, l) => sum + l.balance, 0);
+
+            const currentLiabilities = ledgers
+                .filter(l => ['Sundry Creditors', 'Duties & Taxes', 'Current Liabilities'].includes(l.group))
+                .reduce((sum, l) => sum + l.balance, 0);
+
+            const liquidRatio = currentLiabilities === 0 ? (liquidAssets > 0 ? 9.99 : 0) : liquidAssets / currentLiabilities;
+
+            // Net Margin = (Net Profit / Revenue) * 100
+            const netProfitValue = revenue + closingStockValue - (expenses + openingStockValue);
+            const netMargin = revenue === 0 ? 0 : (netProfitValue / revenue) * 100;
+
+            setVitals({
+                liquidRatio: Number(liquidRatio.toFixed(2)),
+                netMargin: Number(netMargin.toFixed(1)),
+                status: liquidRatio >= 1.2 ? 'Healthy' : (liquidRatio >= 1 ? 'Action Required' : 'Critical')
+            });
         };
         loadDashboardData();
     }, [provider, activeCompany]);
@@ -371,14 +397,20 @@ export default function Dashboard() {
                             <div className="flex justify-between items-end mb-3">
                                 <div>
                                     <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest">Liquid Ratio</span>
-                                    <span className="text-2xl font-black text-cyan-500">2.14</span>
+                                    <span className="text-2xl font-black text-cyan-500">{vitals.liquidRatio}</span>
                                 </div>
-                                <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md">Healthy</span>
+                                <span className={clsx(
+                                    "text-[10px] font-black px-2 py-1 rounded-md",
+                                    vitals.status === 'Healthy' ? "text-emerald-500 bg-emerald-500/10" :
+                                        vitals.status === 'Critical' ? "text-rose-500 bg-rose-500/10" : "text-amber-500 bg-amber-500/10"
+                                )}>
+                                    {vitals.status}
+                                </span>
                             </div>
                             <div className="w-full h-2.5 bg-muted/30 rounded-full overflow-hidden p-0.5 border border-border/50">
                                 <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: '85%' }}
+                                    animate={{ width: `${Math.min(vitals.liquidRatio * 40, 100)}%` }} // 2.5 is 100%
                                     className="h-full bg-gradient-to-r from-cyan-600 to-cyan-400 rounded-full shadow-[0_0_10px_rgba(6,182,212,0.5)]"
                                 />
                             </div>
@@ -387,14 +419,16 @@ export default function Dashboard() {
                             <div className="flex justify-between items-end mb-3">
                                 <div>
                                     <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest">Net Margin</span>
-                                    <span className="text-2xl font-black text-emerald-500">24.5%</span>
+                                    <span className="text-2xl font-black text-emerald-500">{vitals.netMargin}%</span>
                                 </div>
-                                <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md">+2.1%</span>
+                                <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md">
+                                    {vitals.netMargin >= 0 ? 'Profitable' : 'Loss'}
+                                </span>
                             </div>
                             <div className="w-full h-2.5 bg-muted/30 rounded-full overflow-hidden p-0.5 border border-border/50">
                                 <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: '65%' }}
+                                    animate={{ width: `${Math.max(0, Math.min(vitals.netMargin * 2, 100))}%` }} // 50% is 100% bar
                                     className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"
                                 />
                             </div>
@@ -414,7 +448,7 @@ export default function Dashboard() {
                             {stockWatch.slice(0, 3).map((item, i) => (
                                 <div key={i} className="flex justify-between items-center group/item hover:bg-white/5 p-2 rounded-xl transition-colors">
                                     <span className="text-[10px] font-black uppercase tracking-tight text-foreground/70 truncate max-w-[80px]">{item.name}</span>
-                                    <span className="text-xs font-black tabular-nums text-cyan-500">₹{((item.currentBalance || item.openingStock) * (item.currentRate || item.openingRate)).toLocaleString()}</span>
+                                    <span className="text-xs font-black tabular-nums text-cyan-500">{activeCompany?.symbol || '₹'}{((item.currentBalance || item.openingStock) * (item.currentRate || item.openingRate)).toLocaleString()}</span>
                                 </div>
                             ))}
                         </div>
@@ -430,7 +464,7 @@ export default function Dashboard() {
                             {recentVouchers.slice(0, 3).map((v, i) => (
                                 <div key={i} className="flex flex-col border-l-2 border-primary/20 pl-3 py-1 hover:border-primary transition-colors cursor-pointer group/feed">
                                     <span className="text-[9px] font-black uppercase tracking-widest text-foreground group-hover/feed:text-primary transition-colors truncate">{v.rows[0]?.account}</span>
-                                    <span className="text-[8px] font-bold text-muted-foreground uppercase">₹{v.rows[0]?.type === 'Dr' ? v.rows[0].debit.toLocaleString() : v.rows[0].credit.toLocaleString()} • {v.type}</span>
+                                    <span className="text-[8px] font-bold text-muted-foreground uppercase">{activeCompany?.symbol || '₹'}{v.rows[0]?.type === 'Dr' ? v.rows[0].debit.toLocaleString() : v.rows[0].credit.toLocaleString()} • {v.type}</span>
                                 </div>
                             ))}
                         </div>

@@ -49,7 +49,8 @@ export default function GeminiAssistant({ isOpen, onClose }: GeminiAssistantProp
             const response = await service.generateInsight(userMsg, {
                 vouchers: vouchers || [],
                 ledgers: ledgers || [],
-                companyName: activeCompany.name
+                companyName: activeCompany.name,
+                symbol: activeCompany.symbol || '₹'
             });
 
             setMessages(prev => [...prev, { role: 'ai', text: response }]);

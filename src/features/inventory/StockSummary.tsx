@@ -91,7 +91,7 @@ export default function StockSummary() {
                     </div>
                     <div>
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Stock Valuation</p>
-                        <p className="text-2xl font-black text-foreground">₹{totalValue.toLocaleString()}</p>
+                        <p className="text-2xl font-black text-foreground">{activeCompany?.symbol || '₹'}{totalValue.toLocaleString()}</p>
                     </div>
                 </div>
                 <div className="bg-card p-6 rounded-3xl border border-border shadow-sm flex items-center gap-4 no-print">
@@ -117,7 +117,7 @@ export default function StockSummary() {
                                 <th className="px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em]">Group</th>
                                 <th className="px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] text-right">Closing Quantity</th>
                                 <th className="px-4 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] text-right">Avg Rate</th>
-                                <th className="px-8 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] text-right">Value</th>
+                                <th className="px-8 py-4 text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] text-right">Value ({activeCompany?.symbol || '₹'})</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/50">
@@ -171,7 +171,7 @@ export default function StockSummary() {
                         <tfoot className="bg-muted/30">
                             <tr className="border-t-2 border-primary/20">
                                 <td colSpan={4} className="px-8 py-6 text-[10px] font-black text-muted-foreground uppercase tracking-[0.3em] text-right">Grand Total</td>
-                                <td className="px-8 py-6 text-right font-mono font-black text-xl text-primary">₹{totalValue.toLocaleString()}</td>
+                                <td className="px-8 py-6 text-right font-mono font-black text-xl text-primary">{activeCompany?.symbol || '₹'}{totalValue.toLocaleString()}</td>
                             </tr>
                         </tfoot>
                     </table>

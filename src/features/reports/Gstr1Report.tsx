@@ -135,11 +135,11 @@ export default function Gstr1Report() {
                     <div className="p-8 space-y-6">
                         <div className="flex justify-between items-end border-b border-border pb-4">
                             <p className="text-[10px] font-black text-muted-foreground uppercase">Taxable Value</p>
-                            <p className="text-2xl font-black font-mono text-primary">₹{calculateTotal(b2bInvoices).toLocaleString()}</p>
+                            <p className="text-2xl font-black font-mono text-primary">{activeCompany?.symbol || '₹'}{calculateTotal(b2bInvoices).toLocaleString()}</p>
                         </div>
                         <div className="flex justify-between items-end">
                             <p className="text-[10px] font-black text-muted-foreground uppercase">Tax Amount</p>
-                            <p className="text-xl font-black font-mono text-foreground/70">₹{calculateTax(b2bInvoices).toLocaleString()}</p>
+                            <p className="text-xl font-black font-mono text-foreground/70">{activeCompany?.symbol || '₹'}{calculateTax(b2bInvoices).toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
@@ -158,11 +158,11 @@ export default function Gstr1Report() {
                     <div className="p-8 space-y-6">
                         <div className="flex justify-between items-end border-b border-border pb-4">
                             <p className="text-[10px] font-black text-muted-foreground uppercase">Taxable Value</p>
-                            <p className="text-2xl font-black font-mono text-orange-600">₹{calculateTotal(b2cInvoices).toLocaleString()}</p>
+                            <p className="text-2xl font-black font-mono text-orange-600">{activeCompany?.symbol || '₹'}{calculateTotal(b2cInvoices).toLocaleString()}</p>
                         </div>
                         <div className="flex justify-between items-end">
                             <p className="text-[10px] font-black text-muted-foreground uppercase">Tax Amount</p>
-                            <p className="text-xl font-black font-mono text-foreground/70">₹{calculateTax(b2cInvoices).toLocaleString()}</p>
+                            <p className="text-xl font-black font-mono text-foreground/70">{activeCompany?.symbol || '₹'}{calculateTax(b2cInvoices).toLocaleString()}</p>
                         </div>
                     </div>
                 </div>
@@ -193,8 +193,8 @@ export default function Gstr1Report() {
                                     <td className="px-10 py-5 font-mono text-xs text-primary">{hsn.hsn}</td>
                                     <td className="px-4 py-5 uppercase text-xs">{hsn.description}</td>
                                     <td className="px-4 py-5 text-right font-mono">{hsn.qty.toFixed(2)}</td>
-                                    <td className="px-4 py-5 text-right font-mono">₹{hsn.taxableValue.toLocaleString()}</td>
-                                    <td className="px-10 py-5 text-right font-mono text-primary font-black">₹{hsn.taxAmount.toLocaleString()}</td>
+                                    <td className="px-4 py-5 text-right font-mono">{activeCompany?.symbol || '₹'}{hsn.taxableValue.toLocaleString()}</td>
+                                    <td className="px-10 py-5 text-right font-mono text-primary font-black">{activeCompany?.symbol || '₹'}{hsn.taxAmount.toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -236,9 +236,9 @@ export default function Gstr1Report() {
                                             <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">{v.voucherNo}</div>
                                         </td>
                                         <td className="px-4 py-5 font-mono text-xs text-primary font-black">{ledger?.gstin || '-'}</td>
-                                        <td className="px-4 py-5 text-right font-mono text-sm">₹{taxableValue.toLocaleString()}</td>
-                                        <td className="px-4 py-5 text-right font-mono text-sm text-primary">₹{taxAmount.toLocaleString()}</td>
-                                        <td className="px-10 py-5 text-right font-mono font-black text-base">₹{invoiceValue.toLocaleString()}</td>
+                                        <td className="px-4 py-5 text-right font-mono text-sm">{activeCompany?.symbol || '₹'}{taxableValue.toLocaleString()}</td>
+                                        <td className="px-4 py-5 text-right font-mono text-sm text-primary">{activeCompany?.symbol || '₹'}{taxAmount.toLocaleString()}</td>
+                                        <td className="px-10 py-5 text-right font-mono font-black text-base">{activeCompany?.symbol || '₹'}{invoiceValue.toLocaleString()}</td>
                                     </tr>
                                 );
                             })}

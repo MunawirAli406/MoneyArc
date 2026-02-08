@@ -304,7 +304,7 @@ export default function Daybook() {
                                                     )}
                                                 </td>
                                                 <td className="px-8 py-6 text-right font-mono font-black text-lg text-foreground">
-                                                    ₹{totalAmt.toLocaleString()}
+                                                    {activeCompany?.symbol || '₹'}{totalAmt.toLocaleString()}
                                                 </td>
                                                 <td className="px-8 py-6 text-center">
                                                     <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">

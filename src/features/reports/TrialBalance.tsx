@@ -115,8 +115,8 @@ export default function TrialBalance() {
                     <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
                         <tr>
                             <th className="px-8 py-4 text-left">Particulars</th>
-                            <th className="px-8 py-4 text-right w-48">Debit</th>
-                            <th className="px-8 py-4 text-right w-48">Credit</th>
+                            <th className="px-8 py-4 text-right w-48">Debit ({activeCompany?.symbol || '₹'})</th>
+                            <th className="px-8 py-4 text-right w-48">Credit ({activeCompany?.symbol || '₹'})</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
@@ -154,8 +154,8 @@ export default function TrialBalance() {
 
                         <tr className="bg-muted/50 font-black text-foreground border-t-2 border-border">
                             <td className="px-8 py-5 uppercase tracking-widest text-xs">Grand Total</td>
-                            <td className="px-8 py-5 text-right font-mono text-base">{totalDebit.toLocaleString()}</td>
-                            <td className="px-8 py-5 text-right font-mono text-base">{totalCredit.toLocaleString()}</td>
+                            <td className="px-8 py-5 text-right font-mono text-base">{activeCompany?.symbol || '₹'}{totalDebit.toLocaleString()}</td>
+                            <td className="px-8 py-5 text-right font-mono text-base">{activeCompany?.symbol || '₹'}{totalCredit.toLocaleString()}</td>
                         </tr>
                     </tbody>
                 </table>

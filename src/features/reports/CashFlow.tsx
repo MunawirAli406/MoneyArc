@@ -85,7 +85,7 @@ export default function CashFlow() {
                     </button>
                     <div className="bg-card px-6 py-3 rounded-2xl border border-border shadow-sm">
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Net Change in Cash</p>
-                        <p className="text-xl font-black text-primary tracking-tight">₹{(operating + investing + financing).toLocaleString()}</p>
+                        <p className="text-xl font-black text-primary tracking-tight">{activeCompany?.symbol || '₹'}{(operating + investing + financing).toLocaleString()}</p>
                     </div>
                 </div>
             </div>
@@ -101,7 +101,7 @@ export default function CashFlow() {
                             <act.icon className="w-6 h-6 text-primary" />
                         </div>
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">{act.label}</p>
-                        <p className="text-3xl font-black text-foreground mb-4">₹{act.value.toLocaleString()}</p>
+                        <p className="text-3xl font-black text-foreground mb-4">{activeCompany?.symbol || '₹'}{act.value.toLocaleString()}</p>
                         <div className="flex items-center gap-2 text-xs font-bold">
                             {act.value >= 0 ? (
                                 <span className="text-emerald-500 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Net Inflow</span>
@@ -121,7 +121,7 @@ export default function CashFlow() {
                     <div className="space-y-4">
                         <div className="flex justify-between items-end border-b border-border pb-2">
                             <h3 className="font-black text-xs uppercase tracking-widest text-primary">A. Operating Activities</h3>
-                            <span className="font-mono font-bold text-foreground">₹{operating.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-foreground">{activeCompany?.symbol || '₹'}{operating.toLocaleString()}</span>
                         </div>
                         <p className="text-sm text-muted-foreground italic">Summarizes cash generated from core business operations including sales, inventory, and operational expenses.</p>
                     </div>
@@ -129,7 +129,7 @@ export default function CashFlow() {
                     <div className="space-y-4">
                         <div className="flex justify-between items-end border-b border-border pb-2">
                             <h3 className="font-black text-xs uppercase tracking-widest text-primary">B. Investing Activities</h3>
-                            <span className="font-mono font-bold text-foreground">₹{investing.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-foreground">{activeCompany?.symbol || '₹'}{investing.toLocaleString()}</span>
                         </div>
                         <p className="text-sm text-muted-foreground italic">Tracks cash flows related to purchasing or selling long-term assets like equipment, furniture, and investments.</p>
                     </div>
@@ -137,7 +137,7 @@ export default function CashFlow() {
                     <div className="space-y-4">
                         <div className="flex justify-between items-end border-b border-border pb-2">
                             <h3 className="font-black text-xs uppercase tracking-widest text-primary">C. Financing Activities</h3>
-                            <span className="font-mono font-bold text-foreground">₹{financing.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-foreground">{activeCompany?.symbol || '₹'}{financing.toLocaleString()}</span>
                         </div>
                         <p className="text-sm text-muted-foreground italic">Reports cash movement between the business and its owners or creditors, such as capital infusions or loan repayments.</p>
                     </div>
@@ -149,7 +149,7 @@ export default function CashFlow() {
                                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">(A + B + C)</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-3xl font-black text-primary">₹{(operating + investing + financing).toLocaleString()}</p>
+                                <p className="text-3xl font-black text-primary">{activeCompany?.symbol || '₹'}{(operating + investing + financing).toLocaleString()}</p>
                             </div>
                         </div>
                     </div>

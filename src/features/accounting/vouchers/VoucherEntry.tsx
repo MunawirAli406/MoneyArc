@@ -11,6 +11,7 @@ import type { StockItem, UnitOfMeasure } from '../../../services/inventory/types
 import { useNavigate, useParams } from 'react-router-dom';
 import QuickLedgerForm from '../masters/QuickLedgerForm';
 import QuickStockItemForm from '../masters/QuickStockItemForm';
+import { CURRENCIES } from '../../../data/currencies';
 
 type VoucherType = 'Payment' | 'Receipt' | 'Journal' | 'Contra' | 'Sales' | 'Purchase';
 
@@ -34,7 +35,7 @@ export default function VoucherEntry() {
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [narration, setNarration] = useState('');
     const [voucherNo, setVoucherNo] = useState('1');
-    const [currency, setCurrency] = useState('INR');
+    const [currency, setCurrency] = useState(activeCompany?.currency || 'INR');
     const [exchangeRate, setExchangeRate] = useState(1);
 
     // Inventory Allocation State
@@ -152,7 +153,7 @@ export default function VoucherEntry() {
                     const nextBal = currentBal + localChange;
 
                     if (['Cash-in-hand', 'Bank Accounts'].includes(ledger.group)) {
-                        if (nextBal < 0) alerts.push(`${ledger.name} balance will drop to ₹${Math.abs(nextBal).toLocaleString()} Cr`);
+                        if (nextBal < 0) alerts.push(`${ledger.name} balance will drop to ${activeCompany?.symbol || '₹'}${Math.abs(nextBal).toLocaleString()} Cr`);
                     }
                 }
             });
@@ -439,12 +440,12 @@ export default function VoucherEntry() {
                                     <Select
                                         value={currency}
                                         onChange={setCurrency}
-                                        options={[
-                                            { value: 'INR', label: 'INR', icon: Coins },
-                                            { value: 'USD', label: 'USD', icon: Coins },
-                                            { value: 'EUR', label: 'EUR', icon: Coins },
-                                            { value: 'GBP', label: 'GBP', icon: Coins },
-                                        ]}
+                                        options={CURRENCIES.map(c => ({
+                                            value: c.code,
+                                            label: c.code,
+                                            icon: Coins,
+                                            description: c.label
+                                        }))}
                                         className="w-full"
                                     />
                                 </div>
@@ -684,16 +685,16 @@ export default function VoucherEntry() {
                             {(taxSummary.cgst > 0 || taxSummary.sgst > 0 || taxSummary.igst > 0) && (
                                 <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl space-y-2">
                                     <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">Tax Estimate</p>
-                                    {taxSummary.cgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>CGST Total</span><span>₹{taxSummary.cgst.toLocaleString()}</span></div>}
-                                    {taxSummary.sgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>SGST Total</span><span>₹{taxSummary.sgst.toLocaleString()}</span></div>}
-                                    {taxSummary.igst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>IGST Total</span><span>₹{taxSummary.igst.toLocaleString()}</span></div>}
+                                    {taxSummary.cgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>CGST Total</span><span>{activeCompany?.symbol || '₹'}{taxSummary.cgst.toLocaleString()}</span></div>}
+                                    {taxSummary.sgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>SGST Total</span><span>{activeCompany?.symbol || '₹'}{taxSummary.sgst.toLocaleString()}</span></div>}
+                                    {taxSummary.igst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>IGST Total</span><span>{activeCompany?.symbol || '₹'}{taxSummary.igst.toLocaleString()}</span></div>}
                                 </div>
                             )}
 
                             {Math.abs(totalDebit - totalCredit) > 0.01 && (
                                 <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex items-center justify-between text-rose-500 animate-pulse">
                                     <span className="text-[10px] font-black uppercase tracking-widest">Difference</span>
-                                    <span className="font-mono font-bold">₹{Math.abs(totalDebit - totalCredit).toFixed(2)}</span>
+                                    <span className="font-mono font-bold">{activeCompany?.symbol || '₹'}{Math.abs(totalDebit - totalCredit).toFixed(2)}</span>
                                 </div>
                             )}
                             <div className="flex gap-4">
@@ -758,7 +759,7 @@ export default function VoucherEntry() {
                                                 <th className="py-4 px-4 w-40">Batch No / Expiry</th>
                                                 <th className="py-4 px-4 w-32 text-right">Quantity</th>
                                                 <th className="py-4 px-4 w-36 text-right">Rate / Unit</th>
-                                                <th className="py-4 px-10 w-44 text-right">Value (₹)</th>
+                                                <th className="py-4 px-10 w-44 text-right">Value ({activeCompany?.symbol || '₹'})</th>
                                                 <th className="py-4 px-4 w-12"></th>
                                             </tr>
                                         </thead>
@@ -813,7 +814,7 @@ export default function VoucherEntry() {
                                                         />
                                                     </td>
                                                     <td className="py-4 px-10 text-right font-mono font-black text-sm text-emerald-600">
-                                                        ₹{alloc.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        {activeCompany?.symbol || '₹'}{alloc.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                                                     </td>
                                                     <td className="py-4 px-4">
                                                         <button
@@ -854,7 +855,7 @@ export default function VoucherEntry() {
                                         <div className="w-px h-10 bg-border" />
                                         <div>
                                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Total Valuation</p>
-                                            <p className="text-2xl font-black font-mono text-emerald-600">₹{tempAllocations.reduce((sum, a) => sum + a.amount, 0).toLocaleString()}</p>
+                                            <p className="text-2xl font-black font-mono text-emerald-600">{activeCompany?.symbol || '₹'}{tempAllocations.reduce((sum, a) => sum + a.amount, 0).toLocaleString()}</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-4">

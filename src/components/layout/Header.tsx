@@ -17,10 +17,11 @@ interface HeaderProps {
 export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggle }: HeaderProps) {
     const { theme, toggleTheme } = useTheme();
     const { activeCompany, selectCompany, storageType, isSyncing, sync } = usePersistence();
-    const { hasUnread } = useNotifications();
+    const { notifications, hasUnread, markAsRead, clearAll } = useNotifications();
     const { user, logout } = useAuth();
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const navigate = useNavigate();
 
     const ICON_MAP: Record<string, any> = { Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2 };
@@ -141,15 +142,85 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                         >
                             <Settings className="w-5 h-5" />
                         </button>
-                        <button className="p-3 text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-white/10 rounded-2xl transition-all active:scale-90 relative" title="Notifications">
-                            <Bell className={clsx("w-5 h-5", isSyncing && "animate-bounce text-primary")} />
-                            {(hasUnread || isSyncing) && (
-                                <span className={clsx(
-                                    "absolute top-3 right-3 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-card",
-                                    isSyncing && "animate-pulse"
-                                )} />
+                        <div className="relative">
+                            <button
+                                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+                                className="p-3 text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-white/10 rounded-2xl transition-all active:scale-90 relative"
+                                title="Notifications"
+                            >
+                                <Bell className={clsx("w-5 h-5", isSyncing && "animate-bounce text-primary")} />
+                                {(hasUnread || isSyncing) && (
+                                    <span className={clsx(
+                                        "absolute top-3 right-3 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-card",
+                                        isSyncing && "animate-pulse"
+                                    )} />
+                                )}
+                            </button>
+
+                            {isNotificationsOpen && (
+                                <>
+                                    <div className="fixed inset-0 z-10" onClick={() => setIsNotificationsOpen(false)} />
+                                    <div className="absolute top-full right-0 mt-4 w-80 bg-card/90 dark:bg-card/90 backdrop-blur-2xl border border-border dark:border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] overflow-hidden z-20 animate-in fade-in slide-in-from-top-4 duration-300">
+                                        <div className="p-5 border-b border-border dark:border-white/5 flex justify-between items-center bg-primary/5">
+                                            <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">Notifications</p>
+                                            {notifications.length > 0 && (
+                                                <button
+                                                    onClick={() => {
+                                                        clearAll();
+                                                        setIsNotificationsOpen(false);
+                                                    }}
+                                                    className="text-[9px] font-black uppercase tracking-tighter text-muted-foreground hover:text-rose-500 transition-colors"
+                                                >
+                                                    Clear All
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="max-h-[400px] overflow-y-auto overflow-x-hidden thin-scrollbar">
+                                            {notifications.length === 0 ? (
+                                                <div className="p-10 text-center">
+                                                    <div className="w-12 h-12 rounded-2xl bg-muted/30 flex items-center justify-center mx-auto mb-4">
+                                                        <Bell className="w-6 h-6 text-muted-foreground/40" />
+                                                    </div>
+                                                    <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/60">No new alerts</p>
+                                                </div>
+                                            ) : (
+                                                <div className="p-2 space-y-1">
+                                                    {notifications.map((n) => (
+                                                        <button
+                                                            key={n.id}
+                                                            onClick={() => {
+                                                                markAsRead(n.id);
+                                                                // Potentially navigate or open detail
+                                                            }}
+                                                            className={clsx(
+                                                                "w-full text-left p-4 rounded-2xl transition-all group relative overflow-hidden",
+                                                                !n.read ? "bg-primary/5 hover:bg-primary/10" : "hover:bg-muted/50"
+                                                            )}
+                                                        >
+                                                            {!n.read && (
+                                                                <div className="absolute top-4 right-4 w-1.5 h-1.5 rounded-full bg-primary" />
+                                                            )}
+                                                            <p className={clsx(
+                                                                "text-[10px] font-black uppercase tracking-tight mb-1",
+                                                                n.type === 'error' ? 'text-rose-500' :
+                                                                    n.type === 'warning' ? 'text-amber-500' :
+                                                                        n.type === 'success' ? 'text-emerald-500' : 'text-primary'
+                                                            )}>
+                                                                {n.title}
+                                                            </p>
+                                                            <p className="text-xs font-bold text-foreground leading-snug mb-2">{n.message}</p>
+                                                            <p className="text-[9px] font-black text-muted-foreground/40 uppercase tracking-widest">
+                                                                {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </p>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
                             )}
-                        </button>
+                        </div>
                     </div>
 
                     <div className="w-px h-8 bg-border dark:bg-white/5 mx-2" />

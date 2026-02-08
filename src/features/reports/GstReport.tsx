@@ -90,7 +90,7 @@ export default function GstReport() {
                         }}
                         className="flex items-center gap-2 px-5 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
                     >
-                        <IndianRupee className="w-4 h-4 text-emerald-500" />
+                        <FileDown className="w-4 h-4 text-emerald-500" />
                         Export Excel
                     </button>
                     <button
@@ -116,7 +116,7 @@ export default function GstReport() {
                     <div key={i} className="bg-card p-6 rounded-3xl border border-border flex items-center justify-between shadow-sm">
                         <div>
                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
-                            <p className="text-2xl font-black text-foreground tracking-tight">₹{stat.value.toLocaleString()}</p>
+                            <p className="text-2xl font-black text-foreground tracking-tight">{activeCompany?.symbol || '₹'}{stat.value.toLocaleString()}</p>
                         </div>
                         <div className={clsx("w-12 h-12 rounded-2xl flex items-center justify-center", stat.bg, stat.color)}>
                             <stat.icon className="w-6 h-6" />
@@ -191,12 +191,12 @@ export default function GstReport() {
                             ].map((row, i) => (
                                 <tr key={i} className="group hover:bg-muted/10 transition-colors">
                                     <td className="py-5 font-bold text-foreground">{row.head}</td>
-                                    <td className="py-5 font-mono text-sm text-foreground text-right">₹{row.taxable.toLocaleString()}</td>
-                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">₹{row.igst.toLocaleString()}</td>
-                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">₹{row.cgst.toLocaleString()}</td>
-                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">₹{row.sgst.toLocaleString()}</td>
-                                    <td className="py-5 font-mono text-sm text-foreground text-right">₹{row.totalTax.toLocaleString()}</td>
-                                    <td className="py-5 font-black text-foreground text-right">₹{row.totalValue.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-foreground text-right">{activeCompany?.symbol || '₹'}{row.taxable.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{activeCompany?.symbol || '₹'}{row.igst.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{activeCompany?.symbol || '₹'}{row.cgst.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{activeCompany?.symbol || '₹'}{row.sgst.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-foreground text-right">{activeCompany?.symbol || '₹'}{row.totalTax.toLocaleString()}</td>
+                                    <td className="py-5 font-black text-foreground text-right">{activeCompany?.symbol || '₹'}{row.totalValue.toLocaleString()}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -204,10 +204,10 @@ export default function GstReport() {
                             <tr className="bg-muted/40 font-black">
                                 <td className="py-6 px-1 text-sm uppercase tracking-widest">Net Payable</td>
                                 <td className="py-6 text-right"></td>
-                                <td className="py-6 font-mono text-right">₹{Math.max(0, outputIGST - inputIGST).toLocaleString()}</td>
-                                <td className="py-6 font-mono text-right">₹{Math.max(0, outputCGST - inputCGST).toLocaleString()}</td>
-                                <td className="py-6 font-mono text-right">₹{Math.max(0, outputSGST - inputSGST).toLocaleString()}</td>
-                                <td className="py-6 font-mono text-right">₹{Math.max(0, totalOutputTax - totalInputTax).toLocaleString()}</td>
+                                <td className="py-6 font-mono text-right">{activeCompany?.symbol || '₹'}{Math.max(0, outputIGST - inputIGST).toLocaleString()}</td>
+                                <td className="py-6 font-mono text-right">{activeCompany?.symbol || '₹'}{Math.max(0, outputCGST - inputCGST).toLocaleString()}</td>
+                                <td className="py-6 font-mono text-right">{activeCompany?.symbol || '₹'}{Math.max(0, outputSGST - inputSGST).toLocaleString()}</td>
+                                <td className="py-6 font-mono text-right">{activeCompany?.symbol || '₹'}{Math.max(0, totalOutputTax - totalInputTax).toLocaleString()}</td>
                                 <td className="py-6 text-right text-lg text-emerald-500"></td>
                             </tr>
                         </tfoot>

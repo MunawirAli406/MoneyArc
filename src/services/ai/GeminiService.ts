@@ -13,7 +13,7 @@ export class GeminiService {
 
     async generateInsight(
         question: string,
-        contextData: { vouchers: Voucher[], ledgers: Ledger[], companyName: string }
+        contextData: { vouchers: Voucher[], ledgers: Ledger[], companyName: string, symbol: string }
     ): Promise<string> {
         try {
             // Simplify data for token efficiency
@@ -22,7 +22,7 @@ export class GeminiService {
             ).join('\n');
 
             const ledgerSummary = contextData.ledgers.map(l =>
-                `${l.name} (${l.group}): ₹${l.balance} ${l.type}`
+                `${l.name} (${l.group}): ${contextData.symbol}${l.balance} ${l.type}`
             ).join('\n');
 
             const prompt = `
@@ -41,7 +41,7 @@ User Question: "${question}"
 
 Guidelines:
 - Be concise and professional.
-- Use currency format (₹).
+- Use currency format (${contextData.symbol}).
 - If data is insufficient, say so.
 - Highlight key trends if asked.
             `;

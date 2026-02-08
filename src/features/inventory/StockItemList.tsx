@@ -132,7 +132,7 @@ export default function StockItemList({ onViewTransactions }: StockItemListProps
                                             <div className="w-fit bg-primary/5 border border-primary/10 rounded-xl px-4 py-2">
                                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary leading-none mb-1">Total Value</p>
                                                 <p className="font-mono font-black text-primary text-lg leading-none">
-                                                    {item.openingValue.toLocaleString('en-IN', { style: 'currency', currency: activeCompany?.currency || 'INR' })}
+                                                    {activeCompany?.symbol || '₹'}{item.openingValue.toLocaleString()}
                                                 </p>
                                             </div>
                                         </td>

@@ -232,25 +232,25 @@ export default function StockSummary() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-6 text-right font-mono bg-muted/10 group-hover:bg-muted/20">
-                                            <div className="font-black text-foreground">₹{item.openingVal.toLocaleString()}</div>
+                                            <div className="font-black text-foreground">{activeCompany?.symbol || '₹'}{item.openingVal.toLocaleString()}</div>
                                             <div className="text-[10px] font-bold text-muted-foreground opacity-50">{item.openingQty.toLocaleString()} {item.unit}</div>
                                         </td>
                                         <td className="px-6 py-6 text-right font-mono">
                                             <div className="flex items-center justify-end gap-1.5 text-emerald-500">
                                                 <ArrowUpRight className="w-3 h-3" />
-                                                <span className="font-black">₹{item.inwardVal.toLocaleString()}</span>
+                                                <span className="font-black">{activeCompany?.symbol || '₹'}{item.inwardVal.toLocaleString()}</span>
                                             </div>
                                             <div className="text-[10px] font-bold text-muted-foreground opacity-50">+{item.inwardQty.toLocaleString()} {item.unit}</div>
                                         </td>
                                         <td className="px-6 py-6 text-right font-mono bg-muted/10 group-hover:bg-muted/20">
                                             <div className="flex items-center justify-end gap-1.5 text-rose-500">
                                                 <ArrowDownRight className="w-3 h-3" />
-                                                <span className="font-black">₹{item.outwardVal.toLocaleString()}</span>
+                                                <span className="font-black">{activeCompany?.symbol || '₹'}{item.outwardVal.toLocaleString()}</span>
                                             </div>
                                             <div className="text-[10px] font-bold text-muted-foreground opacity-50">-{item.outwardQty.toLocaleString()} {item.unit}</div>
                                         </td>
                                         <td className="px-8 py-6 text-right">
-                                            <div className="font-black text-xl text-primary tracking-tighter">₹{item.closingVal.toLocaleString()}</div>
+                                            <div className="font-black text-xl text-primary tracking-tighter">{activeCompany?.symbol || '₹'}{item.closingVal.toLocaleString()}</div>
                                             <div className="text-xs font-black text-muted-foreground tracking-widest uppercase mt-0.5">{item.closingQty.toLocaleString()} {item.unit}</div>
                                         </td>
                                     </motion.tr>
@@ -261,7 +261,7 @@ export default function StockSummary() {
                             <tr className="bg-primary/5 border-t-2 border-primary/20">
                                 <td colSpan={4} className="px-8 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-primary">Consolidated Inventory Value</td>
                                 <td className="px-8 py-8 text-right">
-                                    <div className="text-3xl font-black text-primary tracking-tighter">₹{totalClosingVal.toLocaleString()}</div>
+                                    <div className="text-3xl font-black text-primary tracking-tighter">{activeCompany?.symbol || '₹'}{totalClosingVal.toLocaleString()}</div>
                                     <div className="text-[10px] font-black uppercase tracking-widest text-primary/60 opacity-60">Net Stock Holdings</div>
                                 </td>
                             </tr>
@@ -272,7 +272,7 @@ export default function StockSummary() {
 
             <div className="p-10 rounded-[2.5rem] bg-emerald-500/5 border-2 border-emerald-500/20 text-center">
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600/60 mb-3">Inventory Health</p>
-                <h3 className="text-xl font-black text-emerald-600 tracking-tight">Your total inventory is valued at approximately ₹{totalClosingVal.toLocaleString()}</h3>
+                <h3 className="text-xl font-black text-emerald-600 tracking-tight">Your total inventory is valued at approximately {activeCompany?.symbol || '₹'}{totalClosingVal.toLocaleString()}</h3>
             </div>
         </motion.div >
     );

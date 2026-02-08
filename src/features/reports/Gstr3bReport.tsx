@@ -85,7 +85,7 @@ export default function Gstr3bReport() {
             </div>      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 <div className="bg-card p-8 rounded-[2.5rem] border border-border shadow-xl">
                     <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Total Outward Tax</p>
-                    <p className="text-3xl font-black text-cyan-500">₹{outwardTax.toLocaleString()}</p>
+                    <p className="text-3xl font-black text-cyan-500">{activeCompany?.symbol || '₹'}{outwardTax.toLocaleString()}</p>
                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-muted-foreground">
                         <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
                         Liability
@@ -93,7 +93,7 @@ export default function Gstr3bReport() {
                 </div>
                 <div className="bg-card p-8 rounded-[2.5rem] border border-border shadow-xl">
                     <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Eligible ITC</p>
-                    <p className="text-3xl font-black text-indigo-500">₹{eligibleItc.toLocaleString()}</p>
+                    <p className="text-3xl font-black text-indigo-500">{activeCompany?.symbol || '₹'}{eligibleItc.toLocaleString()}</p>
                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-muted-foreground">
                         <TrendingDown className="w-3.5 h-3.5 text-indigo-500" />
                         Tax Credit
@@ -101,7 +101,7 @@ export default function Gstr3bReport() {
                 </div>
                 <div className={`bg-card p-8 rounded-[2.5rem] border border-border shadow-xl border-b-4 ${netTaxPayable >= 0 ? 'border-b-rose-500' : 'border-b-emerald-500'}`}>
                     <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Net Tax Payable</p>
-                    <p className="text-3xl font-black">₹{netTaxPayable.toLocaleString()}</p>
+                    <p className="text-3xl font-black">{activeCompany?.symbol || '₹'}{netTaxPayable.toLocaleString()}</p>
                     <div className="mt-4 flex items-center gap-2 text-xs font-bold text-muted-foreground">
                         <Calculator className="w-3.5 h-3.5 text-primary" />
                         Final Settlement
@@ -121,7 +121,7 @@ export default function Gstr3bReport() {
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">Taxable Value</p>
-                            <p className="text-xl font-black font-mono">₹{outwardTaxable.toLocaleString()}</p>
+                            <p className="text-xl font-black font-mono">{activeCompany?.symbol || '₹'}{outwardTaxable.toLocaleString()}</p>
                         </div>
                     </div>
                     <div className="flex justify-between items-center pt-2">
@@ -129,11 +129,11 @@ export default function Gstr3bReport() {
                         <div className="flex gap-12">
                             <div className="text-right">
                                 <p className="text-[9px] font-black text-muted-foreground uppercase">Output CGST</p>
-                                <p className="text-lg font-bold font-mono">₹{(outwardTax / 2).toLocaleString()}</p>
+                                <p className="text-lg font-bold font-mono">{activeCompany?.symbol || '₹'}{(outwardTax / 2).toLocaleString()}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-[9px] font-black text-muted-foreground uppercase">Output SGST</p>
-                                <p className="text-lg font-bold font-mono">₹{(outwardTax / 2).toLocaleString()}</p>
+                                <p className="text-lg font-bold font-mono">{activeCompany?.symbol || '₹'}{(outwardTax / 2).toLocaleString()}</p>
                             </div>
                         </div>
                     </div>
@@ -152,7 +152,7 @@ export default function Gstr3bReport() {
                         </div>
                         <div className="text-right">
                             <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">ITC Amount</p>
-                            <p className="text-xl font-black font-mono text-indigo-600">₹{eligibleItc.toLocaleString()}</p>
+                            <p className="text-xl font-black font-mono text-indigo-600">{activeCompany?.symbol || '₹'}{eligibleItc.toLocaleString()}</p>
                         </div>
                     </div>
                 </div>

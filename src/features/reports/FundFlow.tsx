@@ -71,7 +71,7 @@ export default function FundFlow() {
                     <div className="bg-card px-6 py-4 rounded-2xl border border-border shadow-sm flex items-center gap-4">
                         <div>
                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest">Working Capital Change</p>
-                            <p className="text-xl font-black text-emerald-500">₹{(sources - applications).toLocaleString()}</p>
+                            <p className="text-xl font-black text-emerald-500">{activeCompany?.symbol || '₹'}{(sources - applications).toLocaleString()}</p>
                         </div>
                         <div className="w-px h-8 bg-border" />
                         <Zap className="w-5 h-5 text-amber-500" />
@@ -86,7 +86,7 @@ export default function FundFlow() {
                         <h2 className="text-sm font-black uppercase tracking-widest text-emerald-600 flex items-center gap-2">
                             <Layers className="w-4 h-4" /> Sources of Funds
                         </h2>
-                        <span className="font-mono font-black text-lg">₹{sources.toLocaleString()}</span>
+                        <span className="font-mono font-black text-lg">{activeCompany?.symbol || '₹'}{sources.toLocaleString()}</span>
                     </div>
                     <div className="p-8 space-y-6">
                         {[
@@ -96,7 +96,7 @@ export default function FundFlow() {
                         ].map((item, i) => (
                             <div key={i} className="flex justify-between items-center group">
                                 <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors">{item.label}</span>
-                                <span className="font-mono text-sm">₹{item.value.toLocaleString()}</span>
+                                <span className="font-mono text-sm">{activeCompany?.symbol || '₹'}{item.value.toLocaleString()}</span>
                             </div>
                         ))}
                     </div>
@@ -108,7 +108,7 @@ export default function FundFlow() {
                         <h2 className="text-sm font-black uppercase tracking-widest text-rose-600 flex items-center gap-2">
                             <Shield className="w-4 h-4" /> Application of Funds
                         </h2>
-                        <span className="font-mono font-black text-lg">₹{applications.toLocaleString()}</span>
+                        <span className="font-mono font-black text-lg">{activeCompany?.symbol || '₹'}{applications.toLocaleString()}</span>
                     </div>
                     <div className="p-8 space-y-6">
                         {[
@@ -118,7 +118,7 @@ export default function FundFlow() {
                         ].map((item, i) => (
                             <div key={i} className="flex justify-between items-center group">
                                 <span className="text-sm font-bold text-muted-foreground group-hover:text-foreground transition-colors">{item.label}</span>
-                                <span className="font-mono text-sm">₹{item.value.toLocaleString()}</span>
+                                <span className="font-mono text-sm">{activeCompany?.symbol || '₹'}{item.value.toLocaleString()}</span>
                             </div>
                         ))}
                     </div>
