@@ -12,18 +12,19 @@
     /* Vibrant Amber */
     --primary-foreground: 0 0% 100%;
 
-    --background: 210 20% 98%;
-    /* Light Gray Base */
+    --background: 38 50% 97%;
+    /* Soft Amber Light Mode Background */
     --foreground: 215 25% 15%;
-    /* Dark Gray Text */
+    /* Contrast Text */
 
     --card: 0 0% 100%;
+    /* Keep cards white for depth */
     --card-foreground: 215 25% 15%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
+    --border: 38 30% 90%;
+    --input: 38 30% 90%;
 
-    --muted: 210 40% 96%;
+    --muted: 38 40% 94%;
     --muted-foreground: 215 16% 47%;
 
     --accent: 174 100% 33%;
