@@ -151,13 +151,13 @@ export default function LedgerForm() {
                 <div className="flex items-center gap-3">
                     <button
                         onClick={() => navigate('/ledgers')}
-                        className="px-6 py-3 border border-border rounded-xl font-bold uppercase tracking-widest text-xs text-muted-foreground hover:bg-muted/50 hover:text-foreground transition-all"
+                        className="btn-premium border border-border text-muted-foreground hover:bg-muted/50 hover:text-foreground"
                     >
                         Cancel
                     </button>
                     <button
                         onClick={handleSave}
-                        className="flex items-center gap-2 px-6 py-3 bg-primary text-primary-foreground rounded-xl font-bold uppercase tracking-widest text-xs hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
+                        className="btn-premium flex items-center gap-2 bg-primary text-primary-foreground"
                     >
                         <Save className="w-5 h-5" />
                         <span>{id ? 'Update Ledger' : 'Save Ledger'}</span>
@@ -176,7 +176,7 @@ export default function LedgerForm() {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold text-lg"
+                                className="input-premium w-full text-lg"
                                 placeholder="e.g. Gotham City Bank"
                             />
                         </div>
@@ -215,7 +215,7 @@ export default function LedgerForm() {
                                                 setShowGroupModal(true);
                                             }
                                         }}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
+                                        className="input-premium w-full appearance-none"
                                     >
                                         <option value="">Select Group</option>
                                         <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Group</option>
@@ -250,7 +250,7 @@ export default function LedgerForm() {
                                                 setShowCategoryModal(true);
                                             }
                                         }}
-                                        className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold appearance-none"
+                                        className="input-premium w-full appearance-none"
                                     >
                                         <option value="">Select Category</option>
                                         <option value="CREATE_NEW" className="text-primary font-bold">+ Create New Category</option>
@@ -268,13 +268,13 @@ export default function LedgerForm() {
                                     type="number"
                                     value={formData.opBalance}
                                     onChange={(e) => setFormData({ ...formData, opBalance: e.target.value })}
-                                    className="flex-1 px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
+                                    className="input-premium flex-1"
                                     placeholder="0.00"
                                 />
                                 <select
                                     value={formData.balanceType}
                                     onChange={(e) => setFormData({ ...formData, balanceType: e.target.value })}
-                                    className="w-32 px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-black text-center"
+                                    className="input-premium w-32 text-center"
                                 >
                                     <option value="Dr">Debit</option>
                                     <option value="Cr">Credit</option>

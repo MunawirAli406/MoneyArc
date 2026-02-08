@@ -5,6 +5,8 @@ import { FileDown, ArrowLeft } from 'lucide-react';
 import type { StockItem } from '../../services/inventory/types';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { useNavigate, useParams } from 'react-router-dom';
+import PeriodSelector from '../../components/ui/PeriodSelector';
+import { useReportDates } from './DateContext';
 
 interface StockVoucherRow {
     date: string;
@@ -28,11 +30,7 @@ export default function StockVoucherReport() {
     const [itemDetails, setItemDetails] = useState<StockItem | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const [startDate, setStartDate] = useState(() => {
-        const today = new Date();
-        return new Date(today.getFullYear(), 3, 1).toISOString().split('T')[0]; // April 1st
-    });
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const { startDate, endDate } = useReportDates();
 
     useEffect(() => {
         const loadData = async () => {
@@ -143,27 +141,7 @@ export default function StockVoucherReport() {
                     <p className="text-emerald-600 font-bold uppercase tracking-widest text-sm mt-1">{itemDetails?.name}</p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm">
-                        <div className="flex flex-col relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all rounded-lg p-1">
-                            <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground ml-1">From</label>
-                            <input
-                                type="date"
-                                className="bg-transparent text-sm font-bold outline-none text-foreground"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                            />
-                        </div>
-                        <div className="w-px h-8 bg-border mx-2"></div>
-                        <div className="flex flex-col relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all rounded-lg p-1">
-                            <label className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground ml-1">To</label>
-                            <input
-                                type="date"
-                                className="bg-transparent text-sm font-bold outline-none text-foreground"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                            />
-                        </div>
-                    </div>
+                    <PeriodSelector />
                     <button
                         onClick={() => window.print()}
                         className="p-3 bg-primary text-primary-foreground rounded-xl hover:shadow-lg transition-all"

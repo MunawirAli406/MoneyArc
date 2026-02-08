@@ -5,19 +5,16 @@ import { ReportService, type Ledger, type GroupSummary } from '../../services/ac
 import { FileDown, ArrowRight } from 'lucide-react';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import PeriodSelector from '../../components/ui/PeriodSelector';
+import LedgerQuickView from './LedgerQuickView';
 import React from 'react';
+import { useReportDates } from './DateContext';
 
 export default function TrialBalance() {
     const { provider, activeCompany } = usePersistence();
     const [groups, setGroups] = useState<GroupSummary[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Period State
-    const [startDate, setStartDate] = useState(() => {
-        const today = new Date();
-        return new Date(today.getFullYear(), 3, 1).toISOString().split('T')[0]; // Default: April 1st
-    });
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const { startDate, endDate } = useReportDates();
 
     useEffect(() => {
         const loadData = async () => {
@@ -51,13 +48,13 @@ export default function TrialBalance() {
 
             // 1. Get Balance Sheet Items (As On End Date)
             balanceSheetTypes.forEach(type => {
-                const summaries = ReportService.getAsOnGroupSummary(ledgers, vouchers, new Date(endDate), type);
+                const summaries = ReportService.getAsOnGroupSummary(ledgers, vouchers, endDate, type);
                 allSummaries = [...allSummaries, ...summaries];
             });
 
             // 2. Get P&L Items (Net Movement for Period)
             pnlTypes.forEach(type => {
-                const summaries = ReportService.getPeriodGroupSummary(ledgers, vouchers, new Date(startDate), new Date(endDate), type);
+                const summaries = ReportService.getPeriodGroupSummary(ledgers, vouchers, startDate, endDate, type);
                 allSummaries = [...allSummaries, ...summaries];
             });
 
@@ -70,7 +67,7 @@ export default function TrialBalance() {
         loadData();
     }, [provider, activeCompany, startDate, endDate]);
 
-    // Calculate Grand Totals
+    // Calculate Grand Totals using the filtered ledger balances from the summaries
     const totalDebit = groups.reduce((sum, g) => {
         return sum + g.ledgers.reduce((lSum, l) => lSum + (l.type === 'Dr' ? l.balance : 0), 0);
     }, 0);
@@ -95,10 +92,10 @@ export default function TrialBalance() {
                 <div>
                     <h1 className="text-3xl font-black text-foreground tracking-tight">Trial Balance</h1>
                     <p className="text-muted-foreground font-medium">
-                        Financial Position ({new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()})
+                        Financial Position ({startDate} to {endDate})
                     </p>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
                     <button
                         onClick={() => window.print()}
                         className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
@@ -108,14 +105,7 @@ export default function TrialBalance() {
                     </button>
 
                     <div className="flex items-center gap-2 no-print">
-                        <PeriodSelector
-                            startDate={startDate}
-                            endDate={endDate}
-                            onChange={(s, e) => {
-                                setStartDate(s);
-                                setEndDate(e);
-                            }}
-                        />
+                        <PeriodSelector />
                     </div>
                 </div>
             </div>
@@ -142,8 +132,12 @@ export default function TrialBalance() {
                                         (ledger.balance !== 0) && (
                                             <tr key={ledger.id} className="hover:bg-muted/10 transition-colors">
                                                 <td className="px-8 py-3 font-medium text-foreground pl-12 flex items-center gap-2">
-                                                    <ArrowRight className="w-3 h-3 text-muted-foreground" />
-                                                    {ledger.name}
+                                                    <ArrowRight className="w-3 h-3 text-muted-foreground mr-1" />
+                                                    <LedgerQuickView ledgerName={ledger.name}>
+                                                        <span className="hover:text-primary transition-colors cursor-help border-b border-dotted border-primary/30">
+                                                            {ledger.name}
+                                                        </span>
+                                                    </LedgerQuickView>
                                                 </td>
                                                 <td className="px-8 py-3 text-right font-mono font-bold text-foreground">
                                                     {ledger.type === 'Dr' ? ledger.balance.toLocaleString() : ''}

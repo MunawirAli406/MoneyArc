@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import InvoiceModal from '../vouchers/InvoiceModal';
 import type { Ledger } from '../../../services/accounting/ReportService';
 import { useNavigate } from 'react-router-dom';
+import PeriodSelector from '../../../components/ui/PeriodSelector';
 
 export default function Daybook() {
     const { provider, activeCompany } = usePersistence();
@@ -50,12 +51,9 @@ export default function Daybook() {
         </div>
     );
 
-    const filteredVouchers = vouchers.filter(v => {
-        const d = new Date(v.date).getTime();
-        const start = new Date(startDate).setHours(0, 0, 0, 0);
-        const end = new Date(endDate).setHours(23, 59, 59, 999);
-        return d >= start && d <= end;
-    });
+    const filteredVouchers = vouchers.filter(v =>
+        v.date >= startDate && v.date <= endDate
+    );
 
     return (
         <motion.div
@@ -76,24 +74,14 @@ export default function Daybook() {
                         <FileDown className="w-4 h-4" />
                         Print / Save PDF
                     </button>
-                    <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm no-print relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                        <Calendar className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
-                            />
-                            <span className="text-muted-foreground font-medium">-</span>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
-                            />
-                        </div>
-                    </div>
+                    <PeriodSelector
+                        startDate={startDate}
+                        endDate={endDate}
+                        onChange={(s, e) => {
+                            setStartDate(s);
+                            setEndDate(e);
+                        }}
+                    />
                 </div>
             </div>
 
@@ -234,6 +222,6 @@ export default function Daybook() {
                     />
                 )}
             </AnimatePresence>
-        </motion.div>
+        </motion.div >
     );
 }

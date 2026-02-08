@@ -4,7 +4,7 @@ MoneyArc is a premium, local-first accounting and inventory management applicati
 
 ## 🚀 Overview
 
-MoneyArc is built for the modern accountant who values speed, aesthetics, and reliability. It features a stunning "Cyan & Gray" professional theme, smooth animations, and a robust data persistence layer that ensures your financial data stays local and secure.
+MoneyArc is built for the modern accountant who values speed, aesthetics, and reliability. It features a stunning "Teal & Charcoal" professional theme, smooth animations, and a robust data persistence layer that ensures your financial data stays local and secure.
 
 ## ✨ Key Features
 

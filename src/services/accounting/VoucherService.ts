@@ -163,4 +163,14 @@ export class VoucherService {
             await provider.write('stock_items.json', stockItems, companyPath);
         }
     }
+
+    static async getLedgerHistory(provider: StorageProvider, ledgerName: string, companyPath?: string): Promise<Voucher[]> {
+        if (!provider) return [];
+        const vouchers = await provider.read<Voucher[]>('vouchers.json', companyPath) || [];
+
+        return vouchers
+            .filter(v => v.rows.some(r => r.account === ledgerName))
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+            .slice(0, 5);
+    }
 }

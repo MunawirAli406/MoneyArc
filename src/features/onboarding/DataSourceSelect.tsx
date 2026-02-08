@@ -1,11 +1,13 @@
-import { Cloud, FolderOpen, ChevronRight } from 'lucide-react';
+import { Cloud, FolderOpen, ChevronRight, Github } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import GitHubImportModal from './GitHubImportModal';
 
 export default function DataSourceSelect() {
     const { initializeStorage } = usePersistence();
-    // Verified Dark Mode Support: 2026-02-05
     const navigate = useNavigate();
+    const [showGithubModal, setShowGithubModal] = useState(false);
 
     const handleLocalSelect = async () => {
         try {
@@ -16,45 +18,77 @@ export default function DataSourceSelect() {
         }
     };
 
+    const handleGithubImport = async (config: any) => {
+        try {
+            await initializeStorage('github', config);
+            navigate('/select-company');
+        } catch (error) {
+            console.error("Failed to init github storage", error);
+            throw error;
+        }
+    };
+
     return (
         <div className="min-h-screen bg-background flex items-center justify-center p-4">
-            <div className="max-w-2xl w-full">
-                <div className="text-center mb-10">
-                    <h1 className="text-3xl font-bold text-foreground mb-3">Where should we store your data?</h1>
-                    <p className="text-muted-foreground">Choose how you want to manage your company data.</p>
+            <div className="max-w-4xl w-full">
+                <div className="text-center mb-12">
+                    <h1 className="text-4xl font-black text-foreground mb-4 uppercase tracking-tighter">Choose Your Data Hub</h1>
+                    <p className="text-muted-foreground font-medium">MoneyArc supports local-first and cloud-sync workflows.</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                    <button className="group relative bg-card p-6 rounded-xl shadow-sm border-2 border-transparent hover:border-primary-500 hover:shadow-md transition-all text-left">
-                        <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mb-4 group-hover:bg-primary/20 transition-colors">
-                            <Cloud className="w-6 h-6 text-primary" />
+                <div className="grid md:grid-cols-3 gap-8">
+                    <button className="glass-card p-8 rounded-[2rem] text-left relative overflow-hidden group">
+                        <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <Cloud className="w-8 h-8 text-primary" />
                         </div>
-                        <h3 className="text-lg font-bold text-foreground mb-2">MoneyArc Cloud</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Securely store your data on our servers. Access from anywhere, on any device. Automatic backups included.
+                        <h3 className="text-xl font-bold text-foreground mb-3 uppercase tracking-tight">Cloud Sync</h3>
+                        <p className="text-xs text-muted-foreground mb-6 leading-relaxed font-medium">
+                            Premium encrypted backup. Access your accounts from any device with zero configuration.
                         </p>
-                        <div className="flex items-center text-primary text-sm font-medium">
-                            Select Cloud Storage <ChevronRight className="w-4 h-4 ml-1" />
+                        <div className="flex items-center text-primary text-[10px] font-black uppercase tracking-widest">
+                            Coming Soon <ChevronRight className="w-4 h-4 ml-1 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
                         </div>
                     </button>
 
                     <button
                         onClick={handleLocalSelect}
-                        className="group relative bg-card p-6 rounded-xl shadow-sm border-2 border-transparent hover:border-muted-foreground hover:shadow-md transition-all text-left"
+                        className="glass-card p-8 rounded-[2rem] text-left relative overflow-hidden group border-primary/20"
                     >
-                        <div className="w-12 h-12 bg-muted rounded-lg flex items-center justify-center mb-4 group-hover:bg-muted/80 transition-colors">
-                            <FolderOpen className="w-6 h-6 text-foreground" />
+                        <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <FolderOpen className="w-8 h-8 text-emerald-500" />
                         </div>
-                        <h3 className="text-lg font-bold text-foreground mb-2">Local Folder</h3>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            Keep your data on your own device. Select a folder on your PC to store all accounting files.
+                        <h3 className="text-xl font-bold text-foreground mb-3 uppercase tracking-tight">Local Vault</h3>
+                        <p className="text-xs text-muted-foreground mb-6 leading-relaxed font-medium">
+                            Absolute privacy. Your data stays on your machine. Full offline capability and direct file access.
                         </p>
-                        <div className="flex items-center text-foreground text-sm font-medium">
-                            Select Local Folder <ChevronRight className="w-4 h-4 ml-1" />
+                        <div className="flex items-center text-emerald-500 text-[10px] font-black uppercase tracking-widest">
+                            Select Folder <ChevronRight className="w-4 h-4 ml-1 opacity-100 group-hover:translate-x-1 transition-all" />
+                        </div>
+                    </button>
+
+                    <button
+                        onClick={() => setShowGithubModal(true)}
+                        className="glass-card p-8 rounded-[2rem] text-left relative overflow-hidden group"
+                    >
+                        <div className="w-14 h-14 bg-foreground/10 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                            <Github className="w-8 h-8 text-foreground" />
+                        </div>
+                        <h3 className="text-xl font-bold text-foreground mb-3 uppercase tracking-tight">GitHub Import</h3>
+                        <p className="text-xs text-muted-foreground mb-6 leading-relaxed font-medium">
+                            Import existing business data from a GitHub repository. Ideal for developers and shared datasets.
+                        </p>
+                        <div className="flex items-center text-foreground text-[10px] font-black uppercase tracking-widest">
+                            Source Repo <ChevronRight className="w-4 h-4 ml-1 opacity-100 group-hover:translate-x-1 transition-all" />
                         </div>
                     </button>
                 </div>
             </div>
+
+            <GitHubImportModal
+                isOpen={showGithubModal}
+                onClose={() => setShowGithubModal(false)}
+                onImport={handleGithubImport}
+            />
         </div>
     );
 }

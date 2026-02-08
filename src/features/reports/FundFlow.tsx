@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Layers, Zap, Shield, ArrowRight, FileDown, Calendar } from 'lucide-react';
+import { Layers, Zap, Shield, ArrowRight, FileDown } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
+import { useReportDates } from './DateContext';
+import PeriodSelector from '../../components/ui/PeriodSelector';
 
 import type { Voucher } from '../../services/accounting/VoucherService';
 
@@ -9,8 +11,7 @@ export default function FundFlow() {
     const { provider, activeCompany } = usePersistence();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
-    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const { startDate, endDate } = useReportDates();
 
     useEffect(() => {
         const loadData = async () => {
@@ -24,12 +25,9 @@ export default function FundFlow() {
     }, [provider, activeCompany]);
 
     // Filter by Period
-    const filteredVouchers = vouchers.filter(v => {
-        const d = new Date(v.date).getTime();
-        const start = new Date(startDate).setHours(0, 0, 0, 0);
-        const end = new Date(endDate).setHours(23, 59, 59, 999);
-        return d >= start && d <= end;
-    });
+    const filteredVouchers = vouchers.filter(v =>
+        v.date >= startDate && v.date <= endDate
+    );
 
     // Simplified Fund Flow (Sources vs Applications)
     let sources = 0;
@@ -61,25 +59,8 @@ export default function FundFlow() {
                     <h1 className="text-3xl font-black text-foreground tracking-tight uppercase leading-none">Fund Flow</h1>
                     <p className="text-muted-foreground font-medium uppercase tracking-widest text-[10px] mt-2">Sources vs Applications for {activeCompany?.name}</p>
                 </div>
-                <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-2.5 shadow-sm no-print relative group focus-within:ring-2 focus-within:ring-primary/20 transition-all">
-                        <Calendar className="w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
-                            />
-                            <span className="text-muted-foreground font-medium">-</span>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="bg-transparent text-sm font-bold outline-none text-foreground w-[8.5rem]"
-                            />
-                        </div>
-                    </div>
+                <div className="flex flex-wrap items-center gap-4 no-print">
+                    <PeriodSelector />
                     <button
                         onClick={() => window.print()}
                         className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"

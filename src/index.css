@@ -7,54 +7,52 @@
 
 @layer base {
   :root {
-    /* Teal & Charcoal Palette - Light Mode */
-    --primary: 173 80% 40%;
-    /* Teal 600 */
+    /* Refined Teal & Charcoal Palette - Light Mode */
+    --primary: 174 100% 33%;
+    /* Vibrant, Premium Teal */
     --primary-foreground: 0 0% 100%;
 
-    --background: 0 0% 96%;
-    /* Light Gray */
-    --foreground: 215 25% 27%;
-    /* Dark gray */
+    --background: 210 20% 98%;
+    /* Clean, almost white background */
+    --foreground: 222 47% 11%;
+    /* Charcoal Gray foreground */
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 27%;
+    --card-foreground: 222 47% 11%;
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
 
     --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 215 25% 45%;
 
-    --accent: 173 80% 95%;
-    --accent-foreground: 173 80% 40%;
+    --accent: 174 100% 95%;
+    --accent-foreground: 174 100% 33%;
 
     --radius: 0.75rem;
   }
 
   .dark {
-    --primary: 173 80% 40%;
-    /* Vibrant Teal */
+    --primary: 174 100% 40%;
+    /* Slightly brighter Teal for Dark Mode */
     --primary-foreground: 0 0% 100%;
 
-    --background: 222 47% 11%;
-    /* Deep Charcoal (Slate 900) */
+    --background: 222 47% 6%;
+    /* Deeper Charcoal Background */
     --foreground: 210 40% 98%;
 
-    --card: 222 47% 13%;
-    /* Slightly lighter Charcoal */
+    --card: 222 47% 10%;
+    /* Smooth Charcoal Card */
     --card-foreground: 210 40% 98%;
 
-    --border: 217 33% 20%;
-    /* Charcoal border */
-    --input: 217 33% 20%;
+    --border: 222 47% 15%;
+    --input: 222 47% 15%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20.2% 75.1%;
+    --muted: 222 47% 12%;
+    --muted-foreground: 215 20% 65%;
 
-    --accent: 173 80% 20%;
-    /* Dark Teal accent */
-    --accent-foreground: 173 80% 90%;
+    --accent: 174 100% 15%;
+    --accent-foreground: 174 100% 90%;
   }
 }
 
@@ -85,16 +83,26 @@
 
 /* Glassmorphism utility */
 .glass {
-  @apply bg-white/70 dark:bg-slate-900/70 backdrop-blur-md border border-white/20 dark:border-white/10;
+  @apply bg-card/70 dark:bg-card/40 backdrop-blur-md border border-border/20 dark:border-white/10;
 }
 
-.cyan-gradient {
-  background: linear-gradient(135deg, #0d9488 0%, #0f766e 100%);
-  /* Teal gradient now */
+.teal-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
 }
 
 .cyan-glow {
-  box-shadow: 0 0 15px rgba(13, 148, 136, 0.2);
+  box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
+}
+
+/* Premium Component Styling */
+@layer components {
+  .btn-premium {
+    @apply relative overflow-hidden px-6 py-2.5 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all active:scale-95 shadow-lg hover:shadow-xl hover:-translate-y-0.5 disabled:opacity-50 disabled:pointer-events-none;
+  }
+
+  .input-premium {
+    @apply bg-card border border-border rounded-2xl px-4 py-3 text-sm font-bold placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm;
+  }
 }
 
 /* Tally-like Compact Utilities */
@@ -104,14 +112,58 @@
   }
 
   .glass-panel {
-    @apply bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/20 dark:border-white/10 shadow-lg;
+    @apply bg-card/60 dark:bg-card/40 backdrop-blur-2xl border border-border/50 dark:border-white/5;
+    box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.1);
   }
 
   .glass-card {
-    @apply bg-white/50 dark:bg-slate-900/50 backdrop-blur-md border border-white/20 dark:border-white/5 hover:bg-white/60 dark:hover:bg-slate-900/60 transition-all;
+    @apply bg-card/50 dark:bg-card/20 backdrop-blur-xl border border-border/50 dark:border-white/5 hover:bg-card/70 dark:hover:bg-card/30 transition-all duration-500 shadow-sm hover:shadow-md;
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-r from-teal-500 to-emerald-500;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60;
+  }
+
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+  }
+
+  .mesh-gradient {
+    @apply bg-background transition-colors duration-700;
+    background-image:
+      radial-gradient(at 0% 0%, hsla(174, 100%, 33%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 50% 0%, hsla(222, 47%, 11%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, hsla(174, 100%, 33%, 0.1) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, hsla(174, 100%, 33%, 0.05) 0px, transparent 50%),
+      radial-gradient(at 100% 100%, hsla(222, 47%, 11%, 0.05) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+
+  100% {
+    background-position: 200% 0;
   }
 }

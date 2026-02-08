@@ -83,16 +83,15 @@ export class ReportService {
         });
     }
 
-    static getPeriodGroupSummary(ledgers: Ledger[], vouchers: any[], startDate: Date, endDate: Date, targetType: keyof typeof ACCT_GROUPS): GroupSummary[] {
+    static getPeriodGroupSummary(ledgers: Ledger[], vouchers: any[], startDate: Date | string, endDate: Date | string, targetType: keyof typeof ACCT_GROUPS): GroupSummary[] {
         const targetGroups = AccountGroupManager.getGroups(targetType);
-        const start = new Date(startDate).setHours(0, 0, 0, 0);
-        const end = new Date(endDate).setHours(23, 59, 59, 999);
 
-        // Filter vouchers within period
-        const periodVouchers = vouchers.filter(v => {
-            const date = new Date(v.date).getTime();
-            return date >= start && date <= end;
-        });
+        // Ensure string format for comparison (YYYY-MM-DD)
+        const start = startDate instanceof Date ? startDate.toISOString().split('T')[0] : startDate;
+        const end = endDate instanceof Date ? endDate.toISOString().split('T')[0] : endDate;
+
+        // Filter vouchers within period using string comparison
+        const periodVouchers = vouchers.filter(v => v.date >= start && v.date <= end);
 
         return targetGroups.map(group => {
             const groupLedgers = ledgers.filter(l => l.group === group);
@@ -145,12 +144,12 @@ export class ReportService {
         });
     }
 
-    static getAsOnGroupSummary(ledgers: Ledger[], vouchers: any[], asOnDate: Date, targetType: keyof typeof ACCT_GROUPS): GroupSummary[] {
+    static getAsOnGroupSummary(ledgers: Ledger[], vouchers: any[], asOnDate: Date | string, targetType: keyof typeof ACCT_GROUPS): GroupSummary[] {
         const targetGroups = AccountGroupManager.getGroups(targetType);
-        const end = new Date(asOnDate).setHours(23, 59, 59, 999);
+        const end = asOnDate instanceof Date ? asOnDate.toISOString().split('T')[0] : asOnDate;
 
         // Filter vouchers strictly AFTER the as-on date (Future)
-        const futureVouchers = vouchers.filter(v => new Date(v.date).getTime() > end);
+        const futureVouchers = vouchers.filter(v => v.date > end);
 
         return targetGroups.map(group => {
             const groupLedgers = ledgers.filter(l => l.group === group);
@@ -205,6 +204,18 @@ export class ReportService {
         });
     }
 
+    static getFinancialYearStart(date: Date | string): string {
+        let d: Date;
+        if (typeof date === 'string') {
+            const [y, m, day] = date.split('-').map(Number);
+            d = new Date(y, m - 1, day);
+        } else {
+            d = date;
+        }
+        const year = d.getMonth() >= 3 ? d.getFullYear() : d.getFullYear() - 1;
+        return `${year}-04-01`;
+    }
+
     static calculateTotal(summaries: GroupSummary[]): number {
         return summaries.reduce((sum, g) => sum + g.total, 0);
     }
@@ -215,16 +226,14 @@ export class ReportService {
         return income - expenses;
     }
 
-    static getNetProfitPeriod(ledgers: Ledger[], vouchers: any[], startDate: Date, endDate: Date, stockItems: StockItem[]): number {
+    static getNetProfitPeriod(ledgers: Ledger[], vouchers: any[], startDate: string | Date, endDate: string | Date, stockItems: StockItem[]): number {
         const income = this.calculateTotal(this.getPeriodGroupSummary(ledgers, vouchers, startDate, endDate, 'INCOME'));
         const expenses = this.calculateTotal(this.getPeriodGroupSummary(ledgers, vouchers, startDate, endDate, 'EXPENSES'));
 
-        // Simplified Stock Logic for V1:
-        // Opening Stock: 0 (Assumed, unless Manual Stock Journal exists)
-        // Closing Stock: Current Value (Assumed)
-
-        const closingStock = this.getClosingStockValue(stockItems);
-        const openingStock = 0;
+        // For Period P&L:
+        // Result = (Income + Closing Stock) - (Expenses + Opening Stock)
+        const closingStock = this.getClosingStockValue(stockItems, vouchers, endDate);
+        const openingStock = this.getClosingStockValue(stockItems, vouchers, startDate);
 
         return (income + closingStock) - (expenses + openingStock);
     }
@@ -238,10 +247,34 @@ export class ReportService {
         return (income + closingStock) - (expenses + openingStock);
     }
 
-    static getClosingStockValue(stockItems: StockItem[]): number {
+    static getClosingStockValue(stockItems: StockItem[], vouchers?: any[], asOnDate?: string | Date): number {
+        const end = asOnDate ? (asOnDate instanceof Date ? asOnDate.toISOString().split('T')[0] : asOnDate) : null;
+
         return stockItems.reduce((sum, item) => {
-            const balance = item.currentBalance !== undefined ? item.currentBalance : item.openingStock;
+            let balance = item.currentBalance !== undefined ? item.currentBalance : item.openingStock;
             const rate = item.currentRate !== undefined ? item.currentRate : item.openingRate;
+
+            // If asOnDate is provided, backtrack from current balance
+            if (end && vouchers) {
+                const futureVouchers = vouchers.filter(v => v.date > end);
+                futureVouchers.forEach(v => {
+                    v.rows.forEach((row: any) => {
+                        if (row.inventoryAllocations) {
+                            row.inventoryAllocations.forEach((alloc: any) => {
+                                if (alloc.itemId === item.id) {
+                                    const qtyChange = alloc.quantity;
+                                    if (v.type === 'Purchase') {
+                                        balance -= qtyChange;
+                                    } else if (v.type === 'Sales') {
+                                        balance += qtyChange;
+                                    }
+                                }
+                            });
+                        }
+                    });
+                });
+            }
+
             return sum + (balance * rate);
         }, 0);
     }
@@ -252,21 +285,54 @@ export class ReportService {
         }, 0);
     }
 
-    static getTrialBalanceDiff(ledgers: Ledger[]): number {
+    static getTrialBalanceDiff(ledgers: Ledger[], vouchers?: any[], asOnDate?: string | Date): number {
+        if (!asOnDate || !vouchers) {
+            return ledgers.reduce((sum, l) => {
+                return sum + (l.type === 'Dr' ? l.balance : -l.balance);
+            }, 0);
+        }
+
         return ledgers.reduce((sum, l) => {
-            // Debit adds, Credit subtracts
-            return sum + (l.type === 'Dr' ? l.balance : -l.balance);
+            const balance = this.getLedgerBalanceAsOn(l, vouchers, asOnDate);
+            return sum + balance;
         }, 0);
     }
 
-    static getLedgerBalanceAsOn(ledger: Ledger, vouchers: any[], asOnDate: Date): number {
-        const end = new Date(asOnDate).setHours(23, 59, 59, 999);
+    static getGstSlabBreakdown(ledgers: Ledger[], vouchers: any[], startDate: string, endDate: string) {
+        // Simple logic for V1: Group Duties & Taxes ledgers that might be GST
+        const gstGroups = ['Duties & Taxes'];
+        const gstLedgers = ledgers.filter(l => gstGroups.includes(l.group));
+
+        return gstLedgers.map(l => {
+            const bal = this.getLedgerBalanceAsOn(l, vouchers, endDate) - this.getLedgerBalanceAsOn(l, vouchers, startDate);
+            return {
+                name: l.name,
+                impact: bal,
+                type: bal >= 0 ? 'Dr' : 'Cr'
+            };
+        });
+    }
+
+    static getNegativeBalanceLedgers(ledgers: Ledger[]) {
+        return ledgers.filter(l => {
+            // Cash & Bank should not be Cr
+            if (['Cash-in-hand', 'Bank Accounts'].includes(l.group) && l.type === 'Cr') return true;
+            // Debtors should not be Cr (usually)
+            if (['Sundry Debtors'].includes(l.group) && l.type === 'Cr') return true;
+            // Creditors should not be Dr (usually)
+            if (['Sundry Creditors'].includes(l.group) && l.type === 'Dr') return true;
+            return false;
+        });
+    }
+
+    static getLedgerBalanceAsOn(ledger: Ledger, vouchers: any[], asOnDate: Date | string): number {
+        const end = asOnDate instanceof Date ? asOnDate.toISOString().split('T')[0] : asOnDate;
 
         // Start with signed current balance: Dr is positive, Cr is negative
         let signedBalance = (ledger.type === 'Dr' ? ledger.balance : -ledger.balance);
 
         // Filter vouchers strictly AFTER the as-on date (Future)
-        const futureVouchers = vouchers.filter(v => new Date(v.date).getTime() > end);
+        const futureVouchers = vouchers.filter(v => v.date > end);
 
         // Reverse future transactions
         futureVouchers.forEach(v => {
@@ -366,33 +432,19 @@ export class LedgerReportCalculator {
 
         // Let's implement Back-Calculation from Current Balance.
 
-        const start = new Date(startDate).setHours(0, 0, 0, 0);
-        const end = new Date(endDate).setHours(23, 59, 59, 999);
-
-        // Sort vouchers descending to work backwards from current? 
-        // Or Ascending to build forwards?
-        // Let's work backwards from Current Balance to find Opening Balance of the period.
+        const start = startDate instanceof Date ? startDate.toISOString().split('T')[0] : startDate;
+        const end = endDate instanceof Date ? endDate.toISOString().split('T')[0] : endDate;
 
         // Filter vouchers for this ledger
         const ledgerVouchers = allVouchers.filter(v => v.rows.some(r => r.account === targetLedger.name));
 
         // Sort all vouchers by date ascending
-        ledgerVouchers.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-        // Calculate Opening Balance for the PERIOD
-        // We know Current Balance (at end of time/now).
-        // But 'Current Balance' might include future vouchers if any? 
-        // Let's assume 'ledger.balance' is the sum of ALL vouchers.
-
-        // Step 1: Calculate "True Opening Balance" (System start)
-        // If we can't trust 'Current - All Tx', we are in trouble.
-        // Let's trust proper forward calculation if we had an initial.
-        // Since we lack explicit 'Initial Opening Balance' in model, let's try Back Calculation.
+        ledgerVouchers.sort((a, b) => a.date.localeCompare(b.date));
 
         let runningBalance = targetLedger.balance * (targetLedger.type === 'Dr' ? 1 : -1);
 
         // Filter vouchers AFTER the End Date (Future relative to report)
-        const futureVouchers = ledgerVouchers.filter(v => new Date(v.date).getTime() > end);
+        const futureVouchers = ledgerVouchers.filter(v => v.date > end);
 
         // Rewind future transactions to get Balance at End Date
         futureVouchers.forEach(v => {
@@ -410,10 +462,7 @@ export class LedgerReportCalculator {
 
         // Now we are at Closing Balance of Period.
         // We need to walk BACKWARDS through the Period to find Opening Balance.
-        const periodVouchers = ledgerVouchers.filter(v => {
-            const d = new Date(v.date).getTime();
-            return d >= start && d <= end;
-        });
+        const periodVouchers = ledgerVouchers.filter(v => v.date >= start && v.date <= end);
 
         // Reversing period vouchers to walk back
         [...periodVouchers].reverse().forEach(v => {

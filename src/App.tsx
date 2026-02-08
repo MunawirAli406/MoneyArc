@@ -34,6 +34,7 @@ import { PersistenceProvider } from './services/persistence/PersistenceContext';
 import { AuthProvider } from './features/auth/AuthContext';
 import { useAuth } from './features/auth/AuthContext.provider';
 import { ThemeProvider } from './features/settings/ThemeContext';
+import { DateProvider } from './features/reports/DateContext';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
@@ -146,15 +147,17 @@ function AppContent() {
 
 function App() {
   return (
-    <ThemeProvider>
-      <PersistenceProvider>
+    <PersistenceProvider>
+      <ThemeProvider>
         <AuthProvider>
-          <BrowserRouter>
-            <AppContent />
-          </BrowserRouter>
+          <DateProvider>
+            <BrowserRouter>
+              <AppContent />
+            </BrowserRouter>
+          </DateProvider>
         </AuthProvider>
-      </PersistenceProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </PersistenceProvider>
   );
 }
 

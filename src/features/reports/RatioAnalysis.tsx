@@ -4,6 +4,7 @@ import { ArrowLeft, PieChart, TrendingUp, Target, Zap, ShieldCheck, FileDown } f
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
 import { type Ledger, ReportService } from '../../services/accounting/ReportService';
+import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import type { StockItem } from '../../services/inventory/types';
@@ -14,11 +15,7 @@ export default function RatioAnalysis() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [ratios, setRatios] = useState<{ name: string, value: string, target: string, desc: string, icon: any, color: string, bg: string }[]>([]);
-    const [startDate, setStartDate] = useState(() => {
-        const today = new Date();
-        return new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-    });
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const { startDate, endDate } = useReportDates();
 
     useEffect(() => {
         const calculateRatios = async () => {
@@ -61,14 +58,10 @@ export default function RatioAnalysis() {
 
             // Calculate balances As On endDate
             const getBalanceAsOn = (ledger: Ledger) => {
-                // This is expensive to do for every ledger individually without the service optimization
-                // but let's do it for accuracy.
-                // Actually ReportService.getAsOnGroupSummary does it for all ledgers in the group.
-                return ReportService.getLedgerBalanceAsOn(ledger, vouchers, new Date(endDate));
+                return ReportService.getLedgerBalanceAsOn(ledger, vouchers, endDate);
             };
 
             // Current Assets: Cash, Bank, Debtors, Stock, etc.
-            // We will filter ledgers that belong to CA groups.
             const caLedgers = ledgers.filter(l =>
                 ['Current Assets', 'Bank Accounts', 'Cash-in-hand', 'Sundry Debtors', 'Stock-in-hand'].includes(l.group) ||
                 l.group.includes('Bank') || l.group.includes('Cash') || l.group.includes('Debtor')
@@ -89,11 +82,11 @@ export default function RatioAnalysis() {
 
             // 2. P&L Items (For the Period)
             // Revenue (Direct Incomes + Sales)
-            const incomeSummaries = ReportService.getPeriodGroupSummary(ledgers, vouchers, new Date(startDate), new Date(endDate), 'INCOME');
+            const incomeSummaries = ReportService.getPeriodGroupSummary(ledgers, vouchers, startDate, endDate, 'INCOME');
             const totalRevenue = Math.abs(incomeSummaries.reduce((sum, g) => sum + g.total, 0)); // Income is Cr
 
             // Expenses (Direct + Indirect)
-            const expenseSummaries = ReportService.getPeriodGroupSummary(ledgers, vouchers, new Date(startDate), new Date(endDate), 'EXPENSES');
+            const expenseSummaries = ReportService.getPeriodGroupSummary(ledgers, vouchers, startDate, endDate, 'EXPENSES');
             const totalExpenses = expenseSummaries.reduce((sum, g) => sum + g.total, 0); // Expense is Dr
 
             const netProfit = totalRevenue - totalExpenses;
@@ -169,7 +162,8 @@ export default function RatioAnalysis() {
                     <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">Ratio Analysis</h1>
                     <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-1">Financial Performance Health-check</p>
                 </div>
-                <div className="ml-auto no-print">
+                <div className="ml-auto no-print flex flex-wrap items-center gap-4">
+                    <PeriodSelector />
                     <button
                         onClick={() => window.print()}
                         className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
@@ -177,14 +171,6 @@ export default function RatioAnalysis() {
                         <FileDown className="w-4 h-4" />
                         Print / Save PDF
                     </button>
-                    <PeriodSelector
-                        startDate={startDate}
-                        endDate={endDate}
-                        onChange={(s, e) => {
-                            setStartDate(s);
-                            setEndDate(e);
-                        }}
-                    />
                 </div>
             </div>
 

@@ -57,6 +57,10 @@ export class LedgerService {
             });
 
             if (changed) {
+                if (provider.readonly) {
+                    console.log(`[LedgerService] Data sanity check identified ${newLedgers.length - ledgers.length} missing ledgers, but provider is read-only. Skipping update.`);
+                    return false;
+                }
                 await provider.write('ledgers.json', newLedgers, company.path);
                 console.log(`[LedgerService] Data sanity check completed. Updated ${newLedgers.length - ledgers.length} ledgers for ${company.name}.`);
                 return true;

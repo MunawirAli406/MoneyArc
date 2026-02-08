@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Save, Plus, Trash2, Calendar, Keyboard, Package, Box, Tag, FileText } from 'lucide-react';
+import { Trash2, Plus, Save, FileText, Calendar, Tag, AlertTriangle, Package, Keyboard, Box } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
@@ -47,6 +47,8 @@ export default function VoucherEntry() {
     const tableRef = useRef<HTMLTableElement>(null);
 
     const [submitting, setSubmitting] = useState(false);
+    const [negativeAlerts, setNegativeAlerts] = useState<string[]>([]);
+    const [taxSummary, setTaxSummary] = useState({ cgst: 0, sgst: 0, igst: 0 });
 
     // Initial Data Loading
     useEffect(() => {
@@ -115,6 +117,39 @@ export default function VoucherEntry() {
             }
         }
     };
+
+    // Real-time Insights Effect
+    useEffect(() => {
+        const analyzeVoucher = () => {
+            const alerts: string[] = [];
+            let cgst = 0, sgst = 0, igst = 0;
+
+            rows.forEach(r => {
+                if (!r.account) return;
+                const ledger = ledgers.find(l => l.name === r.account);
+                if (ledger) {
+                    // Tax Calculation
+                    if (ledger.name.includes('CGST')) cgst += (r.debit || r.credit);
+                    if (ledger.name.includes('SGST')) sgst += (r.debit || r.credit);
+                    if (ledger.name.includes('IGST')) igst += (r.debit || r.credit);
+
+                    // Negative Balance Check
+                    const currentBal = ledger.balance * (ledger.type === 'Dr' ? 1 : -1);
+                    const localChange = (r.debit || 0) - (r.credit || 0);
+                    const nextBal = currentBal + localChange;
+
+                    if (['Cash-in-hand', 'Bank Accounts'].includes(ledger.group)) {
+                        if (nextBal < 0) alerts.push(`${ledger.name} balance will drop to ₹${Math.abs(nextBal).toLocaleString()} Cr`);
+                    }
+                }
+            });
+
+            setNegativeAlerts(alerts);
+            setTaxSummary({ cgst, sgst, igst });
+        };
+
+        analyzeVoucher();
+    }, [rows, ledgers]);
 
     const addRow = () => {
         const lastRow = rows[rows.length - 1];
@@ -325,27 +360,32 @@ export default function VoucherEntry() {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 cyan-gradient rounded-[1.25rem] flex items-center justify-center text-white shadow-xl shadow-primary/20">
-                            <Keyboard className="w-7 h-7" />
+                        <div className="w-16 h-16 cyan-gradient rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl shadow-primary/30">
+                            <Keyboard className="w-8 h-8" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-black text-foreground tracking-tight uppercase leading-none">Universal Entry</h1>
-                            <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
-                                <Box className="w-3 h-3" /> {activeCompany?.name} // {voucherType}
+                            <h1 className="text-4xl font-black text-foreground tracking-tighter uppercase leading-none">Universal Entry</h1>
+                            <p className="text-muted-foreground text-[9px] font-black uppercase tracking-[0.4em] mt-3 flex items-center gap-2 opacity-70">
+                                <Box className="w-3.5 h-3.5" /> {activeCompany?.name} <span className="text-primary font-black">//</span> {voucherType}
                             </p>
                         </div>
                     </div>
 
-                    <div className="bg-card p-1.5 rounded-2xl border border-border shadow-inner">
-                        <select
-                            value={voucherType}
-                            onChange={(e) => setVoucherType(e.target.value as VoucherType)}
-                            className="bg-transparent text-sm font-black uppercase tracking-widest outline-none px-4 py-2 cursor-pointer text-foreground"
-                        >
-                            {['Payment', 'Receipt', 'Journal', 'Contra', 'Sales', 'Purchase'].map(type => (
-                                <option key={type} value={type}>{type}</option>
-                            ))}
-                        </select>
+                    <div className="glass-panel p-2 rounded-2xl flex items-center gap-1">
+                        {['Payment', 'Receipt', 'Journal', 'Contra', 'Sales', 'Purchase'].map(type => (
+                            <button
+                                key={type}
+                                onClick={() => setVoucherType(type as VoucherType)}
+                                className={clsx(
+                                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                    voucherType === type
+                                        ? "bg-primary text-primary-foreground shadow-lg"
+                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
+                            >
+                                {type}
+                            </button>
+                        ))}
                     </div>
                 </div>
 
@@ -406,7 +446,7 @@ export default function VoucherEntry() {
                                         step="0.0001"
                                         value={exchangeRate}
                                         onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 1)}
-                                        className="w-full px-5 py-3.5 bg-background border border-border rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm"
+                                        className="input-premium w-full"
                                         placeholder="1.0000"
                                     />
                                 </div>
@@ -607,11 +647,37 @@ export default function VoucherEntry() {
                                 value={narration}
                                 onChange={(e) => setNarration(e.target.value)}
                                 rows={3}
-                                className="w-full px-6 py-4 bg-background border border-border rounded-[1.5rem] focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none resize-none font-bold text-sm transition-all shadow-inner"
+                                className="input-premium w-full resize-none min-h-[100px]"
                                 placeholder="Type full transaction ವಿವರ (description)..."
                             />
                         </div>
                         <div className="flex flex-col justify-end gap-6">
+                            {negativeAlerts.length > 0 && (
+                                <div className="space-y-2">
+                                    {negativeAlerts.map((alert, i) => (
+                                        <motion.div
+                                            initial={{ x: 20, opacity: 0 }}
+                                            animate={{ x: 0, opacity: 1 }}
+                                            key={i}
+                                            className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl flex items-center gap-3 text-amber-600"
+                                        >
+                                            <AlertTriangle className="w-4 h-4" />
+                                            <span className="text-[10px] font-black uppercase tracking-tight">{alert}</span>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                            )}
+
+                            {/* Tax Breakdown */}
+                            {(taxSummary.cgst > 0 || taxSummary.sgst > 0 || taxSummary.igst > 0) && (
+                                <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl space-y-2">
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">Tax Estimate</p>
+                                    {taxSummary.cgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>CGST Total</span><span>₹{taxSummary.cgst.toLocaleString()}</span></div>}
+                                    {taxSummary.sgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>SGST Total</span><span>₹{taxSummary.sgst.toLocaleString()}</span></div>}
+                                    {taxSummary.igst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>IGST Total</span><span>₹{taxSummary.igst.toLocaleString()}</span></div>}
+                                </div>
+                            )}
+
                             {Math.abs(totalDebit - totalCredit) > 0.01 && (
                                 <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex items-center justify-between text-rose-500 animate-pulse">
                                     <span className="text-[10px] font-black uppercase tracking-widest">Difference</span>
@@ -621,21 +687,21 @@ export default function VoucherEntry() {
                             <div className="flex gap-4">
                                 <button
                                     onClick={() => navigate('/dashboard')}
-                                    className="flex-1 py-4 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground hover:text-foreground hover:bg-muted border border-border rounded-2xl transition-all"
+                                    className="btn-premium flex-1 border border-border text-muted-foreground hover:text-foreground hover:bg-muted"
                                 >
                                     Discard
                                 </button>
                                 <button
                                     onClick={handleSave}
                                     disabled={submitting}
-                                    className="flex-[2] flex items-center justify-center gap-4 py-4 bg-primary text-primary-foreground rounded-2xl hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-[0.98] shadow-xl shadow-primary/10 disabled:opacity-70 disabled:cursor-not-allowed"
+                                    className="btn-premium flex-[2] flex items-center justify-center gap-4 bg-primary text-primary-foreground"
                                 >
                                     {submitting ? (
                                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                                     ) : (
                                         <Save className="w-5 h-5" />
                                     )}
-                                    <span className="font-black uppercase tracking-[0.2em] text-[11px]">{submitting ? 'Saving...' : 'Finalize Entry'}</span>
+                                    <span>{submitting ? 'Saving...' : 'Finalize Entry'}</span>
                                 </button>
                             </div>
                         </div>

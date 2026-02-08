@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { FileDown, Search, Filter, Trash2, Edit2, FileText } from 'lucide-react';
+import { FileDown, Search, Trash2, Edit2, FileText, ChevronRight } from 'lucide-react';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { VoucherService } from '../../services/accounting/VoucherService';
 import { useNavigate } from 'react-router-dom';
+import { useReportDates } from './DateContext';
+import LedgerQuickView from './LedgerQuickView';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 
 export default function Daybook() {
@@ -14,14 +16,10 @@ export default function Daybook() {
     const [filteredVouchers, setFilteredVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
 
-    // Filters
-    const [startDate, setStartDate] = useState(() => {
-        const today = new Date();
-        return new Date(today.getFullYear(), today.getMonth(), 1).toISOString().split('T')[0];
-    });
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const { startDate, endDate } = useReportDates();
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState<string>('ALL');
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
         const loadData = async () => {
@@ -73,57 +71,97 @@ export default function Daybook() {
         try {
             await VoucherService.deleteVoucher(provider, id, activeCompany.path);
             setVouchers(vouchers.filter(v => v.id !== id));
+            setSelectedIds(prev => {
+                const next = new Set(prev);
+                next.delete(id);
+                return next;
+            });
         } catch (e) {
             alert('Failed to delete voucher');
             console.error(e);
         }
     };
 
-    if (loading) return <div className="p-10 text-center text-muted-foreground">Loading Daybook...</div>;
+    const handleBulkDelete = async () => {
+        if (selectedIds.size === 0) return;
+        if (!confirm(`Are you sure you want to delete ${selectedIds.size} vouchers?`)) return;
+        if (!provider || !activeCompany) return;
+
+        try {
+            for (const id of Array.from(selectedIds)) {
+                await VoucherService.deleteVoucher(provider, id, activeCompany.path);
+            }
+            setVouchers(vouchers.filter(v => !selectedIds.has(v.id)));
+            setSelectedIds(new Set());
+        } catch (e) {
+            alert('Bulk delete partially failed');
+            console.error(e);
+        }
+    };
+
+    const toggleSelection = (id: string) => {
+        const next = new Set(selectedIds);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+        setSelectedIds(next);
+    };
+
+    const toggleAll = () => {
+        if (selectedIds.size === filteredVouchers.length) {
+            setSelectedIds(new Set());
+        } else {
+            setSelectedIds(new Set(filteredVouchers.map(v => v.id)));
+        }
+    };
+
+    if (loading) return (
+        <div className="flex items-center justify-center p-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+    );
 
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-6 max-w-7xl mx-auto pb-12"
+            className="space-y-8 max-w-7xl mx-auto pb-12"
         >
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Daybook</h1>
-                    <p className="text-muted-foreground font-medium">Transaction Register ({new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()})</p>
+                    <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Daybook Ledger</h1>
+                    <p className="text-muted-foreground font-medium">Daily transaction register: {activeCompany?.name}</p>
                 </div>
-                <div className="flex items-center gap-3">
-                    <PeriodSelector
-                        startDate={startDate}
-                        endDate={endDate}
-                        onChange={(s, e) => {
-                            setStartDate(s);
-                            setEndDate(e);
-                        }}
-                    />
+                <div className="flex items-center gap-4">
+                    <PeriodSelector />
+                    <button
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
+                    >
+                        <FileText className="w-4 h-4" />
+                        Print / Save PDF
+                    </button>
                 </div>
             </div>
 
             {/* Filters Bar */}
-            <div className="bg-card rounded-3xl p-4 border border-border shadow-sm flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative flex-1">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <div className="bg-card/40 backdrop-blur-xl rounded-[2rem] p-4 border border-border/50 dark:border-white/10 shadow-2xl flex flex-col md:flex-row gap-4 items-center">
+                <div className="relative flex-1 group">
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
                         type="text"
-                        placeholder="Search Vch No, Ledger, Narration..."
+                        placeholder="Search by Voucher No, Ledger, or Narration..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-muted/20 rounded-xl border-none outline-none font-bold text-sm focus:ring-2 focus:ring-primary/20 transition-all"
+                        className="w-full pl-12 pr-4 py-3.5 bg-muted/20 rounded-2xl border-none outline-none font-black text-sm focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50 transition-all"
                     />
                 </div>
-                <div className="relative w-full md:w-auto min-w-[200px]">
-                    <Filter className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <div className="relative w-full md:w-auto min-w-[240px]">
                     <select
                         value={typeFilter}
                         onChange={(e) => setTypeFilter(e.target.value)}
-                        className="w-full pl-10 pr-8 py-3 bg-muted/20 rounded-xl border-none outline-none font-bold text-sm focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
+                        className="w-full pl-5 pr-10 py-3.5 bg-muted/20 rounded-2xl border-none outline-none font-black text-sm uppercase tracking-widest text-primary focus:ring-2 focus:ring-primary/20 transition-all appearance-none cursor-pointer"
                     >
-                        <option value="ALL">All Voucher Types</option>
+                        <option value="ALL">All Vouchers</option>
                         <option value="Sales">Sales</option>
                         <option value="Purchase">Purchase</option>
                         <option value="Payment">Payment</option>
@@ -131,126 +169,169 @@ export default function Daybook() {
                         <option value="Contra">Contra</option>
                         <option value="Journal">Journal</option>
                     </select>
+                    <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-primary rotate-90 pointer-events-none" />
                 </div>
                 <button
                     onClick={() => {
-                        const headers = ["Date", "Voucher Type", "Voucher No", "Particulars", "Debit Amount", "Credit Amount"];
+                        const headers = ["Date", "Type", "Vch No", "Particulars", "Amount"];
                         const csvContent = [
                             headers.join(","),
                             ...filteredVouchers.map(v => {
                                 const totalAmt = v.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0);
                                 const mainLedger = v.rows.find(r => r.type === (v.type === 'Receipt' || v.type === 'Purchase' ? 'Cr' : 'Dr'))?.account || 'Multiple';
-                                return [
-                                    new Date(v.date).toLocaleDateString(),
-                                    v.type,
-                                    v.voucherNo,
-                                    `"${mainLedger} - ${v.narration || ''}"`,
-                                    totalAmt,
-                                    totalAmt
-                                ].join(",");
+                                return [v.date, v.type, v.voucherNo, `"${mainLedger}"`, totalAmt].join(",");
                             })
                         ].join("\n");
-
-                        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-                        const link = document.createElement("a");
-                        if (link.download !== undefined) {
-                            const url = URL.createObjectURL(blob);
-                            link.setAttribute("href", url);
-                            link.setAttribute("download", `Daybook_${startDate}_${endDate}.csv`);
-                            link.style.visibility = 'hidden';
-                            document.body.appendChild(link);
-                            link.click();
-                            document.body.removeChild(link);
-                        }
+                        const blob = new Blob([csvContent], { type: 'text/csv' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Daybook_${startDate}.csv`;
+                        a.click();
                     }}
-                    className="p-3 bg-muted/20 rounded-xl hover:bg-emerald-500/10 hover:text-emerald-500 transition-colors"
+                    className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500/20 transition-all active:scale-95"
                     title="Export CSV"
                 >
                     <FileDown className="w-5 h-5" />
                 </button>
-                <button
-                    onClick={() => window.print()}
-                    className="p-3 bg-muted/20 rounded-xl hover:bg-primary/10 hover:text-primary transition-colors"
-                    title="Print List"
-                >
-                    <FileText className="w-5 h-5" />
-                </button>
             </div>
 
-            <div className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
-                        <tr>
-                            <th className="px-6 py-4">Date</th>
-                            <th className="px-6 py-4">Vch Type</th>
-                            <th className="px-6 py-4">Vch No</th>
-                            <th className="px-6 py-4 w-1/3">Particulars</th>
-                            <th className="px-6 py-4 text-right">Debit Amount</th>
-                            <th className="px-6 py-4 text-right">Credit Amount</th>
-                            <th className="px-6 py-4 text-center">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50">
-                        {filteredVouchers.length === 0 ? (
-                            <tr>
-                                <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground font-medium">
-                                    No vouchers found for this period.
-                                </td>
-                            </tr>
-                        ) : (
-                            filteredVouchers.map(v => {
-                                const totalAmt = v.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0);
-                                // Determine main party or ledger name for display
-                                const mainLedger = v.rows.find(r => r.type === (v.type === 'Receipt' || v.type === 'Purchase' ? 'Cr' : 'Dr'))?.account || 'Multiple';
+            <AnimatePresence>
+                {selectedIds.size > 0 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="bg-primary/10 border border-primary/20 p-4 rounded-2xl flex items-center justify-between no-print"
+                    >
+                        <div className="flex items-center gap-4">
+                            <div className="bg-primary text-primary-foreground w-10 h-10 rounded-xl flex items-center justify-center font-black">
+                                {selectedIds.size}
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-black uppercase tracking-tight">Bulk Actions</h4>
+                                <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Applying to selected entries</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <button
+                                onClick={handleBulkDelete}
+                                className="flex items-center gap-2 px-6 py-2 bg-rose-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all shadow-lg shadow-rose-500/20"
+                            >
+                                <Trash2 className="w-4 h-4" /> Delete All
+                            </button>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
-                                return (
-                                    <tr key={v.id} className="hover:bg-muted/10 transition-colors group">
-                                        <td className="px-6 py-4 font-bold text-foreground whitespace-nowrap">
-                                            {new Date(v.date).toLocaleDateString()}
-                                        </td>
-                                        <td className="px-6 py-4 font-bold text-muted-foreground uppercase text-xs tracking-wider">
-                                            {v.type}
-                                        </td>
-                                        <td className="px-6 py-4 font-mono font-bold text-foreground">
-                                            {v.voucherNo}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="font-bold text-foreground">{mainLedger}</div>
-                                            {v.narration && (
-                                                <div className="text-xs text-muted-foreground truncate max-w-xs">{v.narration}</div>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-mono font-bold text-foreground">
-                                            {totalAmt.toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-right font-mono font-bold text-foreground">
-                                            {totalAmt.toLocaleString()}
-                                        </td>
-                                        <td className="px-6 py-4 text-center">
-                                            <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <button
-                                                    onClick={() => navigate(`/vouchers/${v.id}`)}
-                                                    className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-colors"
-                                                    title="View/Edit"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(v.id)}
-                                                    className="p-2 hover:bg-rose-500/10 text-rose-500 rounded-lg transition-colors"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
+            <div className="bg-card rounded-[2.5rem] shadow-2xl border border-border/50 dark:border-white/10 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="bg-muted/30 border-b border-border">
+                                <th className="px-8 py-5 w-16">
+                                    <input
+                                        type="checkbox"
+                                        checked={selectedIds.size === filteredVouchers.length && filteredVouchers.length > 0}
+                                        onChange={toggleAll}
+                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
+                                    />
+                                </th>
+                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground w-40">Date</th>
+                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Type & Number</th>
+                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Particulars</th>
+                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right w-48">Net Amount</th>
+                                <th className="px-8 py-5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-center w-32">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/30">
+                            <AnimatePresence mode="popLayout">
+                                {filteredVouchers.length === 0 ? (
+                                    <motion.tr initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                        <td colSpan={5} className="px-8 py-20 text-center">
+                                            <div className="flex flex-col items-center gap-4">
+                                                <div className="p-4 bg-muted/30 rounded-full text-muted-foreground/30">
+                                                    <FileText className="w-12 h-12" />
+                                                </div>
+                                                <p className="text-lg font-black text-muted-foreground/50 uppercase tracking-widest">Empty Registry</p>
                                             </div>
                                         </td>
-                                    </tr>
-                                );
-                            })
-                        )}
-                    </tbody>
-                </table>
+                                    </motion.tr>
+                                ) : (
+                                    filteredVouchers.map((v, idx) => {
+                                        const totalAmt = v.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0);
+                                        const mainLedger = v.rows.find(r => r.type === (v.type === 'Receipt' || v.type === 'Purchase' ? 'Cr' : 'Dr'))?.account || 'Multiple';
+
+                                        return (
+                                            <motion.tr
+                                                key={v.id}
+                                                initial={{ opacity: 0, x: -20 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: idx * 0.02 }}
+                                                className="hover:bg-muted/5 transition-colors group"
+                                            >
+                                                <td className="px-8 py-6">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedIds.has(v.id)}
+                                                        onChange={() => toggleSelection(v.id)}
+                                                        className="w-4 h-4 rounded border-border text-primary focus:ring-primary/20"
+                                                    />
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <span className="font-mono font-black text-base text-foreground/80">{new Date(v.date).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}</span>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${v.type === 'Sales' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                                                            v.type === 'Purchase' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
+                                                                v.type === 'Payment' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-500' :
+                                                                    'bg-amber-500/10 border-amber-500/20 text-amber-500'
+                                                            }`}>
+                                                            {v.type}
+                                                        </div>
+                                                        <span className="font-mono font-black text-foreground">{v.voucherNo}</span>
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6">
+                                                    <LedgerQuickView ledgerName={mainLedger}>
+                                                        <div className="font-black text-base text-foreground tracking-tight group-hover:text-primary transition-colors underline decoration-dotted decoration-primary/30 underline-offset-4">{mainLedger}</div>
+                                                    </LedgerQuickView>
+                                                    {v.narration && (
+                                                        <p className="text-xs font-bold text-muted-foreground/60 italic truncate max-w-sm mt-1">{v.narration}</p>
+                                                    )}
+                                                </td>
+                                                <td className="px-8 py-6 text-right font-mono font-black text-lg text-foreground">
+                                                    ₹{totalAmt.toLocaleString()}
+                                                </td>
+                                                <td className="px-8 py-6 text-center">
+                                                    <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                                                        <button
+                                                            onClick={() => navigate(`/vouchers/${v.id}`)}
+                                                            className="p-3 hover:bg-primary/10 text-primary rounded-xl transition-all"
+                                                            title="Modify Transaction"
+                                                        >
+                                                            <Edit2 className="w-4 h-4" />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(v.id)}
+                                                            className="p-3 hover:bg-rose-500/10 text-rose-500 rounded-xl transition-all"
+                                                            title="Void Transaction"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </motion.tr>
+                                        );
+                                    })
+                                )}
+                            </AnimatePresence>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </motion.div>
+        </motion.div >
     );
 }

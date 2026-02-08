@@ -7,6 +7,7 @@ import type { Ledger } from '../../services/accounting/ReportService';
 import type { StockItem } from '../../services/inventory/types';
 import { useNavigate } from 'react-router-dom';
 import { GstService } from '../../services/accounting/GstService';
+import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 
 export default function Gstr1Report() {
@@ -16,8 +17,7 @@ export default function Gstr1Report() {
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
     const [stockItems, setStockItems] = useState<StockItem[]>([]);
     const [loading, setLoading] = useState(true);
-    const [startDate, setStartDate] = useState(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const { startDate, endDate } = useReportDates();
 
     useEffect(() => {
         const loadData = async () => {
@@ -36,12 +36,7 @@ export default function Gstr1Report() {
         loadData();
     }, [provider, activeCompany]);
 
-    const filteredVouchers = vouchers.filter(v => {
-        const d = new Date(v.date).getTime();
-        const start = new Date(startDate).setHours(0, 0, 0, 0);
-        const end = new Date(endDate).setHours(23, 59, 59, 999);
-        return d >= start && d <= end;
-    });
+    const filteredVouchers = vouchers.filter(v => v.date >= startDate && v.date <= endDate);
 
     const salesVouchers = filteredVouchers.filter(v => v.type === 'Sales');
 
@@ -101,7 +96,7 @@ export default function Gstr1Report() {
             animate={{ opacity: 1, scale: 1 }}
             className="max-w-7xl mx-auto space-y-8 pb-20"
         >
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
                     <button
                         onClick={() => navigate('/reports/gst')}
@@ -116,15 +111,8 @@ export default function Gstr1Report() {
                         </p>
                     </div>
                 </div>
+                <PeriodSelector />
                 <div className="flex gap-3">
-                    <PeriodSelector
-                        startDate={startDate}
-                        endDate={endDate}
-                        onChange={(s, e) => {
-                            setStartDate(s);
-                            setEndDate(e);
-                        }}
-                    />
                     <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                         <Users className="w-5 h-5" />
                     </div>

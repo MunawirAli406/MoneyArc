@@ -5,6 +5,7 @@ const HANDLE_KEY = 'moneyarc_dir_handle';
 
 export class FileSystemProvider implements StorageProvider {
     private dirHandle: FileSystemDirectoryHandle | null = null;
+    public readonly: boolean = false;
 
     public get isReady(): boolean {
         return this.dirHandle !== null;

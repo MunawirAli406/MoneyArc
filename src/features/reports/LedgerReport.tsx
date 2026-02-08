@@ -4,6 +4,8 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { type Ledger, LedgerReportCalculator, type LedgerReportData } from '../../services/accounting/ReportService';
 import { type Voucher } from '../../services/accounting/VoucherService';
 import { FileDown, Wallet } from 'lucide-react';
+import PeriodSelector from '../../components/ui/PeriodSelector';
+import { useReportDates } from './DateContext';
 
 
 interface LedgerReportProps {
@@ -17,8 +19,7 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
     const [selectedLedgerId, setSelectedLedgerId] = useState<string>(externalSelectedLedgerId || '');
     const [reportData, setReportData] = useState<LedgerReportData | null>(null);
-    const [startDate, setStartDate] = useState<string>(new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]);
-    const [endDate, setEndDate] = useState<string>(new Date().toISOString().split('T')[0]);
+    const { startDate, endDate } = useReportDates();
     const [loading, setLoading] = useState(false);
 
     // Load minimal data on mount
@@ -94,8 +95,8 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                         </div>
                     )}
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-1">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="space-y-1 flex-1 min-w-[240px]">
                             <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Select Ledger</label>
                             <select
                                 value={selectedLedgerId}
@@ -111,22 +112,8 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                             </select>
                         </div>
                         <div className="space-y-1">
-                            <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Start Date</label>
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => setStartDate(e.target.value)}
-                                className="w-full p-2.5 rounded-xl bg-muted/50 border border-border font-medium text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">End Date</label>
-                            <input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => setEndDate(e.target.value)}
-                                className="w-full p-2.5 rounded-xl bg-muted/50 border border-border font-medium text-sm focus:ring-2 focus:ring-primary/20 outline-none"
-                            />
+                            <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Reporting Period</label>
+                            <PeriodSelector />
                         </div>
                     </div>
                 </div>

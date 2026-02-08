@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Mail, ArrowRight, Loader2, Lock, FolderOpen, PieChart } from 'lucide-react';
+import { Mail, ArrowRight, Loader2, Lock, FolderOpen } from 'lucide-react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from './AuthContext.provider';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import Logo from '../../components/ui/Logo';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -58,11 +59,7 @@ export default function LoginPage() {
             >
                 {/* Logo Area */}
                 <div className="flex flex-col items-center mb-10">
-                    <div className="w-16 h-16 rounded-[1.5rem] bg-gradient-to-br from-primary to-teal-600 flex items-center justify-center shadow-2xl shadow-primary/20 mb-4 scale-110">
-                        <PieChart className="w-8 h-8 text-white" />
-                    </div>
-                    <h2 className="text-3xl font-black text-white tracking-tight uppercase px-4">Money<span className="text-primary">Arc</span></h2>
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-[0.3em] mt-2">Professional Accounting Suite</p>
+                    <Logo size={64} showText={true} className="flex-col !gap-4" />
                 </div>
 
                 <div className="bg-slate-900/80 backdrop-blur-3xl border border-white/5 p-10 rounded-[2.5rem] shadow-2xl overflow-hidden relative">

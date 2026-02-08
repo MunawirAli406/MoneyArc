@@ -13,13 +13,14 @@ export interface Company {
     currency: string;
     symbol: string;
     registrationType?: 'Regular' | 'Composition' | 'Unregistered';
+    businessType?: 'General' | 'Hotel' | 'Automobile' | 'Textiles' | 'Restaurant' | 'School' | 'Hospital';
 }
 
 export interface StorageProvider {
     /**
      * Initialize the storage (e.g., prompt for directory handle)
      */
-    init(): Promise<void>;
+    init(config?: any): Promise<void>;
 
     /**
      * List all companies in the storage
@@ -50,6 +51,7 @@ export interface StorageProvider {
      * Check if storage is ready
      */
     isReady: boolean;
+    readonly: boolean;
 }
 
-export type StorageType = 'local' | 'cloud' | 'browser' | null;
+export type StorageType = 'local' | 'cloud' | 'browser' | 'github' | null;

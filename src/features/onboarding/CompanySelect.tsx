@@ -25,7 +25,8 @@ export default function CompanySelect() {
         website: '',
         currency: 'INR',
         symbol: '₹',
-        registrationType: 'Regular'
+        registrationType: 'Regular',
+        businessType: 'General'
     });
     const navigate = useNavigate();
 
@@ -69,7 +70,8 @@ export default function CompanySelect() {
             website: company.website || '',
             currency: company.currency || 'INR',
             symbol: company.symbol || '₹',
-            registrationType: company.registrationType || 'Regular'
+            registrationType: company.registrationType || 'Regular',
+            businessType: company.businessType || 'General'
         });
         setEditingCompanyId(company.id);
         setShowCreateForm(true);
@@ -88,7 +90,8 @@ export default function CompanySelect() {
             website: '',
             currency: 'INR',
             symbol: '₹',
-            registrationType: 'Regular'
+            registrationType: 'Regular',
+            businessType: 'General'
         });
         setEditingCompanyId(null);
         setShowCreateForm(false);
@@ -193,6 +196,9 @@ export default function CompanySelect() {
                                                         GST: {company.gstin}
                                                     </div>
                                                 )}
+                                                <div className="px-2 py-0.5 bg-primary/10 rounded text-[10px] font-bold uppercase tracking-wider text-primary">
+                                                    {company.businessType || 'General'}
+                                                </div>
                                             </div>
                                         </div>
                                         <button
@@ -280,12 +286,28 @@ export default function CompanySelect() {
                                             <label className="block text-sm font-bold text-foreground mb-1">Registration Type</label>
                                             <select
                                                 value={newCompany.registrationType}
-                                                onChange={(e) => setNewCompany({ ...newCompany, registrationType: e.target.value as 'Regular' | 'Composition' | 'Unregistered' })}
+                                                onChange={(e) => setNewCompany({ ...newCompany, registrationType: e.target.value as any })}
                                                 className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground"
                                             >
                                                 <option value="Regular">Regular</option>
                                                 <option value="Composition">Composition</option>
                                                 <option value="Unregistered">Unregistered</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-foreground mb-1">Business Type</label>
+                                            <select
+                                                value={newCompany.businessType}
+                                                onChange={(e) => setNewCompany({ ...newCompany, businessType: e.target.value as any })}
+                                                className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground"
+                                            >
+                                                <option value="General">General Business</option>
+                                                <option value="Hotel">Hotel & Hospitality</option>
+                                                <option value="Automobile">Automobile & Garage</option>
+                                                <option value="Textiles">Textiles & Garments</option>
+                                                <option value="Restaurant">Restaurant & Cafe</option>
+                                                <option value="School">School & Education</option>
+                                                <option value="Hospital">Hospital & Healthcare</option>
                                             </select>
                                         </div>
                                     </div>

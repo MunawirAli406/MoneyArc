@@ -4,6 +4,8 @@ const STORAGE_PREFIX = 'moneyarc_';
 const COMPANIES_KEY = 'moneyarc_companies';
 
 export class LocalStorageProvider implements StorageProvider {
+    public readonly readonly = false;
+
     public get isReady(): boolean {
         return true;
     }

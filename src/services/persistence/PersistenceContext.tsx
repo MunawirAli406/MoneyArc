@@ -1,13 +1,14 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import type { StorageProvider, StorageType, Company } from './types';
 import { FileSystemProvider } from './FileSystemProvider';
+import { GitHubProvider } from './GitHubProvider';
 import { LedgerService } from '../accounting/LedgerService';
 
 interface PersistenceContextType {
     provider: StorageProvider | null;
     storageType: StorageType;
     activeCompany: Company | null;
-    initializeStorage: (type: StorageType) => Promise<void>;
+    initializeStorage: (type: StorageType, config?: any) => Promise<void>;
     restoreStorage: () => Promise<boolean>;
     selectCompany: (company: Company | null) => Promise<void>;
 }
@@ -35,6 +36,14 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
                 setStorageType('local');
                 return true;
             }
+            const githubProvider = new GitHubProvider();
+            const ghRestored = await githubProvider.restore?.();
+            if (ghRestored) {
+                console.log('PersistenceProvider: GitHub storage restored.');
+                setProvider(githubProvider);
+                setStorageType('github');
+                return true;
+            }
         } catch (e) {
             console.error('PersistenceProvider: Restore failed', e);
         }
@@ -42,19 +51,18 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
         return false;
     };
 
-    const initializeStorage = async (type: StorageType) => {
+    const initializeStorage = async (type: StorageType, config?: any) => {
         let newProvider: StorageProvider | null = null;
 
         if (type === 'local') {
             newProvider = new FileSystemProvider();
-        } else if (type === 'browser') {
-            const { LocalStorageProvider } = await import('./LocalStorageProvider');
-            newProvider = new LocalStorageProvider();
+        } else if (type === 'github') {
+            newProvider = new GitHubProvider();
         }
         // Add Cloud provider logic here later
 
         if (newProvider) {
-            await newProvider.init();
+            await newProvider.init(config);
             if (newProvider.isReady) {
                 setProvider(newProvider);
                 setStorageType(type);

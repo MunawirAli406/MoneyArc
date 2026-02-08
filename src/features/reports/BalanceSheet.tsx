@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ReportService, type Ledger, type GroupSummary } from '../../services/accounting/ReportService';
 import { type StockItem } from '../../services/inventory/types';
-import { FileDown } from 'lucide-react';
+import { FileDown, ChevronRight, ChevronDown } from 'lucide-react';
 import type { Voucher } from '../../services/accounting/VoucherService';
+import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 
 
@@ -14,14 +15,11 @@ export default function BalanceSheet() {
     const [assets, setAssets] = useState<GroupSummary[]>([]);
     const [closingStock, setClosingStock] = useState(0);
     const [netProfit, setNetProfit] = useState(0);
+    const [tbDiff, setTbDiff] = useState(0);
     const [loading, setLoading] = useState(true);
+    const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
-    // Period State
-    const [startDate, setStartDate] = useState(() => {
-        const today = new Date();
-        return new Date(today.getFullYear(), 3, 1).toISOString().split('T')[0]; // Default: April 1st
-    });
-    const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
+    const { startDate, endDate } = useReportDates();
 
     useEffect(() => {
         const loadData = async () => {
@@ -31,7 +29,6 @@ export default function BalanceSheet() {
             const [ledgerData, stockItemsData, customGroupsData, vouchersData] = await Promise.all([
                 provider.read<Ledger[]>('ledgers.json', activeCompany.path),
                 provider.read<StockItem[]>('stock_items.json', activeCompany.path),
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 provider.read<any[]>('custom_groups.json', activeCompany.path),
                 provider.read<Voucher[]>('vouchers.json', activeCompany.path)
             ]);
@@ -41,43 +38,37 @@ export default function BalanceSheet() {
             const customGroups = customGroupsData || [];
             const vouchers = vouchersData || [];
 
-            // Re-register groups (safe to call multiple times)
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { AccountGroupManager } = await import('../../services/accounting/ReportService');
             customGroups.forEach((c: any) => AccountGroupManager.registerGroup(c.name, c.parentType));
 
-
-            const liabilityData = ReportService.getAsOnGroupSummary(ledgers as Ledger[], vouchers, new Date(endDate), 'LIABILITIES');
-            // Exclude 'Stock-in-hand' from standard assets as we add Closing Stock explicitly
-            // Assets are "As On" End Date
-            const assetData = ReportService.getAsOnGroupSummary(ledgers as Ledger[], vouchers, new Date(endDate), 'ASSETS')
+            const liabilityData = ReportService.getAsOnGroupSummary(ledgers as Ledger[], vouchers, endDate, 'LIABILITIES');
+            const assetData = ReportService.getAsOnGroupSummary(ledgers as Ledger[], vouchers, endDate, 'ASSETS')
                 .filter(g => g.groupName !== 'Stock-in-hand');
 
-            // Net Profit for Balance Sheet: P&L for the selected PERIOD
-            // Determine Fiscal Year Start -> No, User SELECTED Period.
-            // But usually BS is "As On", implying P&L from Start of Year to Date.
-            // Here we respect the User's "From" date for the P&L Calculation part of the BS.
-
-            const np = ReportService.getNetProfitPeriod(ledgers as Ledger[], vouchers, new Date(startDate), new Date(endDate), stockItems);
-
-            // Closing Stock: Should be As On End Date. 
-            // V1: Use current stock value (simplification)
-            const cs = ReportService.getClosingStockValue(stockItems);
-
-            const tbDiff = ReportService.getTrialBalanceDiff(ledgers as Ledger[]); // TB Diff might need AsOn calculation too but minor for now
+            const np = ReportService.getNetProfitPeriod(ledgers as Ledger[], vouchers, startDate, endDate, stockItems);
+            const cs = ReportService.getClosingStockValue(stockItems, vouchers, endDate);
+            const currentTbDiff = ReportService.getTrialBalanceDiff(ledgers as Ledger[], vouchers, endDate);
 
             setLiabilities(liabilityData);
             setAssets(assetData);
             setNetProfit(np);
             setClosingStock(cs);
-            setTbDiff(tbDiff);
+            setTbDiff(currentTbDiff);
 
             setLoading(false);
         };
         loadData();
     }, [provider, activeCompany, startDate, endDate]);
 
-    const [tbDiff, setTbDiff] = useState(0);
+    const toggleGroup = (groupName: string) => {
+        const newExpanded = new Set(expandedGroups);
+        if (newExpanded.has(groupName)) {
+            newExpanded.delete(groupName);
+        } else {
+            newExpanded.add(groupName);
+        }
+        setExpandedGroups(newExpanded);
+    };
 
     const totalLiabilities = ReportService.calculateTotal(liabilities) + (netProfit > 0 ? netProfit : 0) + (tbDiff > 0 ? tbDiff : 0);
     const totalAssets = ReportService.calculateTotal(assets) + closingStock + (netProfit < 0 ? Math.abs(netProfit) : 0) + (tbDiff < 0 ? Math.abs(tbDiff) : 0);
@@ -96,11 +87,11 @@ export default function BalanceSheet() {
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight">Balance Sheet</h1>
-                    <p className="text-muted-foreground font-medium">Financial health ({new Date(startDate).toLocaleDateString()} - {new Date(endDate).toLocaleDateString()})</p>
+                    <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Balance Sheet</h1>
+                    <p className="text-muted-foreground font-medium">Financial health ({startDate} to {endDate})</p>
                 </div>
-                {/* Export Buttons Code ... */}
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4">
+                    <PeriodSelector />
                     <button
                         onClick={() => window.print()}
                         className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
@@ -108,21 +99,10 @@ export default function BalanceSheet() {
                         <FileDown className="w-4 h-4" />
                         Print / Save PDF
                     </button>
-
-                    <div className="flex items-center gap-2 no-print">
-                        <PeriodSelector
-                            startDate={startDate}
-                            endDate={endDate}
-                            onChange={(s, e) => {
-                                setStartDate(s);
-                                setEndDate(e);
-                            }}
-                        />
-                    </div>
                 </div>
             </div>
 
-            <div className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden">
+            <div className="bg-card rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden">
                 <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
                     {/* Liabilities Side */}
                     <div className="flex flex-col">
@@ -130,46 +110,66 @@ export default function BalanceSheet() {
                             Liabilities & Equity
                         </div>
                         <div className="p-8 space-y-8 flex-1">
-
                             {liabilities.map(group => (
                                 group.total !== 0 && (
-                                    <div key={group.groupName} className="space-y-4">
-                                        <div className="flex justify-between items-baseline group cursor-pointer">
-                                            <span className="text-sm font-black text-foreground uppercase tracking-tight group-hover:text-primary transition-colors">{group.groupName}</span>
-                                            <span className={`font-mono font-bold text-base ${group.total < 0 ? 'text-amber-500' : 'text-foreground'}`}>{Math.abs(group.total).toLocaleString()} {group.total < 0 ? '(Dr)' : ''}</span>
+                                    <div key={group.groupName} className="space-y-3">
+                                        <div
+                                            onClick={() => toggleGroup(group.groupName)}
+                                            className="flex justify-between items-center group cursor-pointer hover:bg-muted/30 p-2 -mx-2 rounded-xl transition-all"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                {expandedGroups.has(group.groupName) ? (
+                                                    <ChevronDown className="w-4 h-4 text-primary" />
+                                                ) : (
+                                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                )}
+                                                <span className="text-sm font-black text-foreground uppercase tracking-tight">{group.groupName}</span>
+                                            </div>
+                                            <span className={`font-mono font-black text-base ${group.total < 0 ? 'text-amber-500' : 'text-foreground'}`}>
+                                                {Math.abs(group.total).toLocaleString()} {group.total < 0 ? '(Dr)' : ''}
+                                            </span>
                                         </div>
-                                        <div className="space-y-2 border-l-2 border-muted pl-4 ml-1">
-                                            {group.ledgers.map(l => (
-                                                <div key={l.id} className="flex justify-between items-center text-sm font-medium text-muted-foreground/80 hover:text-foreground transition-colors py-0.5">
-                                                    <span>{l.name}</span>
-                                                    <span className="font-mono">{l.balance.toLocaleString()} {l.type}</span>
-                                                </div>
-                                            ))}
-                                        </div>
+
+                                        <AnimatePresence>
+                                            {expandedGroups.has(group.groupName) && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="overflow-hidden space-y-1 border-l-2 border-primary/20 pl-4 ml-2"
+                                                >
+                                                    {group.ledgers.map(l => (
+                                                        <div key={l.id} className="flex justify-between items-center text-xs font-bold text-muted-foreground/80 hover:text-foreground transition-colors py-1">
+                                                            <span>{l.name}</span>
+                                                            <span className="font-mono text-[10px]">{l.balance.toLocaleString()} {l.type}</span>
+                                                        </div>
+                                                    ))}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 )
                             ))}
                             {netProfit > 0 && (
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-baseline group">
-                                        <span className="text-sm font-black text-emerald-500 uppercase tracking-tight">Profit & Loss A/c (Net Profit)</span>
-                                        <span className="font-mono font-bold text-emerald-600 text-base">{netProfit.toLocaleString()}</span>
+                                <div className="p-2 -mx-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-black text-emerald-500 uppercase tracking-tight">Net Profit</span>
+                                        <span className="font-mono font-black text-emerald-600 text-base">{netProfit.toLocaleString()}</span>
                                     </div>
                                 </div>
                             )}
                             {tbDiff > 0 && (
-                                <div className="space-y-4 pt-4 border-t border-dashed border-red-500/20">
-                                    <div className="flex justify-between items-baseline group">
-                                        <span className="text-sm font-black text-amber-500 uppercase tracking-tight">Diff. in Opening Balances</span>
-                                        <span className="font-mono font-bold text-amber-600 text-base">{tbDiff.toLocaleString()}</span>
+                                <div className="space-y-2 p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 mt-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-black text-amber-500 uppercase tracking-tight">Opening Diff</span>
+                                        <span className="font-mono font-black text-amber-600">{tbDiff.toLocaleString()}</span>
                                     </div>
-                                    <p className="text-[10px] text-muted-foreground italic">Total Debits exceed Credits by {tbDiff.toLocaleString()}</p>
                                 </div>
                             )}
                         </div>
-                        <div className="p-6 bg-muted/30 border-t border-border flex justify-between items-center px-8">
-                            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Total Liabilities</span>
-                            <span className="text-xl font-black text-foreground font-mono">{totalLiabilities.toLocaleString()}</span>
+                        <div className="p-8 bg-muted/30 border-t border-border flex justify-between items-center">
+                            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Capital & Liabilities</span>
+                            <span className="text-2xl font-black text-foreground font-mono">{totalLiabilities.toLocaleString()}</span>
                         </div>
                     </div>
 
@@ -180,66 +180,77 @@ export default function BalanceSheet() {
                         </div>
                         <div className="p-8 space-y-8 flex-1">
                             {closingStock > 0 && (
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-baseline group">
-                                        <span className="text-sm font-black text-foreground uppercase tracking-tight group-hover:text-cyan-500 transition-colors">Closing Stock</span>
-                                        <span className="font-mono font-bold text-foreground text-base">{closingStock.toLocaleString()}</span>
+                                <div className="p-2 -mx-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-black text-foreground uppercase tracking-tight">Closing Stock</span>
+                                        <span className="font-mono font-black text-foreground text-base">{closingStock.toLocaleString()}</span>
                                     </div>
                                 </div>
                             )}
                             {assets.map(group => (
                                 group.total !== 0 && (
-                                    <div key={group.groupName} className="space-y-4">
-                                        <div className="flex justify-between items-baseline group cursor-pointer">
-                                            <span className="text-sm font-black text-foreground uppercase tracking-tight group-hover:text-cyan-500 transition-colors">{group.groupName}</span>
-                                            <span className={`font-mono font-bold text-base ${group.total < 0 ? 'text-amber-500' : 'text-foreground'}`}>{Math.abs(group.total).toLocaleString()} {group.total < 0 ? '(Cr)' : ''}</span>
+                                    <div key={group.groupName} className="space-y-3">
+                                        <div
+                                            onClick={() => toggleGroup(group.groupName)}
+                                            className="flex justify-between items-center group cursor-pointer hover:bg-muted/30 p-2 -mx-2 rounded-xl transition-all"
+                                        >
+                                            <div className="flex items-center gap-3">
+                                                {expandedGroups.has(group.groupName) ? (
+                                                    <ChevronDown className="w-4 h-4 text-cyan-500" />
+                                                ) : (
+                                                    <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-cyan-500 transition-colors" />
+                                                )}
+                                                <span className="text-sm font-black text-foreground uppercase tracking-tight">{group.groupName}</span>
+                                            </div>
+                                            <span className={`font-mono font-black text-base ${group.total < 0 ? 'text-amber-500' : 'text-foreground'}`}>
+                                                {Math.abs(group.total).toLocaleString()} {group.total < 0 ? '(Cr)' : ''}
+                                            </span>
                                         </div>
-                                        <div className="space-y-2 border-l-2 border-muted pl-4 ml-1">
-                                            {group.ledgers.map(l => (
-                                                <div key={l.id} className="flex justify-between items-center text-sm font-medium text-muted-foreground/80 hover:text-foreground transition-colors py-0.5">
-                                                    <span>{l.name}</span>
-                                                    <span className="font-mono">{l.balance.toLocaleString()} {l.type}</span>
-                                                </div>
-                                            ))}
-                                        </div>
+
+                                        <AnimatePresence>
+                                            {expandedGroups.has(group.groupName) && (
+                                                <motion.div
+                                                    initial={{ height: 0, opacity: 0 }}
+                                                    animate={{ height: 'auto', opacity: 1 }}
+                                                    exit={{ height: 0, opacity: 0 }}
+                                                    className="overflow-hidden space-y-1 border-l-2 border-cyan-500/20 pl-4 ml-2"
+                                                >
+                                                    {group.ledgers.map(l => (
+                                                        <div key={l.id} className="flex justify-between items-center text-xs font-bold text-muted-foreground/80 hover:text-foreground transition-colors py-1">
+                                                            <span>{l.name}</span>
+                                                            <span className="font-mono text-[10px]">{l.balance.toLocaleString()} {l.type}</span>
+                                                        </div>
+                                                    ))}
+                                                </motion.div>
+                                            )}
+                                        </AnimatePresence>
                                     </div>
                                 )
                             ))}
                             {netProfit < 0 && (
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-baseline group">
-                                        <span className="text-sm font-black text-rose-500 uppercase tracking-tight">Profit & Loss A/c (Net Loss)</span>
-                                        <span className="font-mono font-bold text-rose-600 text-base">{Math.abs(netProfit).toLocaleString()}</span>
+                                <div className="p-2 -mx-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-black text-rose-500 uppercase tracking-tight">Net Loss</span>
+                                        <span className="font-mono font-black text-rose-600 text-base">{Math.abs(netProfit).toLocaleString()}</span>
                                     </div>
-                                </div>
-                            )}
-                            {tbDiff < 0 && (
-                                <div className="space-y-4 pt-4 border-t border-dashed border-red-500/20">
-                                    <div className="flex justify-between items-baseline group">
-                                        <span className="text-sm font-black text-amber-500 uppercase tracking-tight">Diff. in Opening Balances</span>
-                                        <span className="font-mono font-bold text-amber-600 text-base">{Math.abs(tbDiff).toLocaleString()}</span>
-                                    </div>
-                                    <p className="text-[10px] text-muted-foreground italic">Total Credits exceed Debits by {Math.abs(tbDiff).toLocaleString()}</p>
                                 </div>
                             )}
                         </div>
-                        <div className="p-6 bg-muted/30 border-t border-border flex justify-between items-center px-8">
-                            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Total Assets</span>
-                            <span className="text-xl font-black text-foreground font-mono">{totalAssets.toLocaleString()}</span>
+                        <div className="p-8 bg-muted/30 border-t border-border flex justify-between items-center">
+                            <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Assets & Values</span>
+                            <span className="text-2xl font-black text-foreground font-mono">{totalAssets.toLocaleString()}</span>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* Validation Check */}
-            <div className={`p-6 rounded-2xl border text-center font-bold text-sm tracking-wide ${Math.abs(totalAssets - totalLiabilities) < 0.01 ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/10 border-rose-500/20 text-rose-500'}`}>
+            <div className={`p-8 rounded-[2rem] border-2 text-center font-black text-sm tracking-widest uppercase ${Math.abs(totalAssets - totalLiabilities) < 0.01 ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/5 border-rose-500/20 text-rose-500'}`}>
                 {Math.abs(totalAssets - totalLiabilities) < 0.01
-                    ? '✓ Balance Sheet is perfectly balanced'
-                    : `⚠ Balance Sheet Difference: ${(totalAssets - totalLiabilities).toLocaleString()}`
+                    ? '✓ Accounts are balanced'
+                    : `⚠ System Imbalance: ${(totalAssets - totalLiabilities).toLocaleString()}`
                 }
             </div>
-
-
-        </motion.div>
+        </motion.div >
     );
 }

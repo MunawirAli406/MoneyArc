@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Mail, User, Lock, ArrowRight, Loader2, PieChart, FolderOpen } from 'lucide-react';
+import { Mail, User, Lock, ArrowRight, Loader2, FolderOpen } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from './AuthContext.provider';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
+import Logo from '../../components/ui/Logo';
 
 export default function SignUpPage() {
     const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -54,10 +55,7 @@ export default function SignUpPage() {
             >
                 {/* Logo Area */}
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-teal-600 flex items-center justify-center shadow-xl shadow-primary/20 mb-3">
-                        <PieChart className="w-6 h-6 text-white" />
-                    </div>
-                    <h2 className="text-2xl font-black text-white tracking-tight uppercase">Money<span className="text-primary">Arc</span></h2>
+                    <Logo size={48} showText={true} className="flex-col !gap-3" />
                 </div>
 
                 <div className="bg-slate-900/80 backdrop-blur-3xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl overflow-hidden relative">
