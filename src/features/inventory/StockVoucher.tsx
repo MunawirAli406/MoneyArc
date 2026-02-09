@@ -267,7 +267,7 @@ export default function StockVoucher({ externalSelectedItemId, onItemChange, isE
                                     {totalOutward.toLocaleString()}
                                 </div>
                             </div>
-                            <div className="space-y-1 p-4 rounded-2xl bg-primary/5 border border-primary/20 shadow-sm amber-glow">
+                            <div className="space-y-1 p-4 rounded-2xl bg-primary/5 border border-primary/20 shadow-sm primary-glow">
                                 <span className="text-[10px] uppercase font-black text-primary tracking-widest">Closing Balance</span>
                                 <div className="font-mono font-bold text-lg text-primary">
                                     {(openingQty + totalInward - totalOutward).toLocaleString()} <span className="text-xs text-muted-foreground">{getUnitName(selectedItem.unitId)}</span>

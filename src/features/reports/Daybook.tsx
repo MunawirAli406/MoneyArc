@@ -145,7 +145,7 @@ export default function Daybook() {
             </div>
 
             {/* Filters Bar */}
-            <div className="bg-card/40 backdrop-blur-xl rounded-[2rem] p-4 border border-border/50 dark:border-white/10 shadow-2xl flex flex-col md:flex-row gap-4 items-center">
+            <div className="bg-card rounded-[2rem] p-4 border border-border/50 dark:border-white/10 shadow-2xl flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1 group">
                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input

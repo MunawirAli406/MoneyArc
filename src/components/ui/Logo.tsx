@@ -13,12 +13,12 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
     return (
         <div className={`flex items-center gap-4 ${className}`}>
             <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-                {/* Background Ambient Glow */}
+                {/* Background Ambient Glow - Reduced for cleaner look */}
                 <motion.div
-                    className="absolute inset-[-10%] bg-primary/15 blur-2xl rounded-full"
+                    className="absolute inset-[-10%] bg-blue-500/10 blur-2xl rounded-full"
                     animate={{
-                        scale: [1, 1.2, 1],
-                        opacity: [0.3, 0.5, 0.3],
+                        scale: [1, 1.1, 1],
+                        opacity: [0.2, 0.4, 0.2],
                     }}
                     transition={{
                         duration: 4,
@@ -34,7 +34,7 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                         scale: [1, 1.02, 1],
                         opacity: 1
                     }}
-                    whileHover={{ scale: 1.08 }}
+                    whileHover={{ scale: 1.05 }}
                     transition={{
                         type: "spring",
                         stiffness: 400,
@@ -47,11 +47,11 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
                     >
-                        {/* The Nexus Arc (The Bridge) */}
+                        {/* The Nexus Arc (The Bridge) - Google Blue */}
                         <motion.path
                             d="M 20 70 C 20 30 80 30 80 70"
-                            stroke="currentColor"
-                            className="text-primary/40"
+                            stroke="#4285F4"
+                            className="text-google-blue"
                             strokeWidth={bridgeStroke}
                             strokeLinecap="round"
                             initial={{ pathLength: 0 }}
@@ -61,19 +61,19 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
 
                         {/* Interconnected Nodes with Pulse Effect */}
                         {[
-                            { cx: 20, cy: 70, delay: 0 },
-                            { cx: 50, cy: 35, delay: 0.3 },
-                            { cx: 80, cy: 70, delay: 0.6 }
+                            { cx: 20, cy: 70, color: '#EA4335', delay: 0 },   // Red - Left
+                            { cx: 50, cy: 35, color: '#FBBC04', delay: 0.3 }, // Yellow - Top
+                            { cx: 80, cy: 70, color: '#34A853', delay: 0.6 }  // Green - Right
                         ].map((node, i) => (
                             <g key={i}>
                                 {/* Node Glow */}
                                 <motion.circle
-                                    cx={node.cx} cy={node.cy} r={nodeRadius * 2.5}
-                                    fill="currentColor"
-                                    className="text-primary/20"
+                                    cx={node.cx} cy={node.cy} r={nodeRadius * 2}
+                                    fill={node.color}
+                                    className="opacity-20"
                                     animate={{
-                                        scale: [1, 1.4, 1],
-                                        opacity: [0.3, 0.6, 0.3]
+                                        scale: [1, 1.3, 1],
+                                        opacity: [0.2, 0.5, 0.2]
                                     }}
                                     transition={{
                                         duration: 2,
@@ -85,27 +85,26 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                                 {/* Solid Node Core */}
                                 <motion.circle
                                     cx={node.cx} cy={node.cy} r={nodeRadius}
-                                    fill="white"
+                                    fill={node.color}
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
                                     transition={{ delay: node.delay, type: "spring", stiffness: 300 }}
                                 />
-                                {/* Teal Accent ring around core */}
+                                {/* White ring around core for contrast */}
                                 <circle
                                     cx={node.cx} cy={node.cy} r={nodeRadius + 1}
-                                    stroke="currentColor"
-                                    className="text-primary"
+                                    stroke="white"
                                     strokeWidth="1.5"
                                 />
                             </g>
                         ))}
 
-                        {/* Connection Lines (Inner Core Bridge) */}
+                        {/* Connection Lines (Inner Core Bridge) - Subtle White */}
                         <motion.path
                             d="M 20 70 L 50 35 L 80 70"
                             stroke="white"
-                            strokeOpacity="0.15"
-                            strokeWidth="1.5"
+                            strokeOpacity="0.3"
+                            strokeWidth="1"
                             initial={{ pathLength: 0 }}
                             animate={{ pathLength: 1 }}
                             transition={{ duration: 1.2, delay: 0.8 }}
@@ -121,18 +120,16 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                     transition={{ delay: 0.2 }}
                     className="flex flex-col justify-center items-center text-center select-none"
                 >
-                    <div className="text-2xl font-black tracking-tight text-foreground leading-none flex items-baseline justify-center">
-                        <span>Money</span>
-                        <span className="text-primary ml-0.5">Arc</span>
+                    <div className="text-2xl font-black tracking-tight leading-none flex items-baseline justify-center">
+                        <span style={{ color: '#4285F4' }}>M</span>
+                        <span style={{ color: '#EA4335' }}>o</span>
+                        <span style={{ color: '#FBBC04' }}>n</span>
+                        <span style={{ color: '#4285F4' }}>e</span>
+                        <span style={{ color: '#34A853' }}>y</span>
+                        <span style={{ color: '#EA4335' }}>A</span>
+                        <span style={{ color: '#4285F4' }}>r</span>
+                        <span style={{ color: '#FBBC04' }}>c</span>
                     </div>
-                    <motion.p
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5 }}
-                        className="text-[10px] font-bold tracking-[0.3em] uppercase text-muted-foreground/50 leading-none mt-2"
-                    >
-                        Intelligent Wealth
-                    </motion.p>
                 </motion.div>
             )}
         </div>

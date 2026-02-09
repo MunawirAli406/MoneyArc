@@ -50,7 +50,7 @@ export default function LedgerQuickView({ ledgerName, children }: LedgerQuickVie
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                        className="absolute z-[100] left-0 mt-2 w-80 bg-card/80 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl p-4 pointer-events-auto"
+                        className="absolute z-[100] left-0 mt-2 w-80 bg-card border border-border/50 rounded-2xl shadow-2xl p-4 pointer-events-auto"
                     >
                         <div className="flex items-center justify-between mb-4 border-b border-border/50 pb-2">
                             <div className="flex items-center gap-2">

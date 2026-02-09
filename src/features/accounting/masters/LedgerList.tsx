@@ -3,6 +3,7 @@ import { Plus, Search, Filter, Edit2, Trash2, BookOpen, FileText } from 'lucide-
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
+import type { Voucher } from '../../../services/accounting/VoucherService';
 
 interface Ledger {
     id: string;
@@ -19,16 +20,22 @@ interface LedgerListProps {
 export default function LedgerList({ onViewTransactions }: LedgerListProps) {
     const { provider, activeCompany } = usePersistence();
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
+    const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
-        const fetchLedgers = async () => {
+        const fetchData = async () => {
             if (provider && activeCompany) {
                 try {
-                    const data = await provider.read<Ledger[]>('ledgers.json', activeCompany.path);
-                    setLedgers(data || []);
+                    const [ledgerData, voucherData] = await Promise.all([
+                        provider.read<Ledger[]>('ledgers.json', activeCompany.path),
+                        provider.read<Voucher[]>('vouchers.json', activeCompany.path)
+                    ]);
+                    setLedgers(ledgerData || []);
+                    setVouchers(voucherData || []);
                 } catch (error) {
-                    console.error('Failed to load ledgers:', error);
+                    console.error('Failed to load data:', error);
                 } finally {
                     setLoading(false);
                 }
@@ -36,7 +43,7 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
                 setLoading(false);
             }
         };
-        fetchLedgers();
+        fetchData();
     }, [provider, activeCompany]);
 
     const handleDelete = async (id: string) => {
@@ -53,6 +60,50 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
         }
     };
 
+    const getLedgerStats = (ledger: Ledger) => {
+        let totalDebit = 0;
+        let totalCredit = 0;
+
+        vouchers.forEach(v => {
+            v.rows.forEach(r => {
+                if (r.account === ledger.name) {
+                    if (r.type === 'Dr') totalDebit += r.debit;
+                    if (r.type === 'Cr') totalCredit += r.credit;
+                }
+            });
+        });
+
+        // Closing Balance is what is stored in ledger.balance (Current Balance)
+        // We need to back-calculate Opening Balance.
+        // Formula: Closing = Opening + Dr - Cr (For Dr accounts)
+        //          Closing = Opening + Cr - Dr (For Cr accounts)
+
+        // Let's standardise to signed numbers where Dr is +ve and Cr is -ve
+        const closingSigned = ledger.type === 'Dr' ? ledger.balance : -ledger.balance;
+        const netMovement = totalDebit - totalCredit;
+
+        // Closing = Opening + NetMovement
+        // Opening = Closing - NetMovement
+        const openingSigned = closingSigned - netMovement;
+
+        const openingBalance = Math.abs(openingSigned);
+        const openingType = openingSigned >= 0 ? 'Dr' : 'Cr';
+
+        return {
+            openingBalance,
+            openingType,
+            totalDebit,
+            totalCredit,
+            closingBalance: ledger.balance,
+            closingType: ledger.type
+        };
+    };
+
+    const filteredLedgers = ledgers.filter(l =>
+        l.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        l.group.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     if (loading) return (
         <div className="flex items-center justify-center p-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -63,7 +114,7 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="space-y-8 max-w-6xl mx-auto"
+            className="space-y-8 max-w-[95%] mx-auto"
         >
             <div className="flex items-center justify-between">
                 <div>
@@ -87,6 +138,8 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
                         <input
                             type="text"
                             placeholder="Find an account..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
                             className="w-full pl-10 pr-4 py-2.5 text-sm bg-background border border-input rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all font-medium"
                         />
                     </div>
@@ -98,7 +151,7 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
 
                 {/* Table */}
                 <div className="overflow-x-auto">
-                    {ledgers.length === 0 ? (
+                    {filteredLedgers.length === 0 ? (
                         <div className="p-16 text-center space-y-4">
                             <div className="w-16 h-16 bg-muted rounded-2xl flex items-center justify-center mx-auto text-muted-foreground">
                                 <BookOpen className="w-8 h-8" />
@@ -112,53 +165,72 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
                         <table className="w-full text-left text-sm">
                             <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
                                 <tr>
-                                    <th className="px-4 py-2">Account Name</th>
-                                    <th className="px-4 py-2">Group</th>
-                                    <th className="px-4 py-2 text-right">Balance</th>
-                                    <th className="px-4 py-2 text-center">Actions</th>
+                                    <th className="px-4 py-3 min-w-[200px]">Account Name</th>
+                                    <th className="px-4 py-3 min-w-[150px]">Group</th>
+                                    <th className="px-4 py-3 text-right min-w-[120px]">Opening Bal</th>
+                                    <th className="px-4 py-3 text-right min-w-[120px]">Debit</th>
+                                    <th className="px-4 py-3 text-right min-w-[120px]">Credit</th>
+                                    <th className="px-4 py-3 text-right min-w-[120px]">Closing Bal</th>
+                                    <th className="px-4 py-3 text-center w-[120px]">Actions</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/50">
-                                {ledgers.map((ledger) => (
-                                    <tr key={ledger.id} className="hover:bg-muted/10 transition-colors group">
-                                        <td className="px-4 py-2 font-bold text-foreground">{ledger.name}</td>
-                                        <td className="px-4 py-2 font-medium text-muted-foreground">
-                                            <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-bold uppercase tracking-wider">
-                                                {ledger.group}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-2 text-right font-mono font-bold">
-                                            <span className={ledger.type === 'Cr' ? 'text-rose-500' : 'text-accent-500'}>
-                                                {ledger.balance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {ledger.type}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-2 text-center">
-                                            <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
-                                                {onViewTransactions && (
-                                                    <button
-                                                        onClick={() => onViewTransactions(ledger.id)}
-                                                        className="p-2 text-muted-foreground hover:text-accent-500 hover:bg-accent-500/10 rounded-lg transition-colors"
-                                                        title="View Vouchers"
+                                {filteredLedgers.map((ledger) => {
+                                    const stats = getLedgerStats(ledger);
+                                    return (
+                                        <tr key={ledger.id} className="hover:bg-muted/10 transition-colors group">
+                                            <td className="px-4 py-3 font-bold text-foreground">{ledger.name}</td>
+                                            <td className="px-4 py-3 font-medium text-muted-foreground">
+                                                <span className="px-2 py-0.5 rounded-md bg-muted text-[10px] font-bold uppercase tracking-wider">
+                                                    {ledger.group}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-mono text-muted-foreground">
+                                                {stats.openingBalance > 0 ? (
+                                                    <span className={stats.openingType === 'Cr' ? 'text-rose-500/70' : 'text-emerald-500/70'}>
+                                                        {stats.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {stats.openingType}
+                                                    </span>
+                                                ) : '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-mono text-foreground/70">
+                                                {stats.totalDebit > 0 ? stats.totalDebit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-mono text-foreground/70">
+                                                {stats.totalCredit > 0 ? stats.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}
+                                            </td>
+                                            <td className="px-4 py-3 text-right font-mono font-bold">
+                                                <span className={stats.closingType === 'Cr' ? 'text-rose-500' : 'text-emerald-500'}>
+                                                    {stats.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {stats.closingType}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-2 group-hover:translate-x-0">
+                                                    {onViewTransactions && (
+                                                        <button
+                                                            onClick={() => onViewTransactions(ledger.id)}
+                                                            className="p-1.5 text-muted-foreground hover:text-accent-500 hover:bg-accent-500/10 rounded-lg transition-colors"
+                                                            title="View Vouchers"
+                                                        >
+                                                            <FileText className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    <Link
+                                                        to={`/ledgers/${ledger.id}`}
+                                                        className="p-1.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
                                                     >
-                                                        <FileText className="w-4 h-4" />
+                                                        <Edit2 className="w-4 h-4" />
+                                                    </Link>
+                                                    <button
+                                                        onClick={() => handleDelete(ledger.id)}
+                                                        className="p-1.5 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
                                                     </button>
-                                                )}
-                                                <Link
-                                                    to={`/ledgers/${ledger.id}`}
-                                                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                                >
-                                                    <Edit2 className="w-4 h-4" />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(ledger.id)}
-                                                    className="p-2 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     )}

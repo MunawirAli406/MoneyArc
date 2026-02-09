@@ -11,7 +11,7 @@ export default function SignUpPage() {
     const [isLoadingLocal, setIsLoadingLocal] = useState(false);
     const [error, setError] = useState('');
 
-    const { signup } = useAuth();
+    const { signup, loginWithSocial } = useAuth();
     const { provider, initializeStorage } = usePersistence();
     const navigate = useNavigate();
 
@@ -43,10 +43,14 @@ export default function SignUpPage() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center p-6 relative overflow-hidden font-sans">
-            {/* Background Decorative Elements */}
-            <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-full blur-[120px]" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-primary/10 rounded-full blur-[120px]" />
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 relative overflow-hidden font-sans">
+            {/* Google Brand Stripe */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 flex z-50">
+                <div className="h-full flex-1 bg-google-blue" />
+                <div className="h-full flex-1 bg-google-red" />
+                <div className="h-full flex-1 bg-google-yellow" />
+                <div className="h-full flex-1 bg-google-green" />
+            </div>
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -58,21 +62,20 @@ export default function SignUpPage() {
                     <Logo size={48} showText={true} className="flex-col !gap-3" />
                 </div>
 
-                <div className="bg-slate-900/80 backdrop-blur-3xl border border-white/5 p-8 rounded-[2.5rem] shadow-2xl overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+                <div className="bg-white border border-slate-200 p-8 rounded-[2.5rem] shadow-2xl overflow-hidden relative">
 
                     <div className="mb-8 text-center">
-                        <h1 className="text-2xl font-black text-white mb-2 tracking-tight">Establish Identity</h1>
-                        <p className="text-slate-400 text-sm">Join the elite accounting ecosystem.</p>
+                        <h1 className="text-2xl font-black text-slate-900 mb-2 tracking-tight">Establish Identity</h1>
+                        <p className="text-slate-500 text-sm">Join the elite accounting ecosystem.</p>
                     </div>
 
                     {!provider ? (
-                        <div className="bg-white/5 border border-white/10 p-8 rounded-[2rem] text-center">
+                        <div className="bg-slate-50 border border-slate-200 p-8 rounded-[2rem] text-center">
                             <FolderOpen className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse" />
-                            <h4 className="text-white font-bold text-lg mb-2">
+                            <h4 className="text-slate-900 font-bold text-lg mb-2">
                                 {'showDirectoryPicker' in window ? 'Target Directory Missing' : 'Initialize Mobile Storage'}
                             </h4>
-                            <p className="text-slate-400 text-xs mb-8 leading-relaxed">
+                            <p className="text-slate-500 text-xs mb-8 leading-relaxed">
                                 {'showDirectoryPicker' in window
                                     ? 'Account data must be anchored to a physical directory. Please initialize your storage vault.'
                                     : 'Mobile usage detected. Data will be stored securely in this browser instance and cannot be accessed externally.'}
@@ -102,45 +105,45 @@ export default function SignUpPage() {
 
                                 <div className="space-y-4">
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Full Legal Name</label>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Full Legal Name</label>
                                         <div className="relative group">
-                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 group-focus-within:text-primary transition-all shadow-sm" />
+                                            <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-primary transition-all shadow-sm" />
                                             <input
                                                 type="text"
                                                 required
                                                 value={formData.name}
                                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-[1.25rem] text-white text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
+                                                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-slate-900 text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-300"
                                                 placeholder="John Doe"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Vault Identity (Email)</label>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Vault Identity (Email)</label>
                                         <div className="relative group">
-                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 group-focus-within:text-primary transition-all shadow-sm" />
+                                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-primary transition-all shadow-sm" />
                                             <input
                                                 type="email"
                                                 required
                                                 value={formData.email}
                                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-[1.25rem] text-white text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
+                                                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-slate-900 text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-300"
                                                 placeholder="name@company.com"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
-                                        <label className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em] ml-2">Secure Key (Password)</label>
+                                        <label className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2">Secure Key (Password)</label>
                                         <div className="relative group">
-                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 w-4 h-4 group-focus-within:text-primary transition-all shadow-sm" />
+                                            <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4 group-focus-within:text-primary transition-all shadow-sm" />
                                             <input
                                                 type="password"
                                                 required
                                                 value={formData.password}
                                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                                className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-[1.25rem] text-white text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all"
+                                                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-[1.25rem] text-slate-900 text-sm font-bold outline-none focus:border-primary/50 focus:ring-4 focus:ring-primary/5 transition-all placeholder:text-slate-300"
                                                 placeholder="••••••••"
                                             />
                                         </div>
@@ -164,16 +167,23 @@ export default function SignUpPage() {
                             </form>
 
                             <div className="relative flex py-2 items-center">
-                                <div className="flex-grow border-t border-white/10"></div>
-                                <span className="flex-shrink-0 mx-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest">Or sign up with</span>
-                                <div className="flex-grow border-t border-white/10"></div>
+                                <div className="flex-grow border-t border-slate-100"></div>
+                                <span className="flex-shrink-0 mx-4 text-slate-400 text-[10px] font-bold uppercase tracking-widest">Or sign up with</span>
+                                <div className="flex-grow border-t border-slate-100"></div>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     type="button"
-                                    onClick={() => alert("Google Sign Up integration requires cloud configuration.")}
-                                    className="flex items-center justify-center gap-2 py-3 bg-white text-slate-900 rounded-xl font-bold text-xs hover:bg-slate-100 transition-colors"
+                                    onClick={async () => {
+                                        try {
+                                            await loginWithSocial('google.user@example.com', 'Google User', 'Google');
+                                            navigate('/dashboard');
+                                        } catch (err) {
+                                            console.error("Google sign up failed", err);
+                                        }
+                                    }}
+                                    className="flex items-center justify-center gap-2 py-3 bg-white text-slate-900 rounded-xl font-bold text-xs hover:bg-slate-100 transition-colors shadow-sm"
                                 >
                                     <svg className="w-4 h-4" viewBox="0 0 24 24">
                                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -185,11 +195,21 @@ export default function SignUpPage() {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={() => alert("Microsoft Sign Up integration requires cloud configuration.")}
-                                    className="flex items-center justify-center gap-2 py-3 bg-[#2f2f2f] text-white rounded-xl font-bold text-xs hover:bg-[#3f3f3f] transition-colors border border-white/10"
+                                    onClick={async () => {
+                                        try {
+                                            await loginWithSocial('microsoft.user@example.com', 'Microsoft User', 'Microsoft');
+                                            navigate('/dashboard');
+                                        } catch (err) {
+                                            console.error("Microsoft sign up failed", err);
+                                        }
+                                    }}
+                                    className="flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-100 transition-colors"
                                 >
                                     <svg className="w-4 h-4" viewBox="0 0 23 23">
-                                        <path fill="#f3f3f3" d="M0 0h11v11H0zM12 0h11v11H12zM0 12h11v11H0zM12 12h11v11H12z" />
+                                        <path fill="#00a1f1" d="M12 0h11v11H12z" />
+                                        <path fill="#f25022" d="M0 0h11v11H0z" />
+                                        <path fill="#7fb900" d="M0 12h11v11H0z" />
+                                        <path fill="#ffb900" d="M12 12h11v11H12z" />
                                     </svg>
                                     Microsoft
                                 </button>
@@ -198,8 +218,8 @@ export default function SignUpPage() {
                     )}
                 </div>
 
-                <p className="text-center mt-8 text-sm text-slate-500 font-medium">
-                    Already registered? <Link to="/login" className="text-primary font-black uppercase tracking-widest text-xs ml-2 hover:text-primary/70 transition-colors">Log in</Link>
+                <p className="text-center mt-8 text-sm text-slate-400 font-medium">
+                    Already registered? <Link to="/login" className="text-google-blue font-black uppercase tracking-widest text-xs ml-2 hover:text-google-blue/70 transition-colors">Log in</Link>
                 </p>
 
                 <div className="mt-8 pt-8 border-t border-white/5 flex justify-center items-center gap-3">

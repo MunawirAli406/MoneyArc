@@ -31,6 +31,8 @@ export default function StockItemList({ onViewTransactions }: StockItemListProps
                 } finally {
                     setLoading(false);
                 }
+            } else {
+                setLoading(false);
             }
         };
         fetchData();
@@ -129,17 +131,17 @@ export default function StockItemList({ onViewTransactions }: StockItemListProps
                                         </td>
                                         <td className="px-4 py-2">
                                             <p className="font-mono font-bold text-foreground">
-                                                {item.openingStock.toLocaleString()} {getUnitName(item.unitId)}
+                                                {(item.openingStock || 0).toLocaleString()} {getUnitName(item.unitId)}
                                             </p>
                                             <p className="text-[10px] text-muted-foreground font-medium italic">
-                                                @ {item.openingRate.toLocaleString()} / {getUnitName(item.unitId)}
+                                                @ {(item.openingRate || 0).toLocaleString()} / {getUnitName(item.unitId)}
                                             </p>
                                         </td>
                                         <td className="px-4 py-2">
                                             <div className="w-fit bg-primary/5 border border-primary/10 rounded-xl px-4 py-2">
                                                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary leading-none mb-1">Total Value</p>
                                                 <p className="font-mono font-black text-primary text-lg leading-none">
-                                                    {activeCompany?.symbol || '₹'}{item.openingValue.toLocaleString()}
+                                                    {activeCompany?.symbol || '₹'}{(item.openingValue || 0).toLocaleString()}
                                                 </p>
                                             </div>
                                         </td>

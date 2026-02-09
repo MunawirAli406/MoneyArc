@@ -7,15 +7,13 @@
 
 @layer base {
   :root {
-    /* Amber, Teal & Gray Palette - Light Mode */
-    --primary: 38 92% 50%;
-    /* Vibrant Amber */
+    /* Google-Inspired Palette - Light Mode */
+    --primary: 217 89% 61%;
+    /* Google Blue */
     --primary-foreground: 0 0% 100%;
 
     --background: 210 20% 98%;
-    /* Light Gray Base */
     --foreground: 215 25% 15%;
-    /* Dark Gray Text */
 
     --card: 0 0% 100%;
     --card-foreground: 215 25% 15%;
@@ -26,24 +24,28 @@
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 174 100% 33%;
-    /* Premium Teal Accent */
+    --accent: 136 53% 43%;
+    /* Google Green */
     --accent-foreground: 0 0% 100%;
+
+    /* Extra Google Palette */
+    --google-blue: 217 89% 61%;
+    --google-red: 5 82% 56%;
+    --google-yellow: 44 97% 50%;
+    --google-green: 136 53% 43%;
 
     --radius: 0.75rem;
   }
 
   .dark {
-    --primary: 45 93% 47%;
-    /* Brighter Amber for Dark Mode */
+    --primary: 217 89% 65%;
+    /* Brighter Blue for Dark Mode */
     --primary-foreground: 0 0% 100%;
 
     --background: 220 30% 6%;
-    /* Deep Gray-Black Background */
     --foreground: 210 40% 98%;
 
     --card: 220 30% 10%;
-    /* Deep Gray Card */
     --card-foreground: 210 40% 98%;
 
     --border: 220 30% 15%;
@@ -52,8 +54,8 @@
     --muted: 220 30% 12%;
     --muted-foreground: 215 20% 65%;
 
-    --accent: 174 100% 40%;
-    /* Brighter Teal Accent */
+    --accent: 136 53% 50%;
+    /* Brighter Green for Dark Mode */
     --accent-foreground: 0 0% 100%;
   }
 }
@@ -89,18 +91,18 @@
 
 /* Glassmorphism utility */
 .glass {
-  @apply bg-card/70 dark:bg-card/40 backdrop-blur-md border border-border/20 dark:border-white/10;
+  @apply bg-card border border-border/20 dark:border-white/10;
 }
 
-.amber-gradient {
+.primary-gradient {
   background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.8) 100%);
 }
 
-.teal-gradient {
+.accent-gradient {
   background: linear-gradient(135deg, hsl(var(--accent)) 0%, hsl(var(--accent) / 0.8) 100%);
 }
 
-.amber-glow {
+.primary-glow {
   box-shadow: 0 0 20px hsl(var(--primary) / 0.3);
 }
 
@@ -122,12 +124,12 @@
   }
 
   .glass-panel {
-    @apply bg-card/60 dark:bg-card/40 backdrop-blur-2xl border border-border/50 dark:border-white/5;
+    @apply bg-card border border-border/50 dark:border-white/5;
     box-shadow: 0 32px 64px -12px rgba(0, 0, 0, 0.1);
   }
 
   .glass-card {
-    @apply bg-card/50 dark:bg-card/20 backdrop-blur-xl border border-border/50 dark:border-white/5 hover:bg-card/70 dark:hover:bg-card/30 transition-all duration-500 shadow-sm hover:shadow-md;
+    @apply bg-card border border-border/50 dark:border-white/5 hover:border-primary/50 transition-all duration-500 shadow-sm hover:shadow-md;
   }
 
   .text-gradient {
@@ -142,13 +144,6 @@
 
   .mesh-gradient {
     @apply bg-background transition-colors duration-700;
-    background-image:
-      radial-gradient(at 0% 0%, hsla(38, 92%, 50%, 0.08) 0px, transparent 50%),
-      radial-gradient(at 50% 0%, hsla(174, 100%, 33%, 0.05) 0px, transparent 50%),
-      radial-gradient(at 100% 0%, hsla(38, 92%, 50%, 0.08) 0px, transparent 50%),
-      radial-gradient(at 0% 100%, hsla(174, 100%, 33%, 0.05) 0px, transparent 50%),
-      radial-gradient(at 100% 100%, hsla(38, 92%, 50%, 0.05) 0px, transparent 50%);
-    background-attachment: fixed;
   }
 
   .animate-float {

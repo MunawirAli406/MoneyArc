@@ -84,7 +84,7 @@ export default function Calculator({ isOpen, onClose }: CalculatorProps) {
                     {/* Header */}
                     <div className="bg-muted/50 p-3 flex items-center justify-between border-b border-border">
                         <div className="flex items-center gap-2">
-                            <div className="p-1.5 bg-indigo-500/10 rounded-lg text-indigo-500">
+                            <div className="p-1.5 bg-[#4285F4]/10 rounded-lg text-[#4285F4]">
                                 <CalcIcon className="w-4 h-4" />
                             </div>
                             <span className="text-xs font-bold uppercase tracking-wider">Calculator</span>
@@ -103,29 +103,29 @@ export default function Calculator({ isOpen, onClose }: CalculatorProps) {
                     {/* Keypad */}
                     <div className="p-3 grid grid-cols-4 gap-2 bg-muted/20">
                         {[
-                            { label: 'C', act: handleClear, style: 'text-red-500 bg-red-500/10' },
-                            { label: <Eraser className="w-4 h-4" />, act: handleClear, style: 'text-indigo-500 bg-indigo-500/10' }, // Just using logic for UI balance
-                            { label: <Delete className="w-4 h-4" />, act: handleBackspace, style: 'text-indigo-500 bg-indigo-500/10' },
-                            { label: '÷', act: () => handleOperator('/'), style: 'bg-indigo-500 text-white' },
+                            { label: 'C', act: handleClear, style: 'text-[#EA4335] bg-[#EA4335]/10' },
+                            { label: <Eraser className="w-4 h-4" />, act: handleClear, style: 'text-[#4285F4] bg-[#4285F4]/10' }, // Just using logic for UI balance
+                            { label: <Delete className="w-4 h-4" />, act: handleBackspace, style: 'text-[#4285F4] bg-[#4285F4]/10' },
+                            { label: '÷', act: () => handleOperator('/'), style: 'bg-[#4285F4] text-white' },
 
                             { label: '7', act: () => handleNumberCp('7') },
                             { label: '8', act: () => handleNumberCp('8') },
                             { label: '9', act: () => handleNumberCp('9') },
-                            { label: '×', act: () => handleOperator('*'), style: 'bg-indigo-500 text-white' },
+                            { label: '×', act: () => handleOperator('*'), style: 'bg-[#4285F4] text-white' },
 
                             { label: '4', act: () => handleNumberCp('4') },
                             { label: '5', act: () => handleNumberCp('5') },
                             { label: '6', act: () => handleNumberCp('6') },
-                            { label: '-', act: () => handleOperator('-'), style: 'bg-indigo-500 text-white' },
+                            { label: '-', act: () => handleOperator('-'), style: 'bg-[#4285F4] text-white' },
 
                             { label: '1', act: () => handleNumberCp('1') },
                             { label: '2', act: () => handleNumberCp('2') },
                             { label: '3', act: () => handleNumberCp('3') },
-                            { label: '+', act: () => handleOperator('+'), style: 'bg-indigo-500 text-white' },
+                            { label: '+', act: () => handleOperator('+'), style: 'bg-[#4285F4] text-white' },
 
                             { label: '0', act: () => handleNumberCp('0'), span: 'col-span-2' },
                             { label: '.', act: () => handleNumberCp('.') },
-                            { label: '=', act: handleEqual, style: 'bg-green-500 text-white' },
+                            { label: '=', act: handleEqual, style: 'bg-[#4285F4] text-white' },
                         ].map((btn: any, i) => (
                             <button
                                 key={i}

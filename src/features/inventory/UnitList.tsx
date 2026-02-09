@@ -21,6 +21,8 @@ export default function UnitList() {
                 } finally {
                     setLoading(false);
                 }
+            } else {
+                setLoading(false);
             }
         };
         fetchUnits();

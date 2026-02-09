@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Keyboard, Box, Plus, Trash2, FileText, AlertTriangle, Save, Tag, Package, Coins } from 'lucide-react';
+import { Box, Plus, Trash2, FileText, AlertTriangle, Save, Tag, Package, Coins } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
@@ -374,9 +374,6 @@ export default function VoucherEntry() {
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                     <div className="flex items-center gap-5">
-                        <div className="w-16 h-16 cyan-gradient rounded-[1.5rem] flex items-center justify-center text-white shadow-2xl shadow-primary/30">
-                            <Keyboard className="w-8 h-8" />
-                        </div>
                         <div>
                             <h1 className="text-4xl font-black text-foreground tracking-tighter uppercase leading-none">Universal Entry</h1>
                             <p className="text-muted-foreground text-[9px] font-black uppercase tracking-[0.4em] mt-3 flex items-center gap-2 opacity-70">

@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const foundUser = users.find((u) => u.email === email && (!password || u.password === password));
 
             if (foundUser) {
-                const userSafe = { ...foundUser };
+                const userSafe = { ...foundUser, provider: 'Local' as const };
                 delete userSafe.password;
                 setUser(userSafe as User);
                 AuditService.setCurrentUser({ ...userSafe, name: userSafe.name || 'User' });
@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 throw new Error('User already exists in this directory.');
             }
 
-            const newUser = { id: Math.random().toString(36).substr(2, 9), email, name, password };
+            const newUser = { id: Math.random().toString(36).substr(2, 9), email, name, password, provider: 'Local' as const };
             const updatedUsers = [...users, newUser];
             await saveUsers(updatedUsers);
 
@@ -88,6 +88,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
+    const loginWithSocial = async (email: string, name: string, socialProvider: 'Google' | 'Microsoft') => {
+        setIsLoading(true);
+        try {
+            await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate OAuth delay
+            const users = await getUsers();
+            let foundUser = users.find((u) => u.email === email);
+
+            if (!foundUser) {
+                // Auto-signup for social users if they don't exist
+                const newUser = { id: Math.random().toString(36).substr(2, 9), email, name, provider: socialProvider };
+                await saveUsers([...users, newUser]);
+                foundUser = newUser;
+            }
+
+            const userSafe = { ...foundUser, provider: socialProvider };
+            delete userSafe.password;
+            setUser(userSafe as User);
+            AuditService.setCurrentUser({ ...userSafe, name: userSafe.name || 'User' });
+            localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
+            console.log(`Social Login (${socialProvider}) success for ${email}`);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const logout = () => {
         setUser(null);
         AuditService.setCurrentUser(null);
@@ -95,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, signup, logout }}>
+        <AuthContext.Provider value={{ user, isAuthenticated: !!user, isLoading, login, signup, loginWithSocial, logout }}>
             {children}
         </AuthContext.Provider>
     );

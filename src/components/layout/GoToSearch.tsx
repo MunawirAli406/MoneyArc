@@ -138,8 +138,8 @@ export default function GoToSearch() {
                             >
                                 <div className="p-8 border-b border-border/50">
                                     <div className="flex items-center gap-6">
-                                        <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
-                                            <Search className="w-6 h-6 text-primary" />
+                                        <div className="w-12 h-12 rounded-2xl bg-[#4285F4]/10 flex items-center justify-center">
+                                            <Search className="w-6 h-6 text-[#4285F4]" />
                                         </div>
                                         <input
                                             ref={inputRef}
@@ -179,12 +179,12 @@ export default function GoToSearch() {
                                                             onClick={() => handleSelect(item.path)}
                                                             onMouseEnter={() => setSelectedIndex(index)}
                                                             className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all duration-200 group ${index === selectedIndex
-                                                                ? 'bg-primary text-primary-foreground shadow-xl shadow-primary/20 scale-[1.02]'
+                                                                ? 'bg-[#4285F4] text-primary-foreground shadow-xl shadow-[#4285F4]/20 scale-[1.02]'
                                                                 : 'hover:bg-muted/50'
                                                                 }`}
                                                         >
                                                             <div className="flex items-center gap-4">
-                                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${index === selectedIndex ? 'bg-white/20' : 'bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+                                                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${index === selectedIndex ? 'bg-white/20' : 'bg-muted text-muted-foreground group-hover:bg-[#4285F4]/10 group-hover:text-[#4285F4]'
                                                                     }`}>
                                                                     <item.icon className="w-5 h-5" />
                                                                 </div>

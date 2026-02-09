@@ -1,4 +1,4 @@
-import { Bell, Sun, Moon, ChevronDown, LogOut, Sparkles, Calculator, Settings, Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2, Menu, RefreshCcw } from 'lucide-react';
+import { Bell, Sun, Moon, ChevronDown, LogOut, Sparkles, Calculator, Settings, Building2, Menu, RefreshCcw, HardDrive } from 'lucide-react';
 import { useTheme } from '../../features/settings/useTheme';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useAuth } from '../../features/auth/AuthContext.provider';
@@ -24,8 +24,7 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
     const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
     const navigate = useNavigate();
 
-    const ICON_MAP: Record<string, any> = { Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2 };
-    const BusinessIcon = activeCompany?.businessType ? (ICON_MAP[activeCompany.businessType] || Building2) : Building2;
+    const BusinessIcon = Building2;
 
     const handleSync = async () => {
         if (isSyncing) return;
@@ -34,6 +33,13 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
 
     return (
         <header className="h-20 bg-card/60 dark:bg-card/60 backdrop-blur-xl border-b border-border/50 dark:border-white/5 px-8 flex items-center justify-between transition-all duration-500 sticky top-0 z-40">
+            {/* Google Brand Stripe */}
+            <div className="absolute top-0 left-0 right-0 h-1 flex z-50">
+                <div className="h-full flex-1 bg-google-blue" />
+                <div className="h-full flex-1 bg-google-red" />
+                <div className="h-full flex-1 bg-google-yellow" />
+                <div className="h-full flex-1 bg-google-green" />
+            </div>
             <div className="flex items-center gap-12 flex-1">
                 <button
                     onClick={onMenuToggle}
@@ -103,7 +109,7 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                                 disabled={isSyncing}
                                 className={clsx(
                                     "p-2.5 rounded-xl transition-all active:scale-90",
-                                    isSyncing ? "text-primary animate-spin" : "text-muted-foreground hover:text-primary hover:bg-primary/10"
+                                    isSyncing ? "text-[#4285F4] animate-spin" : "text-muted-foreground hover:text-[#4285F4] hover:bg-[#4285F4]/10"
                                 )}
                                 title="Sync with GitHub"
                             >
@@ -112,14 +118,14 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                         )}
                         <button
                             onClick={onToggleCalculator}
-                            className="p-2.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-90"
+                            className="p-2.5 text-muted-foreground hover:text-[#4285F4] hover:bg-[#4285F4]/10 rounded-xl transition-all active:scale-90"
                             title="Calculator"
                         >
                             <Calculator className="w-5 h-5" />
                         </button>
                         <button
                             onClick={onToggleGemini}
-                            className="p-2.5 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all active:scale-90"
+                            className="p-2.5 text-muted-foreground hover:text-[#4285F4] hover:bg-[#4285F4]/10 rounded-xl transition-all active:scale-90"
                             title="AI Assistant"
                         >
                             <Sparkles className="w-5 h-5" />
@@ -231,8 +237,24 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                             onClick={() => setIsProfileOpen(!isProfileOpen)}
                             className="flex items-center gap-3 p-1 pr-3 rounded-[2rem] hover:bg-muted/50 dark:hover:bg-white/5 border border-transparent hover:border-border/50 transition-all active:scale-95"
                         >
-                            <div className="w-10 h-10 rounded-2xl amber-gradient flex items-center justify-center text-white font-bold shadow-lg shadow-primary/10">
-                                {user?.name?.[0] || user?.email?.[0] || 'U'}
+                            <div className={clsx(
+                                "w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-500",
+                                (user?.provider === 'Google' || user?.provider === 'Microsoft') ? "bg-white" : "primary-gradient text-white"
+                            )}>
+                                {user?.provider === 'Google' ? (
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                    </svg>
+                                ) : user?.provider === 'Microsoft' ? (
+                                    <svg className="w-5 h-5" viewBox="0 0 23 23">
+                                        <path fill="#00a1f1" d="M12 0h11v11H12z" />
+                                        <path fill="#f25022" d="M0 11h11v11H0z" />
+                                        <path fill="#7fb900" d="M12 11h11v11H12z" />
+                                        <path fill="#ffb900" d="M0 0h11v11H0z" />
+                                    </svg>
+                                ) : (
+                                    user?.name?.[0] || user?.email?.[0] || 'U'
+                                )}
                             </div>
                             <div className="text-left hidden lg:block">
                                 <p className="text-xs font-black text-foreground truncate max-w-[100px]">{user?.name || 'User'}</p>
@@ -247,8 +269,24 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                                 <div className="absolute top-full right-0 mt-4 w-64 bg-card/90 dark:bg-card/90 backdrop-blur-2xl border border-border dark:border-white/10 shadow-[0_32px_64px_-16px_rgba(0,0,0,0.2)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] rounded-[2rem] overflow-hidden z-20 animate-in fade-in slide-in-from-top-4 duration-300">
                                     <div className="p-6 bg-primary/5 border-b border-border dark:border-white/5">
                                         <div className="flex items-center gap-4 mb-4">
-                                            <div className="w-12 h-12 rounded-2xl amber-gradient flex items-center justify-center text-white text-lg font-black shadow-lg">
-                                                {user?.name?.[0] || user?.email?.[0] || 'U'}
+                                            <div className={clsx(
+                                                "w-12 h-12 rounded-2xl flex items-center justify-center text-lg font-black shadow-lg",
+                                                (user?.provider === 'Google' || user?.provider === 'Microsoft') ? "bg-white" : "primary-gradient text-white"
+                                            )}>
+                                                {user?.provider === 'Google' ? (
+                                                    <svg className="w-6 h-6" viewBox="0 0 24 24">
+                                                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                                    </svg>
+                                                ) : user?.provider === 'Microsoft' ? (
+                                                    <svg className="w-6 h-6" viewBox="0 0 23 23">
+                                                        <path fill="#00a1f1" d="M12 0h11v11H12z" />
+                                                        <path fill="#f25022" d="M0 11h11v11H0z" />
+                                                        <path fill="#7fb900" d="M12 11h11v11H12z" />
+                                                        <path fill="#ffb900" d="M0 0h11v11H0z" />
+                                                    </svg>
+                                                ) : (
+                                                    user?.name?.[0] || user?.email?.[0] || 'U'
+                                                )}
                                             </div>
                                             <div>
                                                 <p className="text-sm font-black text-foreground truncate">{user?.name || 'User'}</p>
@@ -273,6 +311,16 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                                         </button>
                                         <button
                                             onClick={() => {
+                                                setIsProfileOpen(false);
+                                                navigate('/select-source');
+                                            }}
+                                            className="w-full flex items-center gap-4 px-4 py-3 text-sm font-black uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-muted dark:hover:bg-white/5 rounded-2xl transition-all"
+                                        >
+                                            <HardDrive className="w-4 h-4" />
+                                            Change Data Source
+                                        </button>
+                                        <button
+                                            onClick={() => {
                                                 logout();
                                                 setIsProfileOpen(false);
                                             }}
@@ -288,6 +336,6 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                     </div>
                 </div>
             </div>
-        </header>
+        </header >
     );
 }

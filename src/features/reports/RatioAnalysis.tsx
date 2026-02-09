@@ -181,7 +181,6 @@ export default function RatioAnalysis() {
                         whileHover={{ y: -5 }}
                         className="bg-card p-10 rounded-[3rem] border border-border shadow-xl space-y-6 relative overflow-hidden group"
                     >
-                        <div className={`absolute top-0 right-0 w-32 h-32 -mr-12 -mt-12 rounded-full ${ratio.bg} blur-3xl opacity-20 group-hover:opacity-40 transition-opacity`} />
                         <div className="flex items-center justify-between relative z-10">
                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${ratio.bg} ${ratio.color}`}>
                                 <ratio.icon className="w-7 h-7" />

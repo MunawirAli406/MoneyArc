@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, FileText, Wallet, TrendingUp, Layers, Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2, Activity } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, Wallet, TrendingUp, Layers, Building2, Activity } from 'lucide-react';
 import clsx from 'clsx';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useAuth } from '../../features/auth/AuthContext.provider';
@@ -31,8 +31,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
     const { activeCompany } = usePersistence();
     const { } = useAuth();
 
-    const ICON_MAP: Record<string, any> = { Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2 };
-    const BusinessIcon = activeCompany?.businessType ? (ICON_MAP[activeCompany.businessType] || Building2) : Building2;
+    const BusinessIcon = Building2;
 
     return (
         <div className="w-64 h-full bg-card border-r border-border flex flex-col transition-colors duration-300 flex-shrink-0">
@@ -68,7 +67,7 @@ export default function Sidebar({ onClose }: SidebarProps) {
                                     : 'text-muted-foreground hover:bg-accent hover:text-foreground'
                             )}
                         >
-                            <item.icon className={clsx('w-5 h-5 transition-transform group-hover:scale-110', isActive ? 'text-primary-foreground' : 'text-primary')} />
+                            <item.icon className={clsx('w-5 h-5 transition-transform group-hover:scale-110', isActive ? 'text-primary-foreground' : 'text-[#4285F4]')} />
                             <span className="font-semibold text-sm">{item.label}</span>
                         </Link>
                     );

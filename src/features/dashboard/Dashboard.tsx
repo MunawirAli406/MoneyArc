@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, FileText, PieChart as PieIcon, Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, FileText, PieChart as PieIcon, Building2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
@@ -8,7 +8,6 @@ import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
-import { BUSINESS_THEMES } from '../settings/businessThemes';
 
 export default function Dashboard() {
     const { provider, activeCompany } = usePersistence();
@@ -16,10 +15,10 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const [greeting, setGreeting] = useState('');
     const [stats, setStats] = useState([
-        { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10', sparkData: [] as any[] },
-        { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10', sparkData: [] as any[] },
-        { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sparkData: [] as any[] },
-        { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', sparkData: [] as any[] },
+        { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: DollarSign, color: 'text-google-blue', bg: 'bg-google-blue/10', sparkData: [] as any[] },
+        { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingDown, color: 'text-google-red', bg: 'bg-google-red/10', sparkData: [] as any[] },
+        { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingUp, color: 'text-google-green', bg: 'bg-google-green/10', sparkData: [] as any[] },
+        { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-google-yellow', bg: 'bg-google-yellow/10', sparkData: [] as any[] },
     ]);
 
 
@@ -141,16 +140,12 @@ export default function Dashboard() {
                 return sum + (item.openingStock * item.openingRate);
             }, 0);
 
-
-
             setStats([
-                { label: bTheme.revenueLabel, value: `${activeCompany?.symbol || '₹'}${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10', sparkData: sparkLines.rev },
-                { label: bTheme.expenseLabel, value: `${activeCompany?.symbol || '₹'}${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10', sparkData: sparkLines.exp },
-                { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}${(revenue + closingStockValue - (expenses + openingStockValue)).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10', sparkData: sparkLines.profit },
-                { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-purple-500', bg: 'bg-purple-500/10', sparkData: sparkLines.vouchers },
+                { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-google-blue', bg: 'bg-google-blue/10', sparkData: sparkLines.rev },
+                { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-google-red', bg: 'bg-google-red/10', sparkData: sparkLines.exp },
+                { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}${(revenue + closingStockValue - (expenses + openingStockValue)).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-google-green', bg: 'bg-google-green/10', sparkData: sparkLines.profit },
+                { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-google-yellow', bg: 'bg-google-yellow/10', sparkData: sparkLines.vouchers },
             ]);
-
-
 
             const currentMonth = new Date().getMonth();
             const last6Months = [];
@@ -162,9 +157,6 @@ export default function Dashboard() {
             setChartData(last6Months);
 
             // Calculate Vitals
-            // Liquid Ratio = Liquid Assets / Current Liabilities
-            // Liquid Assets ≈ Cash + Bank + Debtors
-            // Current Liabilities ≈ Creditors + Duties & Taxes + Current Liabilities
             const liquidAssets = ledgers
                 .filter(l => ['Bank Accounts', 'Cash-in-hand', 'Sundry Debtors'].includes(l.group))
                 .reduce((sum, l) => sum + l.balance, 0);
@@ -175,7 +167,6 @@ export default function Dashboard() {
 
             const liquidRatio = currentLiabilities === 0 ? (liquidAssets > 0 ? 9.99 : 0) : liquidAssets / currentLiabilities;
 
-            // Net Margin = (Net Profit / Revenue) * 100
             const netProfitValue = revenue + closingStockValue - (expenses + openingStockValue);
             const netMargin = revenue === 0 ? 0 : (netProfitValue / revenue) * 100;
 
@@ -188,9 +179,7 @@ export default function Dashboard() {
         loadDashboardData();
     }, [provider, activeCompany]);
 
-    const bTheme = activeCompany?.businessType ? BUSINESS_THEMES[activeCompany.businessType] : BUSINESS_THEMES.General;
-    const ICON_MAP: Record<string, any> = { Hotel, Car, Shirt, Utensils, GraduationCap, HeartPulse, Building2 };
-    const BusinessIcon = ICON_MAP[bTheme.icon] || Building2;
+    const BusinessIcon = Building2;
 
     const container = {
         hidden: { opacity: 0 },
@@ -207,9 +196,9 @@ export default function Dashboard() {
 
     return (
         <motion.div variants={container} initial="hidden" animate="show" className="space-y-8 max-w-7xl mx-auto px-4 sm:px-8 pb-24">
+            {/* Header Section */}
             <motion.div variants={item} className="group relative glass-panel p-10 rounded-[3.5rem] border-primary/20 shadow-2xl overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/20 blur-[120px] rounded-full -mr-48 -mt-48 group-hover:bg-primary/30 transition-all duration-1000 animate-pulse" />
 
                 <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
                     <div>
@@ -224,10 +213,6 @@ export default function Dashboard() {
                         </h1>
                         <div className="flex items-center gap-4">
                             <p className="text-muted-foreground font-black uppercase tracking-widest text-[10px] bg-muted/30 px-2 py-1 rounded-md">
-                                {activeCompany?.businessType || 'General'}
-                            </p>
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-                            <p className="text-muted-foreground font-black uppercase tracking-widest text-[10px] bg-muted/30 px-2 py-1 rounded-md">
                                 FY {activeCompany?.financialYear || '2023-24'}
                             </p>
                             {activeCompany?.gstin && (
@@ -240,11 +225,10 @@ export default function Dashboard() {
                             )}
                         </div>
                     </div>
-
-
                 </div>
             </motion.div>
 
+            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <AnimatePresence>
                     {stats.map((stat, index) => (
@@ -254,7 +238,6 @@ export default function Dashboard() {
                             whileHover={{ y: -8, scale: 1.02 }}
                             className="glass-card p-6 rounded-[2.5rem] shadow-xl group relative overflow-hidden border-border/50 hover:border-primary/30 transition-all duration-300"
                         >
-                            <div className={`absolute top-0 right-0 w-32 h-32 -mr-12 -mt-12 rounded-full ${stat.bg} blur-3xl opacity-20 group-hover:opacity-40 transition-opacity`} />
 
                             <div className="flex items-center justify-between mb-6 relative z-10">
                                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.bg} ${stat.color} shadow-lg ring-1 ring-inset ring-white/10`}>
@@ -278,10 +261,10 @@ export default function Dashboard() {
                                         <Area
                                             type="monotone"
                                             dataKey="value"
-                                            stroke={index === 1 ? '#f43f5e' : (index === 0 ? '#f59e0b' : (index === 2 ? '#10b981' : '#8b5cf6'))}
+                                            stroke={index === 1 ? '#EA4335' : (index === 0 ? '#4285F4' : (index === 2 ? '#34A853' : '#FBBC04'))}
                                             strokeWidth={2}
                                             fillOpacity={0.1}
-                                            fill={index === 1 ? '#f43f5e' : (index === 0 ? '#f59e0b' : (index === 2 ? '#10b981' : '#8b5cf6'))}
+                                            fill={index === 1 ? '#EA4335' : (index === 0 ? '#4285F4' : (index === 2 ? '#34A853' : '#FBBC04'))}
                                         />
                                     </AreaChart>
                                 </ResponsiveContainer>
@@ -296,8 +279,9 @@ export default function Dashboard() {
                 </AnimatePresence>
             </div>
 
+            {/* Charts & Bento Section */}
             <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* Sales & Purchases Chart - Takes full width in bento grid */}
+                {/* Sales & Purchases Chart */}
                 <div className="lg:col-span-3 glass-panel rounded-[3.5rem] shadow-2xl p-10 relative overflow-hidden group border-primary/20">
                     <div className="flex justify-between items-center mb-10 relative z-10">
                         <div>
@@ -309,8 +293,8 @@ export default function Dashboard() {
                         </div>
                         <div className="flex gap-4 p-1.5 bg-muted/20 rounded-2xl border border-border/50 backdrop-blur-sm">
                             {[
-                                { label: 'Sales', color: 'bg-primary' },
-                                { label: 'Purchases', color: 'bg-rose-500' }
+                                { label: 'Sales', color: 'bg-google-blue' },
+                                { label: 'Purchases', color: 'bg-google-red' }
                             ].map(l => (
                                 <div key={l.label} className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/5 transition-colors">
                                     <div className={`w-2 h-2 rounded-full ${l.color} shadow-[0_0_8px_rgba(0,0,0,0.2)]`} />
@@ -325,12 +309,12 @@ export default function Dashboard() {
                             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
                                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="hsl(var(--google-blue))" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="hsl(var(--google-blue))" stopOpacity={0} />
                                     </linearGradient>
                                     <linearGradient id="colorPurchases" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#f43f5e" stopOpacity={0} />
+                                        <stop offset="5%" stopColor="hsl(var(--google-red))" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="hsl(var(--google-red))" stopOpacity={0} />
                                     </linearGradient>
                                 </defs>
                                 <XAxis
@@ -352,14 +336,14 @@ export default function Dashboard() {
                                         padding: '16px'
                                     }}
                                 />
-                                <Area type="monotone" dataKey="sales" stroke="#f59e0b" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
-                                <Area type="monotone" dataKey="purchases" stroke="#f43f5e" strokeWidth={4} fillOpacity={1} fill="url(#colorPurchases)" />
+                                <Area type="monotone" dataKey="sales" stroke="hsl(var(--google-blue))" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
+                                <Area type="monotone" dataKey="purchases" stroke="hsl(var(--google-red))" strokeWidth={4} fillOpacity={1} fill="url(#colorPurchases)" />
                             </AreaChart>
                         </ResponsiveContainer>
                     </div>
                 </div>
 
-                {/* Execution Hub - High density actions */}
+                {/* Execution Hub */}
                 <div className="glass-panel rounded-[3rem] shadow-2xl p-8 border-primary/10">
                     <h2 className="text-xl font-black tracking-tight mb-8 uppercase text-muted-foreground/50 border-b border-border/50 pb-4">Command Center</h2>
                     <div className="grid grid-cols-2 gap-4">
@@ -388,9 +372,8 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Financial Health - Modern progress bars */}
+                {/* Vitals */}
                 <div className="glass-panel rounded-[3rem] shadow-2xl p-8 border-primary/10 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-3xl rounded-full -mr-16 -mt-16" />
                     <h2 className="text-xl font-black tracking-tight mb-8 uppercase text-muted-foreground/50 border-b border-border/50 pb-4">Vitals</h2>
                     <div className="space-y-8">
                         <div>
@@ -410,7 +393,7 @@ export default function Dashboard() {
                             <div className="w-full h-2.5 bg-muted/30 rounded-full overflow-hidden p-0.5 border border-border/50">
                                 <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${Math.min(vitals.liquidRatio * 40, 100)}%` }} // 2.5 is 100%
+                                    animate={{ width: `${Math.min(vitals.liquidRatio * 40, 100)}%` }}
                                     className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]"
                                 />
                             </div>
@@ -428,7 +411,7 @@ export default function Dashboard() {
                             <div className="w-full h-2.5 bg-muted/30 rounded-full overflow-hidden p-0.5 border border-border/50">
                                 <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: `${Math.max(0, Math.min(vitals.netMargin * 2, 100))}%` }} // 50% is 100% bar
+                                    animate={{ width: `${Math.max(0, Math.min(vitals.netMargin * 2, 100))}%` }}
                                     className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"
                                 />
                             </div>
@@ -436,25 +419,23 @@ export default function Dashboard() {
                     </div>
                 </div>
 
-                {/* Second Row of Bento Items */}
+                {/* Additional Bento Row */}
                 <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-                    {/* Stock Watch List */}
                     <div className="glass-panel rounded-[3rem] p-8 border-primary/10 shadow-xl">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
                             <PieIcon className="w-4 h-4 text-primary" />
                             Inventory Watch
                         </h3>
                         <div className="space-y-4">
-                            {stockWatch.slice(0, 3).map((item, i) => (
+                            {stockWatch.slice(0, 3).map((itemVal, i) => (
                                 <div key={i} className="flex justify-between items-center group/item hover:bg-white/5 p-2 rounded-xl transition-colors">
-                                    <span className="text-[10px] font-black uppercase tracking-tight text-foreground/70 truncate max-w-[80px]">{item.name}</span>
-                                    <span className="text-xs font-black tabular-nums text-primary">{activeCompany?.symbol || '₹'}{((item.currentBalance || item.openingStock) * (item.currentRate || item.openingRate)).toLocaleString()}</span>
+                                    <span className="text-[10px] font-black uppercase tracking-tight text-foreground/70 truncate max-w-[80px]">{itemVal.name}</span>
+                                    <span className="text-xs font-black tabular-nums text-primary">{activeCompany?.symbol || '₹'}{((itemVal.currentBalance || itemVal.openingStock) * (itemVal.currentRate || itemVal.openingRate)).toLocaleString()}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Recent Feed - Minimalist */}
                     <div className="glass-panel rounded-[3rem] p-8 border-primary/10 shadow-xl overflow-hidden">
                         <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
                             <FileText className="w-4 h-4 text-purple-500" />

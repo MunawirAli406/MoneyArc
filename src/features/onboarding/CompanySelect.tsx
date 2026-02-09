@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import type { Company } from '../../services/persistence/types';
 import Select from '../../components/ui/Select';
 import { INDIAN_STATES } from '../../data/indian_states';
-import { BACKGROUNDS, BASE_GRADIENT } from '../../components/layout/backgrounds';
 import { CURRENCIES } from '../../data/currencies';
 
 export default function CompanySelect() {
@@ -28,8 +27,7 @@ export default function CompanySelect() {
         website: '',
         currency: 'INR',
         symbol: '₹',
-        registrationType: 'Regular',
-        businessType: 'General'
+        registrationType: 'Regular'
     });
     const [error, setError] = useState<string | null>(null);
     const navigate = useNavigate();
@@ -81,8 +79,7 @@ export default function CompanySelect() {
             website: company.website || '',
             currency: company.currency || 'INR',
             symbol: company.symbol || '₹',
-            registrationType: company.registrationType || 'Regular',
-            businessType: company.businessType || 'General'
+            registrationType: company.registrationType || 'Regular'
         });
         setEditingCompanyId(company.id);
         setError(null);
@@ -102,8 +99,7 @@ export default function CompanySelect() {
             website: '',
             currency: 'INR',
             symbol: '₹',
-            registrationType: 'Regular',
-            businessType: 'General'
+            registrationType: 'Regular'
         });
         setEditingCompanyId(null);
         setError(null);
@@ -143,13 +139,6 @@ export default function CompanySelect() {
 
     return (
         <div className="min-h-screen bg-background p-8 relative isolate">
-            {/* Live Background Preview */}
-            {showCreateForm && (
-                <div
-                    className={`${BASE_GRADIENT} ${BACKGROUNDS[newCompany.businessType || 'General'] || BACKGROUNDS['General']}`}
-                    style={{ zIndex: -10 }}
-                />
-            )}
 
             <div className="max-w-4xl mx-auto">
                 <div className="flex items-center justify-between mb-8">
@@ -222,9 +211,6 @@ export default function CompanySelect() {
                                                         GST: {company.gstin}
                                                     </div>
                                                 )}
-                                                <div className="px-2 py-0.5 bg-primary/10 rounded text-[10px] font-bold uppercase tracking-wider text-primary whitespace-nowrap">
-                                                    {company.businessType || 'General'}
-                                                </div>
                                                 <div className="px-2 py-0.5 bg-accent-500/10 rounded text-[10px] font-black tracking-wider text-accent-600 dark:text-accent-400 whitespace-nowrap">
                                                     {company.currency} ({company.symbol})
                                                 </div>
@@ -333,30 +319,6 @@ export default function CompanySelect() {
                                                     { value: 'Regular', label: 'Regular' },
                                                     { value: 'Composition', label: 'Composition' },
                                                     { value: 'Unregistered', label: 'Unregistered' },
-                                                ]}
-                                                className="w-full"
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm font-bold text-foreground mb-1">Business Type</label>
-                                            <Select
-                                                value={newCompany.businessType || 'General'}
-                                                onChange={(val) => setNewCompany({ ...newCompany, businessType: val as any })}
-                                                options={[
-                                                    { value: 'General', label: 'General Business' },
-                                                    { value: 'Retail', label: 'Retail & Shop' },
-                                                    { value: 'Manufacturing', label: 'Manufacturing & Factory' },
-                                                    { value: 'Service', label: 'Service & Consulting' },
-                                                    { value: 'Hotel', label: 'Hotel & Hospitality' },
-                                                    { value: 'Restaurant', label: 'Restaurant & Cafe' },
-                                                    { value: 'Automobile', label: 'Automobile & Garage' },
-                                                    { value: 'Textiles', label: 'Textiles & Garments' },
-                                                    { value: 'School', label: 'School & Education' },
-                                                    { value: 'Hospital', label: 'Hospital & Healthcare' },
-                                                    { value: 'RealEstate', label: 'Real Estate & Construction' },
-                                                    { value: 'Technology', label: 'Technology & IT' },
-                                                    { value: 'Logistics', label: 'Logistics & Transport' },
-                                                    { value: 'Agriculture', label: 'Agriculture & Farming' },
                                                 ]}
                                                 className="w-full"
                                             />

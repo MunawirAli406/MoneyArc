@@ -33,89 +33,92 @@ export default function StockSummary() {
 
     useEffect(() => {
         const loadData = async () => {
-            if (!provider || !activeCompany) return;
-            setLoading(true);
+            if (provider && activeCompany) {
+                setLoading(true);
 
-            try {
-                const [items, units, vouchers] = await Promise.all([
-                    provider.read<StockItem[]>('stock_items.json', activeCompany.path).then(res => res || []),
-                    provider.read<UnitOfMeasure[]>('units.json', activeCompany.path).then(res => res || []),
-                    provider.read<Voucher[]>('vouchers.json', activeCompany.path).then(res => res || [])
-                ]);
+                try {
+                    const [items, units, vouchers] = await Promise.all([
+                        provider.read<StockItem[]>('stock_items.json', activeCompany.path).then(res => res || []),
+                        provider.read<UnitOfMeasure[]>('units.json', activeCompany.path).then(res => res || []),
+                        provider.read<Voucher[]>('vouchers.json', activeCompany.path).then(res => res || [])
+                    ]);
 
-                const periodVouchers = vouchers.filter(v => v.date >= startDate && v.date <= endDate);
+                    const periodVouchers = vouchers.filter(v => v.date >= startDate && v.date <= endDate);
 
-                const report: StockSummaryRow[] = items.map(item => {
-                    const unitName = units.find(u => u.id === item.unitId)?.name || '';
+                    const report: StockSummaryRow[] = items.map(item => {
+                        const unitName = units.find(u => u.id === item.unitId)?.name || '';
 
-                    const prePeriodVouchers = vouchers.filter(v => v.date < startDate);
+                        const prePeriodVouchers = vouchers.filter(v => v.date < startDate);
 
-                    let effectiveOpeningQty = item.openingStock || 0;
-                    let effectiveOpeningVal = item.openingValue || 0;
+                        let effectiveOpeningQty = item.openingStock || 0;
+                        let effectiveOpeningVal = item.openingValue || 0;
 
-                    prePeriodVouchers.forEach(v => {
-                        v.rows.forEach(r => {
-                            r.inventoryAllocations?.forEach(alloc => {
-                                if (alloc.itemId === item.id) {
-                                    if (v.type === 'Purchase' || v.type === 'Receipt') {
-                                        effectiveOpeningQty += alloc.quantity;
-                                        effectiveOpeningVal += alloc.amount;
-                                    } else if (v.type === 'Sales' || v.type === 'Payment') {
-                                        effectiveOpeningQty -= alloc.quantity;
-                                        effectiveOpeningVal -= alloc.amount;
+                        prePeriodVouchers.forEach(v => {
+                            v.rows.forEach(r => {
+                                r.inventoryAllocations?.forEach(alloc => {
+                                    if (alloc.itemId === item.id) {
+                                        if (v.type === 'Purchase' || v.type === 'Receipt') {
+                                            effectiveOpeningQty += alloc.quantity;
+                                            effectiveOpeningVal += alloc.amount;
+                                        } else if (v.type === 'Sales' || v.type === 'Payment') {
+                                            effectiveOpeningQty -= alloc.quantity;
+                                            effectiveOpeningVal -= alloc.amount;
+                                        }
                                     }
-                                }
+                                });
                             });
                         });
-                    });
 
-                    let inwardQty = 0;
-                    let inwardVal = 0;
-                    let outwardQty = 0;
-                    let outwardVal = 0;
+                        let inwardQty = 0;
+                        let inwardVal = 0;
+                        let outwardQty = 0;
+                        let outwardVal = 0;
 
-                    periodVouchers.forEach(v => {
-                        v.rows.forEach(r => {
-                            r.inventoryAllocations?.forEach(alloc => {
-                                if (alloc.itemId === item.id) {
-                                    if (v.type === 'Purchase' || v.type === 'Receipt') {
-                                        inwardQty += alloc.quantity;
-                                        inwardVal += alloc.amount;
-                                    } else if (v.type === 'Sales' || v.type === 'Payment') {
-                                        outwardQty += alloc.quantity;
-                                        outwardVal += alloc.amount;
+                        periodVouchers.forEach(v => {
+                            v.rows.forEach(r => {
+                                r.inventoryAllocations?.forEach(alloc => {
+                                    if (alloc.itemId === item.id) {
+                                        if (v.type === 'Purchase' || v.type === 'Receipt') {
+                                            inwardQty += alloc.quantity;
+                                            inwardVal += alloc.amount;
+                                        } else if (v.type === 'Sales' || v.type === 'Payment') {
+                                            outwardQty += alloc.quantity;
+                                            outwardVal += alloc.amount;
+                                        }
                                     }
-                                }
+                                });
                             });
                         });
+
+                        const closingQty = effectiveOpeningQty + inwardQty - outwardQty;
+                        const totalInputQty = effectiveOpeningQty + inwardQty;
+                        const totalInputVal = effectiveOpeningVal + inwardVal;
+                        const avgRate = totalInputQty > 0 ? totalInputVal / totalInputQty : 0;
+                        const costOfGoodsSold = outwardQty * avgRate;
+                        const closingVal = totalInputVal - costOfGoodsSold;
+
+                        return {
+                            itemId: item.id,
+                            itemName: item.name,
+                            unit: unitName,
+                            openingQty: effectiveOpeningQty,
+                            openingVal: effectiveOpeningVal,
+                            inwardQty,
+                            inwardVal,
+                            outwardQty,
+                            outwardVal: outwardVal,
+                            closingQty,
+                            closingVal: closingVal
+                        };
                     });
 
-                    const closingQty = effectiveOpeningQty + inwardQty - outwardQty;
-                    const totalInputQty = effectiveOpeningQty + inwardQty;
-                    const totalInputVal = effectiveOpeningVal + inwardVal;
-                    const avgRate = totalInputQty > 0 ? totalInputVal / totalInputQty : 0;
-                    const costOfGoodsSold = outwardQty * avgRate;
-                    const closingVal = totalInputVal - costOfGoodsSold;
-
-                    return {
-                        itemId: item.id,
-                        itemName: item.name,
-                        unit: unitName,
-                        openingQty: effectiveOpeningQty,
-                        openingVal: effectiveOpeningVal,
-                        inwardQty,
-                        inwardVal,
-                        outwardQty,
-                        outwardVal: outwardVal,
-                        closingQty,
-                        closingVal: closingVal
-                    };
-                });
-
-                setSummary(report);
-            } catch (e) {
-                console.error(e);
-            } finally {
+                    setSummary(report);
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    setLoading(false);
+                }
+            } else {
                 setLoading(false);
             }
         };
@@ -158,7 +161,7 @@ export default function StockSummary() {
                 </div>
             </div>
 
-            <div className="flex items-center gap-6 bg-card/40 backdrop-blur-xl p-6 rounded-[2rem] border border-border/50 dark:border-white/10 shadow-2xl">
+            <div className="flex items-center gap-6 bg-card p-6 rounded-[2rem] border border-border/50 dark:border-white/10 shadow-2xl">
                 <div className="relative flex-1 group">
                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input

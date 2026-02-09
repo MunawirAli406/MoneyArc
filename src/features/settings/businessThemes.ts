@@ -12,10 +12,10 @@ export interface BusinessTheme {
 
 export const BUSINESS_THEMES: Record<string, BusinessTheme> = {
     General: {
-        primary: '174 100% 33%', // Refined Teal
+        primary: '217 89% 61%', // Google Blue
         background: 'var(--background)',
         card: 'var(--card)',
-        accent: '174 100% 20%',
+        accent: 'var(--accent)',
         greeting: 'Management Dashboard',
         icon: 'Building2',
         revenueLabel: 'Total Revenue',
