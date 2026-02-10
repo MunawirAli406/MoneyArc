@@ -15,6 +15,7 @@ const STATIC_ITEMS = [
     { label: 'Profit & Loss', path: '/reports/profit-loss', icon: FileText, category: 'Financials' },
     { label: 'GSTR-1 Report', path: '/reports/gst/r1', icon: FileText, category: 'Taxation' },
     { label: 'Ratio Analysis', path: '/reports/ratios', icon: Activity, category: 'Analytics' },
+    { label: 'Inventory Master', path: '/inventory/master', icon: Package, category: 'Inventory' },
     { label: 'Stock Summary', path: '/reports/stock-summary', icon: Package, category: 'Inventory' },
     { label: 'Settings', path: '/settings', icon: Settings, category: 'System' },
 ];
