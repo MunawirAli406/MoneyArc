@@ -24,12 +24,6 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
     const [activeCompany, setActiveCompany] = useState<Company | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
 
-    // Try to restore storage on mount
-    useEffect(() => {
-        console.log('PersistenceProvider: Attempting to restore storage...');
-        restoreStorage();
-    }, []);
-
     const restoreStorage = async () => {
         try {
             const localProvider = new FileSystemProvider();
@@ -54,6 +48,12 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
         console.log('PersistenceProvider: Storage not restored (normal if first run).');
         return false;
     };
+
+    // Try to restore storage on mount
+    useEffect(() => {
+        console.log('PersistenceProvider: Attempting to restore storage...');
+        restoreStorage();
+    }, []);
 
     const initializeStorage = async (type: StorageType, config?: any) => {
         let newProvider: StorageProvider | null = null;
