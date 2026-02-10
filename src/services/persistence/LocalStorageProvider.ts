@@ -67,6 +67,31 @@ export class LocalStorageProvider implements StorageProvider {
         return updatedCompany;
     }
 
+    async deleteCompany(_id: string, path: string): Promise<void> {
+        try {
+            // 1. Remove from companies list
+            const companies = await this.listCompanies();
+            const updatedCompanies = companies.filter(c => c.path !== path);
+            localStorage.setItem(COMPANIES_KEY, JSON.stringify(updatedCompanies));
+
+            // 2. Remove all related files/keys
+            const prefix = this.getKey('', path);
+            const keysToRemove: string[] = [];
+
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith(prefix)) {
+                    keysToRemove.push(key);
+                }
+            }
+
+            keysToRemove.forEach(key => localStorage.removeItem(key));
+        } catch (e) {
+            console.error('Failed to delete company from localStorage', e);
+            throw e;
+        }
+    }
+
     async read<T>(filename: string, companyPath?: string): Promise<T | null> {
         try {
             const key = this.getKey(filename, companyPath);
