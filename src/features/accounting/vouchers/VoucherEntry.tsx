@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Plus, Trash2, FileText, AlertTriangle, Save, Tag, Package, Coins } from 'lucide-react';
+import { Box, Plus, Trash2, FileText, AlertTriangle, Save, Tag, Package, Coins, Mic, MicOff, Sparkles, Shield, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
@@ -11,6 +11,7 @@ import type { StockItem, UnitOfMeasure } from '../../../services/inventory/types
 import { useNavigate, useParams } from 'react-router-dom';
 import QuickLedgerForm from '../masters/QuickLedgerForm';
 import QuickStockItemForm from '../masters/QuickStockItemForm';
+import { GeminiService } from '../../../services/ai/GeminiService';
 import { CURRENCIES } from '../../../data/currencies';
 
 type VoucherType = 'Payment' | 'Receipt' | 'Journal' | 'Contra' | 'Sales' | 'Purchase';
@@ -52,6 +53,100 @@ export default function VoucherEntry() {
     const [submitting, setSubmitting] = useState(false);
     const [negativeAlerts, setNegativeAlerts] = useState<string[]>([]);
     const [taxSummary, setTaxSummary] = useState({ cgst: 0, sgst: 0, igst: 0 });
+
+    // Advanced Features State
+    const [apiKey, setApiKey] = useState(localStorage.getItem('moneyarc_gemini_key') || '');
+    const [isListening, setIsListening] = useState(false);
+    const [smartCheckLoading, setSmartCheckLoading] = useState(false);
+    const [smartInsight, setSmartInsight] = useState<string | null>(null);
+    const recognitionRef = useRef<any>(null);
+
+    useEffect(() => {
+        const handleKeyUpdate = (e: any) => {
+            const newKey = e.detail || localStorage.getItem('moneyarc_gemini_key');
+            if (newKey) setApiKey(newKey);
+        };
+        const handleStorageChange = (e: StorageEvent) => {
+            if (e.key === 'moneyarc_gemini_key' && e.newValue) setApiKey(e.newValue);
+        };
+        window.addEventListener('moneyarc_key_updated', handleKeyUpdate);
+        window.addEventListener('storage', handleStorageChange);
+        return () => {
+            window.removeEventListener('moneyarc_key_updated', handleKeyUpdate);
+            window.removeEventListener('storage', handleStorageChange);
+        };
+    }, []);
+
+    // Initialize Web Speech
+    useEffect(() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (SpeechRecognition) {
+            recognitionRef.current = new SpeechRecognition();
+            recognitionRef.current.continuous = true;
+            recognitionRef.current.interimResults = false;
+            recognitionRef.current.lang = 'en-US';
+
+            recognitionRef.current.onresult = (event: any) => {
+                const transcript = event.results[event.results.length - 1][0].transcript;
+                setNarration(prev => (prev ? `${prev} ${transcript}` : transcript));
+            };
+
+            recognitionRef.current.onend = () => setIsListening(false);
+            recognitionRef.current.onerror = () => setIsListening(false);
+        }
+    }, []);
+
+    const toggleVoice = () => {
+        if (isListening) {
+            recognitionRef.current?.stop();
+        } else {
+            recognitionRef.current?.start();
+            setIsListening(true);
+        }
+    };
+
+    const runSmartCheck = async () => {
+        const currentApiKey = apiKey || localStorage.getItem('moneyarc_gemini_key') || 'AIzaSyD2XzwhQH1baDJE-lc1MT-jUYWPf1sfLTU';
+        if (!currentApiKey) {
+            alert("Please set your Gemini API Key in the AI Assistant or Settings.");
+            return;
+        }
+
+        setSmartCheckLoading(true);
+        try {
+            const service = new GeminiService(currentApiKey);
+            const voucherData = {
+                type: voucherType,
+                rows,
+                narration,
+                date
+            };
+
+            const prompt = `
+                Perform a high-level "Smart Audit" of this pending voucher entry.
+                Check for:
+                1. Accounting logic (Debit matches Credit).
+                2. Potential tax issues (GST ledgers present if Sales/Purchase).
+                3. Ledger group appropriateness.
+                
+                Voucher Data: ${JSON.stringify(voucherData, null, 2)}
+                
+                Provide a short, critical, and helpful paragraph of advice.
+            `;
+
+            const insight = await service.generateInsight(prompt, {
+                vouchers: [], // Not needed for single check
+                ledgers,
+                companyName: activeCompany?.name || 'Company',
+                symbol: activeCompany?.symbol || '₹'
+            });
+            setSmartInsight(insight);
+        } catch (err) {
+            setSmartInsight("Failed to run AI analysis. Check your key.");
+        } finally {
+            setSmartCheckLoading(false);
+        }
+    };
 
     // Initial Data Loading
     useEffect(() => {
@@ -382,21 +477,47 @@ export default function VoucherEntry() {
                         </div>
                     </div>
 
-                    <div className="glass-panel p-2 rounded-2xl flex items-center gap-1">
-                        {['Payment', 'Receipt', 'Journal', 'Contra', 'Sales', 'Purchase'].map(type => (
-                            <button
-                                key={type}
-                                onClick={() => setVoucherType(type as VoucherType)}
-                                className={clsx(
-                                    "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                    voucherType === type
-                                        ? "bg-primary text-primary-foreground shadow-lg"
-                                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                            >
-                                {type}
-                            </button>
-                        ))}
+                    <div className="flex items-center gap-3">
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => navigate('/security/audit')}
+                            className="p-3 bg-muted hover:bg-muted/80 rounded-2xl text-muted-foreground hover:text-primary transition-all shadow-sm border border-border"
+                            title="View Audit Trail"
+                        >
+                            <Shield className="w-5 h-5" />
+                        </motion.button>
+
+                        <motion.button
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            onClick={runSmartCheck}
+                            disabled={smartCheckLoading}
+                            className={clsx(
+                                "flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg",
+                                smartCheckLoading ? "bg-muted text-muted-foreground animate-pulse" : "bg-google-blue text-white hover:shadow-google-blue/20"
+                            )}
+                        >
+                            {smartCheckLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                            AI Smart Check
+                        </motion.button>
+
+                        <div className="glass-panel p-2 rounded-2xl flex items-center gap-1 ml-4">
+                            {['Payment', 'Receipt', 'Journal', 'Contra', 'Sales', 'Purchase'].map(type => (
+                                <button
+                                    key={type}
+                                    onClick={() => setVoucherType(type as VoucherType)}
+                                    className={clsx(
+                                        "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        voucherType === type
+                                            ? "bg-primary text-primary-foreground shadow-lg"
+                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    )}
+                                >
+                                    {type}
+                                </button>
+                            ))}
+                        </div>
                     </div>
                 </div>
 
@@ -650,9 +771,51 @@ export default function VoucherEntry() {
                     {/* Footer Section */}
                     <div className="px-10 py-10 bg-muted/10 border-t border-border grid grid-cols-1 lg:grid-cols-3 gap-10">
                         <div className="lg:col-span-2 space-y-4">
-                            <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1 flex items-center gap-2">
-                                <FileText className="w-4 h-4" /> Detailed Narration Statement
-                            </label>
+                            <div className="flex items-center justify-between ml-1">
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] flex items-center gap-2">
+                                    <FileText className="w-4 h-4" /> Detailed Narration Statement
+                                </label>
+                                <button
+                                    onClick={toggleVoice}
+                                    className={clsx(
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all",
+                                        isListening ? "bg-rose-500 text-white animate-pulse" : "bg-muted text-muted-foreground hover:bg-muted/80"
+                                    )}
+                                >
+                                    {isListening ? <MicOff className="w-3 h-3" /> : <Mic className="w-3 h-3" />}
+                                    {isListening ? "Stop Listening" : "Voice Dictate"}
+                                </button>
+                            </div>
+
+                            <AnimatePresence>
+                                {smartInsight && (
+                                    <motion.div
+                                        initial={{ opacity: 0, scale: 0.95 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        exit={{ opacity: 0, scale: 0.95 }}
+                                        className="bg-google-blue/10 border border-google-blue/20 p-5 rounded-[2rem] relative group"
+                                    >
+                                        <button
+                                            onClick={() => setSmartInsight(null)}
+                                            className="absolute top-4 right-4 p-1 hover:bg-google-blue/10 rounded-full transition-colors"
+                                        >
+                                            <Plus className="w-4 h-4 rotate-45 text-google-blue/50" />
+                                        </button>
+                                        <div className="flex items-start gap-4">
+                                            <div className="p-3 bg-google-blue/20 rounded-2xl text-google-blue">
+                                                <Sparkles className="w-5 h-5" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[10px] font-black text-google-blue uppercase tracking-widest mb-1">AI Smart Audit Insight</p>
+                                                <p className="text-xs font-bold leading-relaxed text-foreground/80">
+                                                    {smartInsight}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+
                             <textarea
                                 value={narration}
                                 onChange={(e) => setNarration(e.target.value)}

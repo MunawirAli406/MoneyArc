@@ -1,12 +1,57 @@
-import { Moon, Sun, Palette, Bell, Shield, Info, Clock } from 'lucide-react';
+import { Moon, Sun, Palette, Bell, Shield, Info, Clock, Sparkles, Eye, EyeOff, ExternalLink, CheckCircle2, Loader2, Play } from 'lucide-react';
 import { useTheme } from './useTheme';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import Select from '../../components/ui/Select';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { GeminiService } from '../../services/ai/GeminiService';
 
 export default function SettingsPage() {
     const { setTheme, theme } = useTheme();
     const [sessionTimeout, setSessionTimeout] = useState('30m');
+    const [geminiKey, setGeminiKey] = useState(localStorage.getItem('moneyarc_gemini_key') || '');
+    const [showKey, setShowKey] = useState(false);
+    const [isTesting, setIsTesting] = useState(false);
+    const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+    const [isSaved, setIsSaved] = useState(false);
+
+    // No default initialization needed anymore to prevent using blocked keys
+    useEffect(() => {
+        // Just ensuring state is consistent with localStorage on mount
+        const savedKey = localStorage.getItem('moneyarc_gemini_key');
+        if (savedKey) setGeminiKey(savedKey);
+    }, []);
+
+    const handleKeyChange = (val: string) => {
+        setGeminiKey(val);
+        localStorage.setItem('moneyarc_gemini_key', val);
+        setIsSaved(true);
+        setTestResult(null);
+        setTimeout(() => setIsSaved(false), 2000);
+
+        // Dispatch custom event for same-tab reactivity
+        window.dispatchEvent(new CustomEvent('moneyarc_key_updated', { detail: val }));
+    };
+
+    const testConnection = async () => {
+        setIsTesting(true);
+        setTestResult(null);
+        try {
+            const service = new GeminiService(geminiKey);
+            const response = await service.generateInsight("Say 'Connection Successful' in 2 words.", {
+                vouchers: [], ledgers: [], companyName: 'System Test', symbol: '₹'
+            });
+
+            if (response.toLowerCase().includes('success')) {
+                setTestResult({ success: true, message: 'Gemini AI is online and ready!' });
+            } else {
+                setTestResult({ success: false, message: response });
+            }
+        } catch (err: any) {
+            setTestResult({ success: false, message: err.message || 'Verification failed.' });
+        } finally {
+            setIsTesting(false);
+        }
+    };
 
     const sections = [
         {
@@ -75,6 +120,98 @@ export default function SettingsPage() {
                             ]}
                             className="w-48"
                         />
+                    )
+                }
+            ]
+        },
+        {
+            title: 'AI & Intelligence',
+            description: 'Configure your Gemini AI assistant settings.',
+            icon: Sparkles,
+            items: [
+                {
+                    label: 'Gemini API Key',
+                    description: 'Required for AI insights and advisor feed.',
+                    content: (
+                        <div className="flex flex-col gap-3 w-full max-w-md">
+                            <div className="relative group">
+                                <input
+                                    type={showKey ? 'text' : 'password'}
+                                    value={geminiKey}
+                                    onChange={(e) => handleKeyChange(e.target.value)}
+                                    placeholder="paste your api key here..."
+                                    className="w-full bg-muted border border-border rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 pr-12 font-mono"
+                                />
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                                    <AnimatePresence>
+                                        {isSaved && (
+                                            <motion.div
+                                                initial={{ opacity: 0, scale: 0.5 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                className="text-google-green"
+                                            >
+                                                <CheckCircle2 className="w-4 h-4" />
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                    <button
+                                        onClick={() => setShowKey(!showKey)}
+                                        className="p-1.5 hover:bg-white/10 rounded-lg text-muted-foreground hover:text-foreground transition-all"
+                                    >
+                                        {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center justify-between gap-4 mt-1">
+                                <a
+                                    href="https://aistudio.google.com/app/apikey"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline opacity-70 hover:opacity-100"
+                                >
+                                    <ExternalLink className="w-3 h-3" />
+                                    Get free API key from Google AI Studio
+                                </a>
+
+                                <button
+                                    onClick={testConnection}
+                                    disabled={isTesting || !geminiKey}
+                                    className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50"
+                                >
+                                    {isTesting ? (
+                                        <>
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                            Verifying...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Play className="w-3 h-3" />
+                                            Test Connection
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            <AnimatePresence>
+                                {testResult && (
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        className={`mt-2 p-3 rounded-xl border text-[11px] font-bold flex items-start gap-2 ${testResult.success
+                                            ? 'bg-google-green/10 border-google-green/20 text-google-green'
+                                            : 'bg-google-red/10 border-google-red/20 text-google-red'
+                                            }`}
+                                    >
+                                        <div className="mt-0.5">
+                                            {testResult.success ? <CheckCircle2 className="w-3 h-3" /> : <Info className="w-3 h-3" />}
+                                        </div>
+                                        {testResult.message}
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     )
                 }
             ]

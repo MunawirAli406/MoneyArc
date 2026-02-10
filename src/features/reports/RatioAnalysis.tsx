@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, PieChart, TrendingUp, Target, Zap, ShieldCheck, FileDown } from 'lucide-react';
+import { ArrowLeft, TrendingUp, Target, Zap, ShieldCheck, FileDown } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
 import { type Ledger, ReportService } from '../../services/accounting/ReportService';
@@ -8,6 +8,7 @@ import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import type { StockItem } from '../../services/inventory/types';
+import AIReportAdvisor from '../../components/ai/AIReportAdvisor';
 
 
 export default function RatioAnalysis() {
@@ -174,12 +175,19 @@ export default function RatioAnalysis() {
                 </div>
             </div>
 
+            <AIReportAdvisor
+                reportName="Ratio Analysis"
+                data={{
+                    ratios: ratios.map(r => ({ name: r.name, value: r.value, target: r.target }))
+                }}
+            />
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {ratios.map((ratio, i) => (
                     <motion.div
                         key={i}
                         whileHover={{ y: -5 }}
-                        className="bg-card p-10 rounded-[3rem] border border-border shadow-xl space-y-6 relative overflow-hidden group"
+                        className="glass-panel p-10 rounded-[3rem] border-white/10 shadow-xl space-y-6 relative overflow-hidden group"
                     >
                         <div className="flex items-center justify-between relative z-10">
                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${ratio.bg} ${ratio.color}`}>
@@ -205,26 +213,6 @@ export default function RatioAnalysis() {
                 ))}
             </div>
 
-            <div className="bg-card rounded-[3rem] border border-border p-10 shadow-sm relative overflow-hidden">
-                <div className="flex items-center gap-4 mb-8">
-                    <PieChart className="w-6 h-6 text-primary" />
-                    <h2 className="text-xl font-black uppercase tracking-tight">Interpretation & Insights</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-primary">Liquidity</h4>
-                        <p className="text-xs font-bold leading-relaxed text-muted-foreground">The Current Ratio of {ratios[0].value} indicates strong ability to cover short-term liabilities. Ideal range is 1.5 to 2.5.</p>
-                    </div>
-                    <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Operation</h4>
-                        <p className="text-xs font-bold leading-relaxed text-muted-foreground">GP Margin remains stable. Efforts to reduce direct material costs could further optimize profitability.</p>
-                    </div>
-                    <div className="space-y-4">
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-indigo-500">Stability</h4>
-                        <p className="text-xs font-bold leading-relaxed text-muted-foreground">Long-term debt is negligible, suggesting a low-risk financial structure and high owner equity.</p>
-                    </div>
-                </div>
-            </div>
         </motion.div>
     );
 }

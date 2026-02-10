@@ -10,6 +10,7 @@ interface PersistenceContextType {
     storageType: StorageType;
     activeCompany: Company | null;
     isSyncing: boolean;
+    isInitialized: boolean;
     initializeStorage: (type: StorageType, config?: any) => Promise<void>;
     restoreStorage: () => Promise<boolean>;
     selectCompany: (company: Company | null) => Promise<void>;
@@ -23,47 +24,80 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
     const [storageType, setStorageType] = useState<StorageType>(null);
     const [activeCompany, setActiveCompany] = useState<Company | null>(null);
     const [isSyncing, setIsSyncing] = useState(false);
+    const [isInitialized, setIsInitialized] = useState(false);
+    const { addNotification } = useNotifications();
 
     const restoreStorage = async () => {
+        console.log('[Persistence] Starting restoration sequence...');
         try {
+            // Priority 1: Check Local Storage/IDB
             const localProvider = new FileSystemProvider();
             const restored = await localProvider.restore?.();
+
             if (restored) {
-                console.log('PersistenceProvider: Storage restored successfully.');
+                console.log('[Persistence] Local storage handle restored.');
                 setProvider(localProvider);
                 setStorageType('local');
+
+                const savedCompany = localStorage.getItem('moneyarc_active_company');
+                if (savedCompany) {
+                    try {
+                        const company: Company = JSON.parse(savedCompany);
+                        setActiveCompany(company);
+                        console.log('[Persistence] Restored active company:', company.name);
+
+                        // Run sanity check in background
+                        LedgerService.ensureDataSanity(localProvider, company).catch(err => {
+                            console.error('[Persistence] Sanity check failed:', err);
+                        });
+                    } catch (e) {
+                        console.error('[Persistence] Failed to parse saved company', e);
+                    }
+                }
                 return true;
             }
+
+            // Priority 2: Check Cloud (GitHub)
             const githubProvider = new GitHubProvider();
             const ghRestored = await githubProvider.restore?.();
             if (ghRestored) {
-                console.log('PersistenceProvider: GitHub storage restored.');
+                console.log('[Persistence] GitHub storage restored.');
                 setProvider(githubProvider);
                 setStorageType('github');
+
+                const savedCompany = localStorage.getItem('moneyarc_active_company');
+                if (savedCompany) {
+                    try {
+                        const company: Company = JSON.parse(savedCompany);
+                        setActiveCompany(company);
+                        LedgerService.ensureDataSanity(githubProvider, company).catch(e => console.error(e));
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
                 return true;
             }
-        } catch (e) {
-            console.error('PersistenceProvider: Restore failed', e);
+        } catch (error) {
+            console.error('[Persistence] Critical error during storage restoration:', error);
+        } finally {
+            console.log('[Persistence] Initialization complete.');
+            setIsInitialized(true);
         }
-        console.log('PersistenceProvider: Storage not restored (normal if first run).');
         return false;
     };
 
     // Try to restore storage on mount
     useEffect(() => {
-        console.log('PersistenceProvider: Attempting to restore storage...');
         restoreStorage();
     }, []);
 
     const initializeStorage = async (type: StorageType, config?: any) => {
         let newProvider: StorageProvider | null = null;
-
         if (type === 'local') {
             newProvider = new FileSystemProvider();
         } else if (type === 'github') {
             newProvider = new GitHubProvider();
         }
-        // Add Cloud provider logic here later
 
         if (newProvider) {
             await newProvider.init(config);
@@ -76,12 +110,15 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
 
     const selectCompany = async (company: Company | null) => {
         setActiveCompany(company);
-        if (provider && company) {
-            await LedgerService.ensureDataSanity(provider, company);
+        if (company) {
+            localStorage.setItem('moneyarc_active_company', JSON.stringify(company));
+            if (provider) {
+                await LedgerService.ensureDataSanity(provider, company);
+            }
+        } else {
+            localStorage.removeItem('moneyarc_active_company');
         }
     };
-
-    const { addNotification } = useNotifications();
 
     const sync = async () => {
         if (!provider || !provider.sync) return;
@@ -110,6 +147,7 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
             storageType,
             activeCompany,
             isSyncing,
+            isInitialized,
             initializeStorage,
             restoreStorage,
             selectCompany,

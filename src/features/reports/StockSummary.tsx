@@ -7,6 +7,7 @@ import type { Voucher } from '../../services/accounting/VoucherService';
 import { useNavigate } from 'react-router-dom';
 import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
+import AIReportAdvisor from '../../components/ai/AIReportAdvisor';
 
 interface StockSummaryRow {
     itemId: string;
@@ -161,7 +162,17 @@ export default function StockSummary() {
                 </div>
             </div>
 
-            <div className="flex items-center gap-6 bg-card p-6 rounded-[2rem] border border-border/50 dark:border-white/10 shadow-2xl">
+            <AIReportAdvisor
+                reportName="Inventory Valuation"
+                data={{
+                    totalValue: totalClosingVal,
+                    itemCount: filteredSummary.length,
+                    topItems: filteredSummary.slice(0, 5).map(i => ({ name: i.itemName, closingVal: i.closingVal, in: i.inwardQty, out: i.outwardQty }))
+                }}
+            />
+
+            <div className="flex items-center gap-6 glass-panel p-6 rounded-[2rem] border-white/10 shadow-2xl relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
                 <div className="relative flex-1 group">
                     <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                     <input
@@ -186,7 +197,8 @@ export default function StockSummary() {
                 </button>
             </div>
 
-            <div className="bg-card rounded-[2.5rem] shadow-2xl border border-border/50 dark:border-white/10 overflow-hidden">
+            <div className="glass-panel rounded-[2.5rem] shadow-2xl border-white/10 overflow-hidden relative group/report">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent-500/5 opacity-50 pointer-events-none" />
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>

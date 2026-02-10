@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Search, Filter, Edit2, Trash2, BookOpen, FileText } from 'lucide-react';
+import { Plus, Search, Filter, Edit2, Trash2, BookOpen, FileText, Sparkles, TrendingUp, TrendingDown, Building2, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
@@ -118,19 +118,65 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight">Chart of Accounts</h1>
-                    <p className="text-muted-foreground font-medium">Manage ledgers and groups for {activeCompany?.name}</p>
+                    <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">Chart of Accounts</h1>
+                    <p className="text-muted-foreground font-bold text-[10px] uppercase tracking-[0.2em] mt-1 opacity-70">Master ledger management: {activeCompany?.name}</p>
                 </div>
-                <Link
-                    to="/ledgers/new"
-                    className="flex items-center gap-2 bg-google-green text-primary-foreground px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:shadow-lg hover:shadow-google-green/20 transition-all active:scale-95"
-                >
-                    <Plus className="w-5 h-5" />
-                    <span>Create Ledger</span>
-                </Link>
+                <div className="flex items-center gap-4">
+                    <button
+                        onClick={() => {/* AI Audit Logic */ }}
+                        className="flex items-center gap-2 bg-primary/10 text-primary px-6 py-3 rounded-xl font-black uppercase text-[10px] tracking-widest hover:bg-primary/20 transition-all active:scale-95 border border-primary/20 shadow-lg"
+                    >
+                        <Sparkles className="w-4 h-4" />
+                        AI Smart Audit
+                    </button>
+                    <Link
+                        to="/ledgers/new"
+                        className="flex items-center gap-2 bg-google-green text-primary-foreground px-6 py-3 rounded-xl border border-google-green/20 font-black uppercase text-xs tracking-widest hover:shadow-xl hover:shadow-google-green/30 transition-all active:scale-95"
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span>Create Ledger</span>
+                    </Link>
+                </div>
             </div>
 
-            <div className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden">
+            {/* Bento Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                {[
+                    { label: 'Total Assets', val: ledgers.filter(l => l.group.includes('Asset') || l.group.includes('Bank') || l.group.includes('Cash')).reduce((s, l) => s + (l.type === 'Dr' ? l.balance : -l.balance), 0), icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { label: 'Total Liability', val: Math.abs(ledgers.filter(l => l.group.includes('Liability') || l.group.includes('Loan')).reduce((s, l) => s + (l.type === 'Cr' ? l.balance : -l.balance), 0)), icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10' },
+                    { label: 'Equity/Capital', val: Math.abs(ledgers.filter(l => l.group.includes('Capital') || l.group.includes('Reserves')).reduce((s, l) => s + (l.type === 'Cr' ? l.balance : -l.balance), 0)), icon: Building2, color: 'text-primary', bg: 'bg-primary/10' },
+                    { label: 'Total Accounts', val: ledgers.length, icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-500/10', sub: 'Active' }
+                ].map((stat, i) => (
+                    <motion.div
+                        key={i}
+                        whileHover={{ y: -5 }}
+                        className="glass-panel p-6 rounded-3xl border-white/5 shadow-xl relative overflow-hidden group/stat"
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color} shadow-inner`}>
+                                <stat.icon className="w-5 h-5" />
+                            </div>
+                            <div className="h-1.5 w-12 bg-white/5 rounded-full overflow-hidden">
+                                <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: '70%' }}
+                                    className={`h-full ${stat.color.replace('text', 'bg')}`}
+                                />
+                            </div>
+                        </div>
+                        <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">{stat.label}</h4>
+                        <div className="text-2xl font-black mt-1 tracking-tighter">
+                            {typeof stat.val === 'number' && stat.label !== 'Total Accounts' ? `${activeCompany?.symbol || '₹'}${stat.val.toLocaleString()}` : stat.val}
+                        </div>
+                        <div className="absolute -right-4 -bottom-4 opacity-5 group-hover/stat:scale-110 transition-transform">
+                            <stat.icon size={80} />
+                        </div>
+                    </motion.div>
+                ))}
+            </div>
+
+            <div className="glass-panel rounded-[2.5rem] shadow-2xl border-white/10 overflow-hidden relative group/list">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent-500/5 opacity-30 pointer-events-none" />
                 {/* Toolbar */}
                 <div className="p-6 border-b border-border bg-muted/30 flex items-center justify-between gap-6">
                     <div className="relative flex-1 max-w-md">

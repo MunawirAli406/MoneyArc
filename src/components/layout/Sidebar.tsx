@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, FileText, Wallet, TrendingUp, Layers, Building2, Activity } from 'lucide-react';
+import { LayoutDashboard, BookOpen, FileText, Wallet, TrendingUp, Layers, Building2, Activity, Shield, Database } from 'lucide-react';
 import clsx from 'clsx';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useAuth } from '../../features/auth/AuthContext.provider';
@@ -19,7 +19,8 @@ const navItems = [
     { icon: Layers, label: 'Inventory Master', path: '/inventory/master' },
     { icon: TrendingUp, label: 'Stock Summary', path: '/reports/stock-summary' },
     { icon: Activity, label: 'Ratio Analysis', path: '/reports/ratios' },
-    { icon: FileText, label: 'Audit Trail', path: '/security/audit' },
+    { icon: Shield, label: 'Security Center', path: '/security' },
+    { icon: Database, label: 'Data Portability', path: '/utility/portability' },
 ];
 
 interface SidebarProps {

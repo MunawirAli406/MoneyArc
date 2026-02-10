@@ -18,6 +18,8 @@ import Gstr1Report from './features/reports/Gstr1Report';
 import Gstr3bReport from './features/reports/Gstr3bReport';
 import RatioAnalysis from './features/reports/RatioAnalysis';
 import AuditLogViewer from './features/security/AuditLogViewer';
+import SecurityCenter from './features/security/SecurityCenter';
+import DataPortability from './features/utilities/DataPortability';
 import CashFlow from './features/reports/CashFlow';
 import FundFlow from './features/reports/FundFlow';
 import Daybook from './features/reports/Daybook';
@@ -30,16 +32,19 @@ import StockGroupForm from './features/inventory/StockGroupForm';
 import StockSummary from './features/reports/StockSummary';
 import StockVoucherReport from './features/reports/StockVoucherReport';
 import InventoryMaster from './features/inventory/InventoryMaster';
-import { PersistenceProvider } from './services/persistence/PersistenceContext';
+import { PersistenceProvider, usePersistence } from './services/persistence/PersistenceContext';
 import { AuthProvider } from './features/auth/AuthContext';
 import { useAuth } from './features/auth/AuthContext.provider';
 import { ThemeProvider } from './features/settings/ThemeContext';
 import { DateProvider } from './features/reports/DateContext';
 import { NotificationProvider } from './services/notifications/NotificationContext';
 import DynamicBackground from './components/layout/DynamicBackground';
+import PageTransition from './components/layout/PageTransition';
+import { AnimatePresence } from 'framer-motion';
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth();
+  const { provider } = usePersistence();
   const location = useLocation();
 
   if (isLoading) {
@@ -54,12 +59,17 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
+  if (!provider && location.pathname !== '/select-source') {
+    return <Navigate to="/select-source" replace />;
+  }
+
   return <>{children}</>;
 }
 
 function AppContent() {
   const navigate = useNavigate();
-  console.log('AppContent: Rendering routes...');
+  const { isInitialized, isSyncing } = usePersistence();
+
   // Global Keyboard Shortcuts
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -94,56 +104,82 @@ function AppContent() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [navigate]);
 
+  if (!isInitialized || isSyncing) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#0F172A]">
+        <div className="mb-8 p-1">
+          <div className="relative">
+            <div className="w-20 h-20 border-4 border-primary/10 border-t-primary rounded-full animate-spin" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-10 h-10 bg-primary/20 rounded-full animate-pulse shadow-[0_0_30px_rgba(245,158,11,0.3)]" />
+            </div>
+          </div>
+        </div>
+        <h2 className="text-2xl font-black text-white uppercase tracking-[0.4em] animate-pulse">Initializing</h2>
+        <p className="text-primary/60 text-[10px] font-black uppercase tracking-[0.2em] mt-6 flex items-center gap-3">
+          <span className="w-2 h-2 bg-primary rounded-full animate-bounce" />
+          Synchronizing Workspace
+        </p>
+      </div>
+    );
+  }
+
+  console.log('AppContent: Rendering routes...');
+
   return (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignUpPage />} />
-      <Route path="/select-source" element={<DataSourceSelect />} />
-      <Route path="/select-company" element={<CompanySelect />} />
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
+        <Route path="/signup" element={<PageTransition><SignUpPage /></PageTransition>} />
+        <Route path="/select-source" element={<PageTransition><DataSourceSelect /></PageTransition>} />
+        <Route path="/select-company" element={<PageTransition><CompanySelect /></PageTransition>} />
 
-      <Route path="/" element={
-        <ProtectedRoute>
-          <Layout />
-        </ProtectedRoute>
-      }>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="ledgers" element={<LedgerManagement />} />
-        <Route path="ledgers/new" element={<LedgerForm />} />
-        <Route path="ledgers/:id" element={<LedgerForm />} />
-        <Route path="vouchers/new" element={<VoucherEntry />} />
-        <Route path="vouchers/edit/:id" element={<VoucherEntry />} />
-        <Route path="reports/balance-sheet" element={<BalanceSheet />} />
-        <Route path="reports/profit-loss" element={<ProfitAndLoss />} />
-        <Route path="reports/trial-balance" element={<TrialBalance />} />
-        <Route path="reports/gst" element={<GstReport />} />
-        <Route path="reports/gst/r1" element={<Gstr1Report />} />
-        <Route path="reports/gst/r3b" element={<Gstr3bReport />} />
-        <Route path="reports/ratios" element={<RatioAnalysis />} />
-        <Route path="security/audit" element={<AuditLogViewer />} />
-        <Route path="reports/cash-flow" element={<CashFlow />} />
-        <Route path="reports/fund-flow" element={<FundFlow />} />
-        <Route path="reports/daybook" element={<Daybook />} />
+        <Route path="/" element={
+          <ProtectedRoute>
+            <Layout />
+          </ProtectedRoute>
+        }>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<PageTransition><Dashboard /></PageTransition>} />
+          <Route path="ledgers" element={<PageTransition><LedgerManagement /></PageTransition>} />
+          <Route path="ledgers/new" element={<PageTransition><LedgerForm /></PageTransition>} />
+          <Route path="ledgers/:id" element={<PageTransition><LedgerForm /></PageTransition>} />
+          <Route path="vouchers/new" element={<PageTransition><VoucherEntry /></PageTransition>} />
+          <Route path="vouchers/edit/:id" element={<PageTransition><VoucherEntry /></PageTransition>} />
+          <Route path="reports/balance-sheet" element={<PageTransition><BalanceSheet /></PageTransition>} />
+          <Route path="reports/profit-loss" element={<PageTransition><ProfitAndLoss /></PageTransition>} />
+          <Route path="reports/trial-balance" element={<PageTransition><TrialBalance /></PageTransition>} />
+          <Route path="reports/gst" element={<PageTransition><GstReport /></PageTransition>} />
+          <Route path="reports/gst/r1" element={<PageTransition><Gstr1Report /></PageTransition>} />
+          <Route path="reports/gst/r3b" element={<PageTransition><Gstr3bReport /></PageTransition>} />
+          <Route path="reports/ratios" element={<PageTransition><RatioAnalysis /></PageTransition>} />
+          <Route path="security" element={<PageTransition><SecurityCenter /></PageTransition>} />
+          <Route path="security/audit" element={<PageTransition><AuditLogViewer /></PageTransition>} />
+          <Route path="utility/portability" element={<PageTransition><DataPortability /></PageTransition>} />
+          <Route path="reports/cash-flow" element={<PageTransition><CashFlow /></PageTransition>} />
+          <Route path="reports/fund-flow" element={<PageTransition><FundFlow /></PageTransition>} />
+          <Route path="reports/daybook" element={<PageTransition><Daybook /></PageTransition>} />
 
-        {/* Inventory Routes */}
-        <Route path="inventory/units" element={<UnitList />} />
-        <Route path="inventory/units/new" element={<UnitForm />} />
-        <Route path="inventory/units/:id" element={<UnitForm />} />
-        <Route path="inventory/master" element={<InventoryMaster />} />
-        <Route path="inventory/items" element={<Navigate to="/inventory/master" replace />} />
-        <Route path="inventory/items/new" element={<StockItemForm />} />
-        <Route path="inventory/items/:id" element={<StockItemForm />} />
-        <Route path="inventory/groups" element={<StockGroupList />} />
-        <Route path="inventory/groups/new" element={<StockGroupForm />} />
-        <Route path="inventory/groups/:id" element={<StockGroupForm />} />
-        <Route path="reports/stock-summary" element={<StockSummary />} />
-        <Route path="reports/stock-voucher/:itemId" element={<StockVoucherReport />} />
+          {/* Inventory Routes */}
+          <Route path="inventory/units" element={<PageTransition><UnitList /></PageTransition>} />
+          <Route path="inventory/units/new" element={<PageTransition><UnitForm /></PageTransition>} />
+          <Route path="inventory/units/:id" element={<PageTransition><UnitForm /></PageTransition>} />
+          <Route path="inventory/master" element={<PageTransition><InventoryMaster /></PageTransition>} />
+          <Route path="inventory/items" element={<Navigate to="/inventory/master" replace />} />
+          <Route path="inventory/items/new" element={<PageTransition><StockItemForm /></PageTransition>} />
+          <Route path="inventory/items/:id" element={<PageTransition><StockItemForm /></PageTransition>} />
+          <Route path="inventory/groups" element={<PageTransition><StockGroupList /></PageTransition>} />
+          <Route path="inventory/groups/new" element={<PageTransition><StockGroupForm /></PageTransition>} />
+          <Route path="inventory/groups/:id" element={<PageTransition><StockGroupForm /></PageTransition>} />
+          <Route path="reports/stock-summary" element={<PageTransition><StockSummary /></PageTransition>} />
+          <Route path="reports/stock-voucher/:itemId" element={<PageTransition><StockVoucherReport /></PageTransition>} />
 
-        <Route path="settings" element={<SettingsPage />} />
-      </Route>
+          <Route path="settings" element={<PageTransition><SettingsPage /></PageTransition>} />
+        </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </AnimatePresence>
   );
 }
 

@@ -1,422 +1,340 @@
-import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, FileText, PieChart as PieIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, Shield, Target, ArrowRight, Clock, Loader2, Globe, Sparkles } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { useTheme } from '../../features/settings/useTheme';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import clsx from 'clsx';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
+import { GeminiService } from '../../services/ai/GeminiService';
+import { useAuth } from '../auth/AuthContext.provider';
 
 export default function Dashboard() {
     const { provider, activeCompany } = usePersistence();
-    const { theme } = useTheme();
+    const { user } = useAuth();
     const navigate = useNavigate();
+
+    // Data States
     const [stats, setStats] = useState([
-        { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: DollarSign, color: 'text-google-blue', bg: 'bg-google-blue/10', sparkData: [] as any[], path: '/reports/profit-loss' },
-        { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingDown, color: 'text-google-red', bg: 'bg-google-red/10', sparkData: [] as any[], path: '/reports/profit-loss' },
-        { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingUp, color: 'text-google-green', bg: 'bg-google-green/10', sparkData: [] as any[], path: '/reports/profit-loss' },
-        { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-google-yellow', bg: 'bg-google-yellow/10', sparkData: [] as any[], path: '/reports/daybook' },
+        { label: 'Revenue', value: '₹0', change: '+0%', icon: DollarSign, color: 'hsl(var(--google-blue))', bg: 'bg-google-blue/10', sparkData: [] as any[], path: '/reports/profit-loss' },
+        { label: 'Expenses', value: '₹0', change: '-0%', icon: TrendingDown, color: 'hsl(var(--google-red))', bg: 'bg-google-red/10', sparkData: [] as any[], path: '/reports/profit-loss' },
+        { label: 'Net Profit', value: '₹0', change: '+0%', icon: TrendingUp, color: 'hsl(var(--google-green))', bg: 'bg-google-green/10', sparkData: [] as any[], path: '/reports/profit-loss' },
+        { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'hsl(var(--google-yellow))', bg: 'bg-google-yellow/10', sparkData: [] as any[], path: '/reports/daybook' },
     ]);
-
-
-
-
-    interface ChartData {
-        name: string;
-        sales: number;
-        purchases: number;
-    }
 
     const [recentVouchers, setRecentVouchers] = useState<Voucher[]>([]);
     const [stockWatch, setStockWatch] = useState<any[]>([]);
-    const [chartData, setChartData] = useState<ChartData[]>([]);
+    const [chartData, setChartData] = useState<any[]>([]);
     const [vitals, setVitals] = useState({ liquidRatio: 0, netMargin: 0, status: 'Healthy' });
+    const [aiSummary, setAiSummary] = useState<string>('');
+    const [aiLoading, setAiLoading] = useState(false);
+
+    interface ChartData { name: string; sales: number; purchases: number; }
+
+    const greeting = useMemo(() => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good Morning';
+        if (hour < 17) return 'Good Afternoon';
+        return 'Good Evening';
+    }, []);
+
+    const fetchAiHeartbeat = async (rev: number, exp: number, vit: any, vList: Voucher[], lList: Ledger[]) => {
+        const apiKey = localStorage.getItem('moneyarc_gemini_key') || '';
+        if (!apiKey) return;
+        setAiLoading(true);
+        try {
+            const service = new GeminiService(apiKey);
+            const prompt = `Provide a one-sentence high-end "Executive Heartbeat" for this dashboard. Stats: Rev ${activeCompany?.symbol}${rev}, Exp ${activeCompany?.symbol}${exp}, Margin ${vit.netMargin}%, Liquidity ${vit.liquidRatio}. One emoji only. Be professional.`;
+            const summary = await service.generateInsight(prompt, { vouchers: vList, ledgers: lList, companyName: activeCompany?.name || '', symbol: activeCompany?.symbol || '₹' });
+            setAiSummary(summary);
+        } catch (e) {
+            console.error("Heartbeat fetch failed", e);
+            setAiSummary("AI Advisor is currently unavailable.");
+        } finally { setAiLoading(false); }
+    };
 
     useEffect(() => {
-        const loadDashboardData = async () => {
+        const load = async () => {
             if (!provider || !activeCompany) return;
-
             const vouchers = await provider.read<Voucher[]>('vouchers.json', activeCompany.path) || [];
             const ledgers = await provider.read<Ledger[]>('ledgers.json', activeCompany.path) || [];
             const stockItems = await provider.read<any[]>('stock_items.json', activeCompany.path) || [];
 
-            // Recent Vouchers
-            const sortedVouchers = [...vouchers].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
-            setRecentVouchers(sortedVouchers);
+            setRecentVouchers([...vouchers].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 4));
+            setStockWatch([...stockItems].sort((a, b) => ((b.currentBalance || b.openingStock) * (b.currentRate || b.openingRate)) - ((a.currentBalance || a.openingStock) * (a.currentRate || a.openingRate))).slice(0, 4));
 
-            // Stock Watch
-            const sortedStock = [...stockItems].sort((a, b) => {
-                const valA = (a.currentBalance || a.openingStock) * (a.currentRate || a.openingRate);
-                const valB = (b.currentBalance || b.openingStock) * (b.currentRate || b.openingRate);
-                return valB - valA;
-            }).slice(0, 5);
-            setStockWatch(sortedStock);
-
-            const ledgerGroupMap = new Map(ledgers.map(l => [l.name, l.group]));
-
-            // Calculate stats
-            let revenue = 0;
-            let expenses = 0;
-
+            const ledgerMap = new Map(ledgers.map(l => [l.name, l.group]));
+            let revenue = 0, expenses = 0;
             const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const monthlyData = months.reduce((acc, month) => {
-                acc[month] = { name: month, sales: 0, purchases: 0 };
-                return acc;
-            }, {} as Record<string, ChartData>);
+            const monthlyData = months.reduce((acc, m) => ({ ...acc, [m]: { name: m, sales: 0, purchases: 0 } }), {} as Record<string, ChartData>);
 
-            // Calculate sparkline data (last 7 days)
             const today = new Date();
-            const last7Days = Array.from({ length: 7 }, (_, i) => {
-                const d = new Date(today);
-                d.setDate(d.getDate() - (6 - i));
+            const last7 = Array.from({ length: 7 }, (_, i) => {
+                const d = new Date(today); d.setDate(d.getDate() - (6 - i));
                 return d.toISOString().split('T')[0];
             });
-
-            const sparkDataMap = last7Days.reduce((acc, date) => {
-                acc[date] = { date, revenue: 0, expenses: 0, profit: 0, vouchers: 0 };
-                return acc;
-            }, {} as Record<string, any>);
+            const sparkMap = last7.reduce((acc, d) => ({ ...acc, [d]: { rev: 0, exp: 0, count: 0 } }), {} as Record<string, any>);
 
             vouchers.forEach(v => {
                 const vDate = v.date.split('T')[0];
-                const date = new Date(v.date);
-                const month = months[date.getMonth()];
-
-                if (sparkDataMap[vDate]) {
-                    sparkDataMap[vDate].vouchers += 1;
-                }
-
+                const m = months[new Date(v.date).getMonth()];
+                if (sparkMap[vDate]) sparkMap[vDate].count++;
                 v.rows.forEach(r => {
-                    const group = ledgerGroupMap.get(r.account);
-                    if (group && ACCT_GROUPS.INCOME.includes(group)) {
-                        if (r.type === 'Cr') {
-                            revenue += r.credit;
-                            if (sparkDataMap[vDate]) sparkDataMap[vDate].revenue += r.credit;
-                            if (group === 'Sales Accounts') {
-                                monthlyData[month].sales += r.credit;
-                            }
-                        }
+                    const g = ledgerMap.get(r.account);
+                    if (g && ACCT_GROUPS.INCOME.includes(g) && r.type === 'Cr') {
+                        revenue += r.credit;
+                        if (sparkMap[vDate]) sparkMap[vDate].rev += r.credit;
+                        if (g === 'Sales Accounts') monthlyData[m].sales += r.credit;
                     }
-                    if (group && ACCT_GROUPS.EXPENSES.includes(group)) {
-                        if (r.type === 'Dr') {
-                            expenses += r.debit;
-                            if (sparkDataMap[vDate]) sparkDataMap[vDate].expenses += r.debit;
-                            if (group === 'Purchase Accounts') {
-                                monthlyData[month].purchases += r.debit;
-                            }
-                        }
+                    if (g && ACCT_GROUPS.EXPENSES.includes(g) && r.type === 'Dr') {
+                        expenses += r.debit;
+                        if (sparkMap[vDate]) sparkMap[vDate].exp += r.debit;
+                        if (g === 'Purchase Accounts') monthlyData[m].purchases += r.debit;
                     }
                 });
             });
 
-            // Calculate Sparkline profit
-            last7Days.forEach(d => {
-                sparkDataMap[d].profit = sparkDataMap[d].revenue - sparkDataMap[d].expenses;
-            });
-
-            const sparkLines = {
-                rev: last7Days.map(d => ({ value: sparkDataMap[d].revenue })),
-                exp: last7Days.map(d => ({ value: sparkDataMap[d].expenses })),
-                profit: last7Days.map(d => ({ value: sparkDataMap[d].profit })),
-                vouchers: last7Days.map(d => ({ value: sparkDataMap[d].vouchers }))
-            };
-
-            const stockItemsList = stockItems || [];
-            const closingStockValue = stockItemsList.reduce((sum, item) => {
-                const balance = item.currentBalance !== undefined ? item.currentBalance : item.openingStock;
-                const rate = item.currentRate !== undefined ? item.currentRate : item.openingRate;
-                return sum + (balance * rate);
-            }, 0);
-
-            const openingStockValue = stockItemsList.reduce((sum, item) => {
-                return sum + (item.openingStock * item.openingRate);
-            }, 0);
+            const closingVal = stockItems.reduce((s, i) => s + ((i.currentBalance ?? i.openingStock) * (i.currentRate ?? i.openingRate)), 0);
+            const openingVal = stockItems.reduce((s, i) => s + (i.openingStock * i.openingRate), 0);
+            const profit = revenue + closingVal - (expenses + openingVal);
 
             setStats([
-                { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-google-blue', bg: 'bg-google-blue/10', sparkData: sparkLines.rev, path: '/reports/profit-loss' },
-                { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-google-red', bg: 'bg-google-red/10', sparkData: sparkLines.exp, path: '/reports/profit-loss' },
-                { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}${(revenue + closingStockValue - (expenses + openingStockValue)).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-google-green', bg: 'bg-google-green/10', sparkData: sparkLines.profit, path: '/reports/profit-loss' },
-                { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-google-yellow', bg: 'bg-google-yellow/10', sparkData: sparkLines.vouchers, path: '/reports/daybook' },
+                { label: 'Revenue', value: `${activeCompany.symbol}${revenue.toLocaleString()}`, change: '+12%', icon: DollarSign, color: 'hsl(var(--google-blue))', bg: 'bg-google-blue/10', sparkData: last7.map(d => ({ v: sparkMap[d].rev })), path: '/reports/profit-loss' },
+                { label: 'Expenses', value: `${activeCompany.symbol}${expenses.toLocaleString()}`, change: '-5%', icon: TrendingDown, color: 'hsl(var(--google-red))', bg: 'bg-google-red/10', sparkData: last7.map(d => ({ v: sparkMap[d].exp })), path: '/reports/profit-loss' },
+                { label: 'Net Profit', value: `${activeCompany.symbol}${profit.toLocaleString()}`, change: '+8%', icon: TrendingUp, color: 'hsl(var(--google-green))', bg: 'bg-google-green/10', sparkData: last7.map(d => ({ v: sparkMap[d].rev - sparkMap[d].exp })), path: '/reports/profit-loss' },
+                { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'hsl(var(--google-yellow))', bg: 'bg-google-yellow/10', sparkData: last7.map(d => ({ v: sparkMap[d].count })), path: '/reports/daybook' },
             ]);
 
-            const currentMonth = new Date().getMonth();
-            const last6Months = [];
-            for (let i = 5; i >= 0; i--) {
-                const mIdx = (currentMonth - i + 12) % 12;
-                last6Months.push(monthlyData[months[mIdx]]);
-            }
+            const curM = new Date().getMonth();
+            const l6 = []; for (let i = 5; i >= 0; i--) l6.push(monthlyData[months[(curM - i + 12) % 12]]);
+            setChartData(l6);
 
-            setChartData(last6Months);
-
-            // Calculate Vitals
-            const liquidAssets = ledgers
-                .filter(l => ['Bank Accounts', 'Cash-in-hand', 'Sundry Debtors'].includes(l.group))
-                .reduce((sum, l) => sum + l.balance, 0);
-
-            const currentLiabilities = ledgers
-                .filter(l => ['Sundry Creditors', 'Duties & Taxes', 'Current Liabilities'].includes(l.group))
-                .reduce((sum, l) => sum + l.balance, 0);
-
-            const liquidRatio = currentLiabilities === 0 ? (liquidAssets > 0 ? 9.99 : 0) : liquidAssets / currentLiabilities;
-
-            const netProfitValue = revenue + closingStockValue - (expenses + openingStockValue);
-            const netMargin = revenue === 0 ? 0 : (netProfitValue / revenue) * 100;
-
-            setVitals({
-                liquidRatio: Number(liquidRatio.toFixed(2)),
-                netMargin: Number(netMargin.toFixed(1)),
-                status: liquidRatio >= 1.2 ? 'Healthy' : (liquidRatio >= 1 ? 'Action Required' : 'Critical')
-            });
+            const liqA = ledgers.filter(l => ['Bank Accounts', 'Cash-in-hand', 'Sundry Debtors'].includes(l.group)).reduce((s, l) => s + l.balance, 0);
+            const curL = ledgers.filter(l => ['Sundry Creditors', 'Duties & Taxes', 'Current Liabilities'].includes(l.group)).reduce((s, l) => s + l.balance, 0);
+            const ratio = curL === 0 ? 1 : liqA / curL;
+            const margin = revenue === 0 ? 0 : (profit / revenue) * 100;
+            const vitResult = { liquidRatio: Number(ratio.toFixed(2)), netMargin: Number(margin.toFixed(1)), status: ratio >= 1.2 ? 'Healthy' : 'Warning' };
+            setVitals(vitResult);
+            fetchAiHeartbeat(revenue, expenses, vitResult, vouchers, ledgers);
         };
-        loadDashboardData();
+        load();
     }, [provider, activeCompany]);
 
+    useEffect(() => {
+        const handleKeyUpdate = () => {
+            const revenue = stats[0].value.replace(/[^0-9.-]/g, '');
+            const expenses = stats[1].value.replace(/[^0-9.-]/g, '');
+            fetchAiHeartbeat(Number(revenue), Number(expenses), vitals, recentVouchers, []);
+        };
+        window.addEventListener('moneyarc_key_updated', handleKeyUpdate);
+        return () => window.removeEventListener('moneyarc_key_updated', handleKeyUpdate);
+    }, [stats, vitals, recentVouchers]);
 
-
-    const container = {
-        hidden: { opacity: 0 },
-        show: {
-            opacity: 1,
-            transition: { staggerChildren: 0.1 }
-        }
-    };
-
-    const item = {
-        hidden: { y: 20, opacity: 0 },
-        show: { y: 0, opacity: 1 }
-    };
+    const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+    const item = { hidden: { y: 20, opacity: 0 }, show: { y: 0, opacity: 1 } };
 
     return (
-        <motion.div variants={container} initial="hidden" animate="show" className="space-y-8 max-w-7xl mx-auto px-4 sm:px-8 pb-24">
+        <motion.div variants={container} initial="hidden" animate="show" className="space-y-8 max-w-[1600px] mx-auto px-6 lg:px-12 pb-24 pt-4">
 
+            {/* Executive Top Row */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-4">
+                <motion.div variants={item}>
+                    <h1 className="text-4xl font-black tracking-tighter flex items-baseline gap-3">
+                        {greeting}, <span className="text-primary">{user?.name?.split(' ')[0] || 'Executive'}</span>
+                        <span className="hidden sm:inline-block w-2 h-2 rounded-full bg-google-green animate-pulse" />
+                    </h1>
+                    <p className="text-sm text-muted-foreground font-medium mt-1 flex items-center gap-2">
+                        <Globe className="w-3.5 h-3.5" />
+                        Analyzing <span className="font-bold text-foreground">{activeCompany?.name}</span> financial landscape
+                    </p>
+                </motion.div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <AnimatePresence>
-                    {stats.map((stat, index) => (
-                        <motion.div
-                            key={index}
-                            variants={item}
-                            whileHover={{ y: -8, scale: 1.02 }}
-                            onClick={() => navigate(stat.path)}
-                            className="glass-card p-6 rounded-[2.5rem] shadow-xl group relative overflow-hidden border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer"
-                        >
+                <motion.div variants={item} className="glass-panel px-6 py-4 rounded-3xl border-primary/20 flex items-center gap-4 max-w-xl shadow-lg ring-1 ring-white/5 backdrop-blur-2xl">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+                    </div>
+                    <div className="min-w-0">
+                        <span className="text-[10px] font-black uppercase tracking-widest text-primary/60 block mb-0.5">AI Advisor Feed</span>
+                        <p className="text-xs font-bold truncate">
+                            {aiLoading ? (
+                                <span className="flex items-center gap-2 text-muted-foreground italic">
+                                    <Loader2 className="w-3 h-3 animate-spin" /> Synthesizing financial metrics...
+                                </span>
+                            ) : aiSummary || "Syncing with real-time voucher data for executive summary."}
+                        </p>
+                    </div>
+                </motion.div>
+            </div>
 
-                            <div className="flex items-center justify-between mb-6 relative z-10">
-                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center ${stat.bg} ${stat.color} shadow-lg ring-1 ring-inset ring-white/10`}>
-                                    <stat.icon className="w-7 h-7" />
+            {/* Premium Bento Grid Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 grid-rows-none">
+
+                {/* Main Insight Hub (Center Top) */}
+                <motion.div variants={item} className="lg:col-span-8 glass-panel rounded-[2.5rem] p-8 border-primary/10 shadow-2xl relative overflow-hidden group min-h-[480px]">
+                    <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+
+                    <div className="flex justify-between items-start relative z-10 mb-8">
+                        <div>
+                            <h2 className="text-2xl font-black tracking-tighter flex items-center gap-2">
+                                <TrendingUp className="w-6 h-6 text-primary" />
+                                Growth Trajectory
+                            </h2>
+                            <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground opacity-50">6-Month Fiscal Cycle</p>
+                        </div>
+                        <div className="flex bg-muted/20 p-1.5 rounded-2xl border border-border/50">
+                            {['Sales', 'Purchases'].map((l, i) => (
+                                <div key={l} className="flex items-center gap-2 px-3 py-1.5 transition-all">
+                                    <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-google-blue' : 'bg-google-red'}`} />
+                                    <span className="text-[10px] font-black uppercase tracking-wider">{l}</span>
                                 </div>
-                                <div className="text-right">
-                                    <span className={`text-[10px] font-black px-2 py-1 rounded-lg ${stat.change.startsWith('+') || index === 2 ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'} border border-current/10`}>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="h-[340px] relative z-10">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="gradientSales" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="hsl(var(--google-blue))" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="hsl(var(--google-blue))" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="gradientPurchases" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="hsl(var(--google-red))" stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor="hsl(var(--google-red))" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: 'currentColor', opacity: 0.5 }} />
+                                <YAxis hide />
+                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', borderRadius: '20px', border: '1px solid hsl(var(--border))', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} />
+                                <Area type="monotone" dataKey="sales" stroke="hsl(var(--google-blue))" strokeWidth={4} fillOpacity={1} fill="url(#gradientSales)" />
+                                <Area type="monotone" dataKey="purchases" stroke="hsl(var(--google-red))" strokeWidth={4} fillOpacity={1} fill="url(#gradientPurchases)" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                </motion.div>
+
+                {/* Quick Stats Column */}
+                <div className="lg:col-span-4 flex flex-col gap-6">
+                    {stats.slice(2, 4).map((stat) => (
+                        <motion.div
+                            key={stat.label}
+                            variants={item}
+                            whileHover={{ y: -5 }}
+                            onClick={() => navigate(stat.path)}
+                            className="glass-card flex-1 p-6 rounded-[2rem] border-primary/10 relative overflow-hidden group cursor-pointer"
+                        >
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.bg} shadow-inner`}>
+                                    <stat.icon className="w-6 h-6" style={{ color: stat.color }} />
+                                </div>
+                                <div>
+                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</h3>
+                                    <p className="text-2xl font-black tabular-nums tracking-tighter">{stat.value}</p>
+                                </div>
+                                <div className="ml-auto text-right">
+                                    <span className="text-[10px] font-black px-2 py-1 rounded-lg bg-google-green/10 text-google-green border border-google-green/20">
                                         {stat.change}
                                     </span>
                                 </div>
                             </div>
-
-                            <div className="relative z-10 mb-4">
-                                <h3 className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.15em] mb-1 opacity-70">{stat.label}</h3>
-                                <p className="text-3xl font-black tracking-tighter tabular-nums">{stat.value}</p>
-                            </div>
-
-                            <div className="h-12 w-full mt-2 relative z-10">
+                            <div className="h-10 w-full opacity-50 group-hover:opacity-100 transition-opacity">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={stat.sparkData}>
-                                        <Area
-                                            type="monotone"
-                                            dataKey="value"
-                                            stroke={index === 1 ? '#EA4335' : (index === 0 ? '#4285F4' : (index === 2 ? '#34A853' : '#FBBC04'))}
-                                            strokeWidth={2}
-                                            fillOpacity={0.1}
-                                            fill={index === 1 ? '#EA4335' : (index === 0 ? '#4285F4' : (index === 2 ? '#34A853' : '#FBBC04'))}
-                                        />
+                                        <Area type="monotone" dataKey="v" stroke={stat.color} strokeWidth={2} fill="transparent" />
                                     </AreaChart>
                                 </ResponsiveContainer>
                             </div>
-
-                            {/* Hover Overlay */}
-                            <div className="absolute inset-x-0 bottom-0 p-4 bg-primary/10 translate-y-full group-hover:translate-y-0 transition-transform backdrop-blur-sm flex justify-center">
-                                <span className="text-[10px] font-black uppercase tracking-widest text-primary">View detailed report</span>
-                            </div>
                         </motion.div>
                     ))}
-                </AnimatePresence>
-            </div>
-
-            {/* Charts & Bento Section */}
-            <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {/* Sales & Purchases Chart */}
-                <div className="lg:col-span-3 glass-panel rounded-[3.5rem] shadow-2xl p-10 relative overflow-hidden group border-primary/20">
-                    <div className="flex justify-between items-center mb-10 relative z-10">
-                        <div>
-                            <h2 className="text-3xl font-black tracking-tighter flex items-center gap-3">
-                                <TrendingUp className="w-7 h-7 text-primary" />
-                                Sales & Purchases
-                            </h2>
-                            <p className="text-xs text-muted-foreground font-black uppercase tracking-[0.2em] opacity-60">Transactional Cycle Analysis</p>
-                        </div>
-                        <div className="flex gap-4 p-1.5 bg-muted/20 rounded-2xl border border-border/50 backdrop-blur-sm">
-                            {[
-                                { label: 'Sales', color: 'bg-google-blue' },
-                                { label: 'Purchases', color: 'bg-google-red' }
-                            ].map(l => (
-                                <div key={l.label} className="flex items-center gap-2 px-3 py-1.5 rounded-xl hover:bg-white/5 transition-colors">
-                                    <div className={`w-2 h-2 rounded-full ${l.color} shadow-[0_0_8px_rgba(0,0,0,0.2)]`} />
-                                    <span className="text-[10px] font-black text-muted-foreground uppercase tracking-wider">{l.label}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="h-[400px] relative z-10">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                <defs>
-                                    <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--google-blue))" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="hsl(var(--google-blue))" stopOpacity={0} />
-                                    </linearGradient>
-                                    <linearGradient id="colorPurchases" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="hsl(var(--google-red))" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="hsl(var(--google-red))" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <XAxis
-                                    dataKey="name"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: theme === 'dark' ? '#64748b' : '#94a3b8', fontSize: 10, fontWeight: 900 }}
-                                />
-                                <YAxis hide />
-                                <CartesianGrid vertical={false} stroke={theme === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.03)'} verticalFill={['rgba(0,0,0,0.01)', 'transparent']} />
-                                <Tooltip
-                                    cursor={{ stroke: 'rgba(255,255,255,0.1)', strokeWidth: 2 }}
-                                    contentStyle={{
-                                        backgroundColor: theme === 'dark' ? 'rgba(15, 23, 42, 0.9)' : 'rgba(255, 255, 255, 0.9)',
-                                        borderRadius: '24px',
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        backdropFilter: 'blur(16px)',
-                                        boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-                                        padding: '16px'
-                                    }}
-                                />
-                                <Area type="monotone" dataKey="sales" stroke="hsl(var(--google-blue))" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
-                                <Area type="monotone" dataKey="purchases" stroke="hsl(var(--google-red))" strokeWidth={4} fillOpacity={1} fill="url(#colorPurchases)" />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
                 </div>
 
-                {/* Execution Hub */}
-                <div className="glass-panel rounded-[3rem] shadow-2xl p-8 border-primary/10">
-                    <h2 className="text-xl font-black tracking-tight mb-8 uppercase text-muted-foreground/50 border-b border-border/50 pb-4">Command Center</h2>
-                    <div className="grid grid-cols-2 gap-4">
+                {/* Efficiency Gauge (Left Middle) */}
+                <motion.div variants={item} className="lg:col-span-3 glass-panel rounded-[2.5rem] p-8 border-primary/10 flex flex-col items-center justify-center text-center relative max-h-[300px]">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-6">Efficiency Vitals</h3>
+                    <div className="relative w-40 h-20 mb-4 overflow-hidden">
+                        <div className="absolute top-0 left-0 w-40 h-40 border-[12px] border-muted/30 rounded-full" />
+                        <motion.div
+                            initial={{ rotate: -90 }}
+                            animate={{ rotate: -90 + (vitals.netMargin * 1.8) }}
+                            className="absolute top-0 left-0 w-40 h-40 border-[12px] border-google-green rounded-full border-b-transparent border-l-transparent transition-all duration-1000"
+                        />
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-xl font-black">{vitals.netMargin}%</div>
+                    </div>
+                    <p className="text-[9px] font-black uppercase text-google-green tracking-widest px-4 py-2 bg-google-green/10 rounded-full">
+                        Net Margin Score: {vitals.status}
+                    </p>
+                </motion.div>
+
+                {/* Activity Bento (Right Middle) */}
+                <motion.div variants={item} className="lg:col-span-6 glass-panel rounded-[2.5rem] p-8 border-primary/10 relative">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                            <Clock className="w-4 h-4 text-violet-500" />
+                            Live Activity Feed
+                        </h3>
+                        <motion.button whileHover={{ scale: 1.05 }} className="text-[9px] font-black text-primary uppercase border-b border-primary/30">View All</motion.button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {recentVouchers.map((v, i) => (
+                            <div key={i} className="p-4 rounded-2xl bg-muted/10 border border-border/50 hover:bg-muted/20 transition-all cursor-pointer group">
+                                <div className="flex justify-between items-start mb-2">
+                                    <span className="text-[9px] font-black uppercase text-primary tracking-tighter">{v.type} #{v.voucherNo}</span>
+                                    <span className="text-[10px] font-black">{activeCompany?.symbol}{v.rows[0]?.type === 'Dr' ? v.rows[0]?.debit.toLocaleString() : v.rows[0]?.credit.toLocaleString()}</span>
+                                </div>
+                                <p className="text-[10px] font-bold text-muted-foreground truncate group-hover:text-foreground transition-colors">{v.rows[0]?.account}</p>
+                            </div>
+                        ))}
+                    </div>
+                </motion.div>
+
+                {/* Inventory Watch (Bottom Right) */}
+                <motion.div variants={item} className="lg:col-span-3 glass-panel rounded-[2.5rem] p-8 border-primary/10 relative overflow-hidden">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2 mb-6">
+                        <Target className="w-4 h-4 text-google-blue" />
+                        Inventory Watch
+                    </h3>
+                    <div className="space-y-4">
+                        {stockWatch.length > 0 ? stockWatch.map((itemVal, i) => (
+                            <div key={i} className="flex justify-between items-center group/item hover:bg-white/5 p-2 rounded-xl transition-colors">
+                                <span className="text-[10px] font-bold uppercase tracking-tight text-foreground/70 truncate max-w-[120px]">{itemVal.name}</span>
+                                <span className="text-[10px] font-black tabular-nums text-primary">{activeCompany?.symbol}{((itemVal.currentBalance || itemVal.openingStock) * (itemVal.currentRate || itemVal.openingRate)).toLocaleString()}</span>
+                            </div>
+                        )) : (
+                            <div className="flex flex-col items-center justify-center py-8 opacity-40">
+                                <span className="text-[10px] font-black uppercase tracking-widest italic">No active stock items</span>
+                            </div>
+                        )}
+                    </div>
+                </motion.div>
+
+                {/* Command Center (Bottom Left) */}
+                <motion.div variants={item} className="lg:col-span-3 glass-panel rounded-[2.5rem] p-8 border-primary/10 flex flex-col gap-4">
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-2">Quick Actions</h3>
+                    <div className="grid grid-cols-2 gap-3">
                         {[
-                            { label: 'Voucher', icon: Wallet, color: 'text-primary', bg: 'bg-primary/10', path: '/vouchers/new', desc: 'New Entry' },
-                            { label: 'Ratios', icon: Activity, color: 'text-amber-500', bg: 'bg-amber-500/10', path: '/reports/ratios', desc: 'Analysis' },
-                            { label: 'Daybook', icon: FileText, color: 'text-emerald-500', bg: 'bg-emerald-500/10', path: '/reports/daybook', desc: 'Audit' },
-                            { label: 'Stock', icon: PieIcon, color: 'text-violet-500', bg: 'bg-violet-500/10', path: '/reports/stock-summary', desc: 'Inventory' },
-                        ].map((action, i) => (
+                            { icon: Wallet, path: '/vouchers/new', color: 'text-google-blue' },
+                            { icon: Shield, path: '/security', color: 'text-amber-500' },
+                            { icon: Target, path: '/reports/ratios', color: 'text-google-green' },
+                            { icon: Activity, path: '/reports/daybook', color: 'text-violet-500' }
+                        ].map((btn, i) => (
                             <motion.button
                                 key={i}
-                                whileHover={{ scale: 1.05 }}
+                                whileHover={{ scale: 1.05, y: -2 }}
                                 whileTap={{ scale: 0.95 }}
-                                onClick={() => navigate(action.path)}
-                                className="flex flex-col items-start gap-4 p-5 rounded-3xl bg-muted/20 border border-border/50 hover:bg-primary/5 hover:border-primary/30 transition-all group"
+                                onClick={() => navigate(btn.path)}
+                                className="h-16 rounded-3xl bg-muted/20 border border-border/50 flex items-center justify-center hover:bg-primary/10 transition-colors"
                             >
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${action.bg} ${action.color} shadow-lg ring-1 ring-inset ring-white/10 group-hover:rotate-12 transition-transform`}>
-                                    <action.icon className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <span className="block text-[10px] font-black uppercase tracking-widest text-foreground">{action.label}</span>
-                                    <span className="block text-[8px] font-bold text-muted-foreground uppercase tracking-tight">{action.desc}</span>
-                                </div>
+                                <btn.icon className={`w-6 h-6 ${btn.color}`} />
                             </motion.button>
                         ))}
                     </div>
-                </div>
+                    <button onClick={() => navigate('/data-portability')} className="mt-2 w-full py-3 rounded-2xl bg-primary text-primary-foreground text-[10px] font-black uppercase tracking-widest hover:shadow-lg hover:shadow-primary/20 transition-all flex items-center justify-center gap-2">
+                        Export Data <ArrowRight className="w-3 h-3" />
+                    </button>
+                </motion.div>
 
-                {/* Vitals */}
-                <div className="glass-panel rounded-[3rem] shadow-2xl p-8 border-primary/10 relative overflow-hidden">
-                    <h2 className="text-xl font-black tracking-tight mb-8 uppercase text-muted-foreground/50 border-b border-border/50 pb-4">Vitals</h2>
-                    <div className="space-y-8">
-                        <div>
-                            <div className="flex justify-between items-end mb-3">
-                                <div>
-                                    <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest">Liquid Ratio</span>
-                                    <span className="text-2xl font-black text-primary">{vitals.liquidRatio}</span>
-                                </div>
-                                <span className={clsx(
-                                    "text-[10px] font-black px-2 py-1 rounded-md",
-                                    vitals.status === 'Healthy' ? "text-emerald-500 bg-emerald-500/10" :
-                                        vitals.status === 'Critical' ? "text-rose-500 bg-rose-500/10" : "text-amber-500 bg-amber-500/10"
-                                )}>
-                                    {vitals.status}
-                                </span>
-                            </div>
-                            <div className="w-full h-2.5 bg-muted/30 rounded-full overflow-hidden p-0.5 border border-border/50">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${Math.min(vitals.liquidRatio * 40, 100)}%` }}
-                                    className="h-full bg-gradient-to-r from-primary to-primary/60 rounded-full shadow-[0_0_10px_rgba(245,158,11,0.5)]"
-                                />
-                            </div>
-                        </div>
-                        <div>
-                            <div className="flex justify-between items-end mb-3">
-                                <div>
-                                    <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest">Net Margin</span>
-                                    <span className="text-2xl font-black text-emerald-500">{vitals.netMargin}%</span>
-                                </div>
-                                <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-1 rounded-md">
-                                    {vitals.netMargin >= 0 ? 'Profitable' : 'Loss'}
-                                </span>
-                            </div>
-                            <div className="w-full h-2.5 bg-muted/30 rounded-full overflow-hidden p-0.5 border border-border/50">
-                                <motion.div
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${Math.max(0, Math.min(vitals.netMargin * 2, 100))}%` }}
-                                    className="h-full bg-gradient-to-r from-emerald-600 to-emerald-400 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)]"
-                                />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Additional Bento Row */}
-                <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8">
-                    <div className="glass-panel rounded-[3rem] p-8 border-primary/10 shadow-xl">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
-                            <PieIcon className="w-4 h-4 text-primary" />
-                            Inventory Watch
-                        </h3>
-                        <div className="space-y-4">
-                            {stockWatch.slice(0, 3).map((itemVal, i) => (
-                                <div key={i} className="flex justify-between items-center group/item hover:bg-white/5 p-2 rounded-xl transition-colors">
-                                    <span className="text-[10px] font-black uppercase tracking-tight text-foreground/70 truncate max-w-[80px]">{itemVal.name}</span>
-                                    <span className="text-xs font-black tabular-nums text-primary">{activeCompany?.symbol || '₹'}{((itemVal.currentBalance || itemVal.openingStock) * (itemVal.currentRate || itemVal.openingRate)).toLocaleString()}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="glass-panel rounded-[3rem] p-8 border-primary/10 shadow-xl overflow-hidden">
-                        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
-                            <FileText className="w-4 h-4 text-purple-500" />
-                            Live Activity Feed
-                        </h3>
-                        <div className="space-y-3">
-                            {recentVouchers.slice(0, 3).map((v, i) => (
-                                <div key={i} className="flex flex-col border-l-2 border-primary/20 pl-3 py-1 hover:border-primary transition-colors cursor-pointer group/feed">
-                                    <span className="text-[9px] font-black uppercase tracking-widest text-foreground group-hover/feed:text-primary transition-colors truncate">{v.rows[0]?.account}</span>
-                                    <span className="text-[8px] font-bold text-muted-foreground uppercase">{activeCompany?.symbol || '₹'}{v.rows[0]?.type === 'Dr' ? v.rows[0].debit.toLocaleString() : v.rows[0].credit.toLocaleString()} • {v.type}</span>
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
+            </div>
         </motion.div>
     );
 }

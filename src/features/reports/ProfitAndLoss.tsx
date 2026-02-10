@@ -8,6 +8,7 @@ import type { Voucher } from '../../services/accounting/VoucherService';
 import LedgerQuickView from './LedgerQuickView';
 import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
+import AIReportAdvisor from '../../components/ai/AIReportAdvisor';
 
 
 export default function ProfitAndLoss() {
@@ -97,7 +98,18 @@ export default function ProfitAndLoss() {
                 </div>
             </div>
 
-            <div className="bg-card rounded-[2.5rem] shadow-2xl border border-white/10 overflow-hidden">
+            <AIReportAdvisor
+                reportName="Profit & Loss Statement"
+                data={{
+                    expenses: expenses.map(e => ({ group: e.groupName, total: e.total })),
+                    incomes: incomes.map(i => ({ group: i.groupName, total: i.total })),
+                    closingStock,
+                    netProfit
+                }}
+            />
+
+            <div className="glass-panel rounded-[2.5rem] shadow-2xl border-white/10 overflow-hidden relative group/report">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent-500/5 opacity-50 pointer-events-none" />
                 <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-border">
                     {/* Expenses Side */}
                     <div className="flex flex-col">
