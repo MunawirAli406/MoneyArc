@@ -38,6 +38,11 @@ export interface StorageProvider {
     updateCompany(id: string, path: string, data: Partial<Omit<Company, 'id' | 'path'>>): Promise<Company>;
 
     /**
+     * Delete an existing company
+     */
+    deleteCompany(id: string, path: string): Promise<void>;
+
+    /**
      * Read a file and return its content as JSON
      */
     read<T>(filename: string, companyPath?: string): Promise<T | null>;

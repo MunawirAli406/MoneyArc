@@ -56,7 +56,7 @@ export default function UnitList() {
                 </div>
                 <Link
                     to="/inventory/units/new"
-                    className="flex items-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:shadow-lg hover:shadow-primary/20 transition-all active:scale-95"
+                    className="flex items-center gap-2 bg-google-green text-primary-foreground px-6 py-3 rounded-xl font-bold uppercase text-xs tracking-widest hover:shadow-lg hover:shadow-google-green/20 transition-all active:scale-95"
                 >
                     <Plus className="w-5 h-5" />
                     <span>Create Unit</span>

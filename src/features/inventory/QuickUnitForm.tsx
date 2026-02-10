@@ -104,7 +104,7 @@ export default function QuickUnitForm({ onClose, onSuccess, initialName = '' }: 
 
                 <div className="p-4 bg-muted/20 border-t border-border flex justify-end gap-3">
                     <button onClick={onClose} className="px-4 py-2 text-xs font-bold uppercase tracking-widest">Cancel</button>
-                    <button onClick={handleSave} className="px-6 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-primary/20 flex items-center gap-2">
+                    <button onClick={handleSave} className="px-6 py-2 bg-google-green text-primary-foreground rounded-lg text-xs font-bold uppercase tracking-widest shadow-lg shadow-google-green/20 flex items-center gap-2">
                         <Save className="w-4 h-4" /> Create
                     </button>
                 </div>

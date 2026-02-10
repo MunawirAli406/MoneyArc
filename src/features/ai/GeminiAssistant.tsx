@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, Send, Key, Loader2, Minimize2 } from 'lucide-react';
+import { Send, Loader2, Minimize2 } from 'lucide-react';
+import GeminiLogo from '../../components/ui/GeminiLogo';
 import { GeminiService } from '../../services/ai/GeminiService';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import type { Voucher } from '../../services/accounting/VoucherService';
@@ -73,8 +74,8 @@ export default function GeminiAssistant({ isOpen, onClose }: GeminiAssistantProp
                     {/* Header */}
                     <div className="p-4 bg-muted/50 border-b border-border flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                            <div className="p-2 bg-[#4285F4]/10 rounded-xl">
-                                <Sparkles className="w-5 h-5 text-[#4285F4]" />
+                            <div className="p-2 bg-muted rounded-xl">
+                                <GeminiLogo size={20} />
                             </div>
                             <h3 className="font-black text-sm uppercase tracking-wider">MoneyArc AI</h3>
                         </div>
@@ -87,7 +88,9 @@ export default function GeminiAssistant({ isOpen, onClose }: GeminiAssistantProp
                     <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-background/50">
                         {!apiKey ? (
                             <div className="text-center p-6 space-y-4">
-                                <Key className="w-12 h-12 mx-auto text-[#4285F4] mb-2" />
+                                <div className="mb-4 flex justify-center">
+                                    <GeminiLogo size={48} animate={false} />
+                                </div>
                                 <h4 className="font-bold">Gemini API Key Required</h4>
                                 <p className="text-xs text-muted-foreground">To use AI features, please provide your Google Gemini API Key.</p>
                                 <input

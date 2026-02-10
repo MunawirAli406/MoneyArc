@@ -1,4 +1,4 @@
-import { Bell, Sun, Moon, ChevronDown, LogOut, Sparkles, Calculator, Settings, Building2, Menu, RefreshCcw, HardDrive } from 'lucide-react';
+import { Bell, Sun, Moon, ChevronDown, LogOut, Calculator, Settings, Building2, Menu, RefreshCcw, HardDrive } from 'lucide-react';
 import { useTheme } from '../../features/settings/useTheme';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useAuth } from '../../features/auth/AuthContext.provider';
@@ -7,6 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
 import GoToSearch from './GoToSearch';
+import GeminiLogo from '../ui/GeminiLogo';
 
 interface HeaderProps {
     onToggleGemini: () => void;
@@ -61,13 +62,24 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                             />
                         </div>
                         <div className="text-left hidden sm:block">
-                            <p className="text-[10px] font-black uppercase tracking-[0.25em] text-primary/60 leading-none mb-2">Entity</p>
                             <div className="flex items-center gap-2">
-                                <span className="text-base font-black text-foreground tracking-tight max-w-[200px] truncate">
-                                    {activeCompany?.name || 'Select Workspace'}
+                                <span className="text-base font-black text-foreground tracking-tight max-w-[200px] truncate leading-none">
+                                    {activeCompany?.name || 'MoneyArc'}
                                 </span>
                                 <ChevronDown className={clsx("w-4 h-4 text-muted-foreground transition-transform duration-500", isMenuOpen && "rotate-180")} />
                             </div>
+                            {activeCompany && (
+                                <div className="flex items-center gap-2 mt-1.5">
+                                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground/60 bg-muted/40 dark:bg-white/5 px-1.5 py-0.5 rounded-md border border-border/50">
+                                        FY {activeCompany.financialYear}
+                                    </span>
+                                    {activeCompany.gstin && (
+                                        <span className="text-[8px] font-black uppercase tracking-widest text-primary/70 bg-primary/5 border border-primary/20 px-1.5 py-0.5 rounded-md">
+                                            {activeCompany.gstin}
+                                        </span>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </button>
 
@@ -118,23 +130,23 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                         )}
                         <button
                             onClick={onToggleCalculator}
-                            className="p-2.5 text-muted-foreground hover:text-[#4285F4] hover:bg-[#4285F4]/10 rounded-xl transition-all active:scale-90"
+                            className="p-2.5 text-[#4285F4] hover:bg-[#4285F4]/10 rounded-xl transition-all active:scale-90"
                             title="Calculator"
                         >
                             <Calculator className="w-5 h-5" />
                         </button>
                         <button
                             onClick={onToggleGemini}
-                            className="p-2.5 text-muted-foreground hover:text-[#4285F4] hover:bg-[#4285F4]/10 rounded-xl transition-all active:scale-90"
+                            className="p-2.5 text-muted-foreground hover:bg-[#4285F4]/10 rounded-xl transition-all active:scale-90"
                             title="AI Assistant"
                         >
-                            <Sparkles className="w-5 h-5" />
+                            <GeminiLogo size={20} />
                         </button>
                         <button
                             onClick={toggleTheme}
-                            className="p-2.5 text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/10 rounded-xl transition-all active:scale-90"
+                            className="p-2.5 text-muted-foreground hover:text-[#FBBC04] hover:bg-[#FBBC04]/10 rounded-xl transition-all active:scale-90"
                         >
-                            {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+                            {theme === 'light' ? <Moon className="w-5 h-5 text-[#FBBC04]" /> : <Sun className="w-5 h-5 text-[#FBBC04]" />}
                         </button>
                     </div>
 
@@ -242,8 +254,12 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                                 (user?.provider === 'Google' || user?.provider === 'Microsoft') ? "bg-white" : "primary-gradient text-white"
                             )}>
                                 {user?.provider === 'Google' ? (
-                                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                    <svg className="w-5 h-5" viewBox="0 0 48 48">
+                                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z" />
+                                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                                        <path fill="none" d="M0 0h48v48H0z" />
                                     </svg>
                                 ) : user?.provider === 'Microsoft' ? (
                                     <svg className="w-5 h-5" viewBox="0 0 23 23">
@@ -274,8 +290,12 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                                                 (user?.provider === 'Google' || user?.provider === 'Microsoft') ? "bg-white" : "primary-gradient text-white"
                                             )}>
                                                 {user?.provider === 'Google' ? (
-                                                    <svg className="w-6 h-6" viewBox="0 0 24 24">
-                                                        <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                                                    <svg className="w-6 h-6" viewBox="0 0 48 48">
+                                                        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+                                                        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+                                                        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24s.92 7.54 2.56 10.78l7.97-6.19z" />
+                                                        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+                                                        <path fill="none" d="M0 0h48v48H0z" />
                                                     </svg>
                                                 ) : user?.provider === 'Microsoft' ? (
                                                     <svg className="w-6 h-6" viewBox="0 0 23 23">

@@ -98,6 +98,10 @@ export class GitHubProvider implements StorageProvider {
         throw new Error('Writing to GitHub is not supported.');
     }
 
+    async deleteCompany(_id: string, _path: string): Promise<void> {
+        throw new Error('Writing to GitHub is not supported.');
+    }
+
     async read<T>(filename: string, companyPath?: string): Promise<T | null> {
         const url = this.getRawUrl(filename, companyPath);
         try {

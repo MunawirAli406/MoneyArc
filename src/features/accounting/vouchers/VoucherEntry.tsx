@@ -514,7 +514,7 @@ export default function VoucherEntry() {
                                                     {activeRowId === row.id && (
                                                         <div className="absolute z-50 left-0 top-full mt-1 w-full min-w-[300px] max-h-60 overflow-y-auto bg-card border border-border rounded-lg shadow-xl py-1">
                                                             <div
-                                                                className="px-3 py-2 hover:bg-primary/10 cursor-pointer flex items-center gap-2 text-primary font-bold border-b border-border/50"
+                                                                className="px-3 py-2 hover:bg-google-green/10 cursor-pointer flex items-center gap-2 text-google-green font-bold border-b border-border/50"
                                                                 onMouseDown={() => {
                                                                     setQuickCreateInitial(row.account || '');
                                                                     setShowQuickLedger(true);

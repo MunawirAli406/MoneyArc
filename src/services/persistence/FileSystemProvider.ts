@@ -1,4 +1,4 @@
-import { get, set, keys } from 'idb-keyval';
+import { get, set, keys, del } from 'idb-keyval';
 import type { StorageProvider, Company } from './types';
 
 const HANDLE_KEY = 'moneyarc_dir_handle';
@@ -187,6 +187,31 @@ export class FileSystemProvider implements StorageProvider {
         }
 
         return updatedData;
+    }
+
+    async deleteCompany(_id: string, path: string): Promise<void> {
+        if (!this.isReady) throw new Error('Storage not initialized');
+
+        if (this.isVirtual) {
+            console.log('FileSystemProvider: Deleting company from Virtual FS:', path);
+            const allKeys = await keys();
+            const prefix = `${VIRTUAL_FS_PREFIX}${path}`;
+            for (const key of allKeys) {
+                if (typeof key === 'string' && key.startsWith(prefix)) {
+                    await del(key);
+                }
+            }
+        } else {
+            // Native FS
+            if (!this.dirHandle) throw new Error("Native handle missing");
+            try {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                await (this.dirHandle as any).removeEntry(path, { recursive: true });
+            } catch (err) {
+                console.error('Error deleting company directory:', err);
+                throw err;
+            }
+        }
     }
 
     async read<T>(filename: string, companyPath?: string): Promise<T | null> {

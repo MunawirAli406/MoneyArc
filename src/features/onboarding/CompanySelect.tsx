@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Building2, Plus, Search, Calendar, ChevronRight, Loader2 } from 'lucide-react';
+import { Building2, Plus, Search, Calendar, ChevronRight, Loader2, Trash2 } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../../services/persistence/types';
@@ -133,6 +133,33 @@ export default function CompanySelect() {
         }
     };
 
+    const handleDeleteCompany = async () => {
+        if (!editingCompanyId || !provider) return;
+
+        const companyToDelete = companies.find(c => c.id === editingCompanyId);
+        if (!companyToDelete) return;
+
+        if (!confirm(`Are you sure you want to PERMANENTLY delete "${companyToDelete.name}"? This action cannot be undone and all data will be lost.`)) {
+            return;
+        }
+
+        setIsLoading(true);
+        setError(null);
+        try {
+            await provider.deleteCompany(editingCompanyId, companyToDelete.path);
+            if (activeCompany?.id === editingCompanyId) {
+                await selectCompany(null);
+            }
+            await loadCompanies();
+            resetForm();
+        } catch (error) {
+            console.error("Failed to delete company", error);
+            setError((error as Error).message || "Failed to delete company");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const filteredCompanies = companies.filter(c =>
         c.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
@@ -153,7 +180,7 @@ export default function CompanySelect() {
                     </div>
                     <button
                         onClick={() => setShowCreateForm(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors shadow-sm"
+                        className="flex items-center gap-2 px-4 py-2 bg-google-green text-primary-foreground rounded-lg hover:shadow-lg hover:shadow-google-green/20 transition-all active:scale-95 shadow-sm"
                     >
                         <Plus size={20} />
                         Create New
@@ -388,22 +415,37 @@ export default function CompanySelect() {
                                 </div>
                             </div>
 
-                            <div className="flex justify-end gap-3 pt-6 border-t border-border">
-                                <button
-                                    type="button"
-                                    onClick={resetForm}
-                                    className="px-6 py-2.5 text-muted-foreground font-bold hover:bg-muted rounded-lg transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="px-8 py-2.5 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary-500/20 disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    {isLoading && <Loader2 size={16} className="animate-spin" />}
-                                    {editingCompanyId ? 'Update Company' : 'Create Company'}
-                                </button>
+                            <div className="flex justify-between items-center pt-6 border-t border-border">
+                                <div>
+                                    {editingCompanyId && (
+                                        <button
+                                            type="button"
+                                            onClick={handleDeleteCompany}
+                                            disabled={isLoading}
+                                            className="px-4 py-2 text-rose-500 font-bold hover:bg-rose-500/10 rounded-lg transition-colors flex items-center gap-2"
+                                        >
+                                            <Trash2 size={16} />
+                                            Delete Company
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={resetForm}
+                                        className="px-6 py-2.5 text-muted-foreground font-bold hover:bg-muted rounded-lg transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={isLoading}
+                                        className="px-8 py-2.5 bg-primary text-primary-foreground font-black uppercase tracking-widest text-xs rounded-lg hover:bg-primary/90 transition-colors shadow-lg shadow-primary-500/20 disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {isLoading && <Loader2 size={16} className="animate-spin" />}
+                                        {editingCompanyId ? 'Update Company' : 'Create Company'}
+                                    </button>
+                                </div>
                             </div>
                         </form>
                     </div>

@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, FileText, PieChart as PieIcon, Building2 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, FileText, PieChart as PieIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
@@ -13,21 +13,15 @@ export default function Dashboard() {
     const { provider, activeCompany } = usePersistence();
     const { theme } = useTheme();
     const navigate = useNavigate();
-    const [greeting, setGreeting] = useState('');
     const [stats, setStats] = useState([
-        { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: DollarSign, color: 'text-google-blue', bg: 'bg-google-blue/10', sparkData: [] as any[] },
-        { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingDown, color: 'text-google-red', bg: 'bg-google-red/10', sparkData: [] as any[] },
-        { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingUp, color: 'text-google-green', bg: 'bg-google-green/10', sparkData: [] as any[] },
-        { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-google-yellow', bg: 'bg-google-yellow/10', sparkData: [] as any[] },
+        { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: DollarSign, color: 'text-google-blue', bg: 'bg-google-blue/10', sparkData: [] as any[], path: '/reports/profit-loss' },
+        { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingDown, color: 'text-google-red', bg: 'bg-google-red/10', sparkData: [] as any[], path: '/reports/profit-loss' },
+        { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}0.00`, change: '0%', icon: TrendingUp, color: 'text-google-green', bg: 'bg-google-green/10', sparkData: [] as any[], path: '/reports/profit-loss' },
+        { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'text-google-yellow', bg: 'bg-google-yellow/10', sparkData: [] as any[], path: '/reports/daybook' },
     ]);
 
 
-    useEffect(() => {
-        const hour = new Date().getHours();
-        if (hour < 12) setGreeting('Good Morning');
-        else if (hour < 17) setGreeting('Good Afternoon');
-        else setGreeting('Good Evening');
-    }, []);
+
 
     interface ChartData {
         name: string;
@@ -141,10 +135,10 @@ export default function Dashboard() {
             }, 0);
 
             setStats([
-                { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-google-blue', bg: 'bg-google-blue/10', sparkData: sparkLines.rev },
-                { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-google-red', bg: 'bg-google-red/10', sparkData: sparkLines.exp },
-                { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}${(revenue + closingStockValue - (expenses + openingStockValue)).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-google-green', bg: 'bg-google-green/10', sparkData: sparkLines.profit },
-                { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-google-yellow', bg: 'bg-google-yellow/10', sparkData: sparkLines.vouchers },
+                { label: 'Total Revenue', value: `${activeCompany?.symbol || '₹'}${revenue.toLocaleString()}`, change: '+0%', icon: DollarSign, color: 'text-google-blue', bg: 'bg-google-blue/10', sparkData: sparkLines.rev, path: '/reports/profit-loss' },
+                { label: 'Total Expenses', value: `${activeCompany?.symbol || '₹'}${expenses.toLocaleString()}`, change: '-0%', icon: TrendingDown, color: 'text-google-red', bg: 'bg-google-red/10', sparkData: sparkLines.exp, path: '/reports/profit-loss' },
+                { label: 'Net Profit', value: `${activeCompany?.symbol || '₹'}${(revenue + closingStockValue - (expenses + openingStockValue)).toLocaleString()}`, change: '+0%', icon: TrendingUp, color: 'text-google-green', bg: 'bg-google-green/10', sparkData: sparkLines.profit, path: '/reports/profit-loss' },
+                { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'text-google-yellow', bg: 'bg-google-yellow/10', sparkData: sparkLines.vouchers, path: '/reports/daybook' },
             ]);
 
             const currentMonth = new Date().getMonth();
@@ -179,7 +173,7 @@ export default function Dashboard() {
         loadDashboardData();
     }, [provider, activeCompany]);
 
-    const BusinessIcon = Building2;
+
 
     const container = {
         hidden: { opacity: 0 },
@@ -196,37 +190,7 @@ export default function Dashboard() {
 
     return (
         <motion.div variants={container} initial="hidden" animate="show" className="space-y-8 max-w-7xl mx-auto px-4 sm:px-8 pb-24">
-            {/* Header Section */}
-            <motion.div variants={item} className="group relative glass-panel p-10 rounded-[3.5rem] border-primary/20 shadow-2xl overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50" />
 
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
-                    <div>
-                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 rounded-full border border-primary/20 mb-4 backdrop-blur-md">
-                            <BusinessIcon className="w-3.5 h-3.5 text-primary" />
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-primary">
-                                {greeting}
-                            </span>
-                        </div>
-                        <h1 className="text-5xl md:text-6xl font-black tracking-tighter text-foreground uppercase leading-none mb-3">
-                            {activeCompany?.name || 'Dashboard'}
-                        </h1>
-                        <div className="flex items-center gap-4">
-                            <p className="text-muted-foreground font-black uppercase tracking-widest text-[10px] bg-muted/30 px-2 py-1 rounded-md">
-                                FY {activeCompany?.financialYear || '2023-24'}
-                            </p>
-                            {activeCompany?.gstin && (
-                                <>
-                                    <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-                                    <p className="text-primary font-black uppercase tracking-widest text-[10px] bg-primary/10 border border-primary/20 px-2 py-1 rounded-md">
-                                        GSTIN: {activeCompany?.gstin}
-                                    </p>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </motion.div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -236,7 +200,8 @@ export default function Dashboard() {
                             key={index}
                             variants={item}
                             whileHover={{ y: -8, scale: 1.02 }}
-                            className="glass-card p-6 rounded-[2.5rem] shadow-xl group relative overflow-hidden border-border/50 hover:border-primary/30 transition-all duration-300"
+                            onClick={() => navigate(stat.path)}
+                            className="glass-card p-6 rounded-[2.5rem] shadow-xl group relative overflow-hidden border-border/50 hover:border-primary/30 transition-all duration-300 cursor-pointer"
                         >
 
                             <div className="flex items-center justify-between mb-6 relative z-10">
