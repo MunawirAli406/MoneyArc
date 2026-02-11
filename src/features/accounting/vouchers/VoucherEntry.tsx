@@ -13,11 +13,13 @@ import QuickLedgerForm from '../masters/QuickLedgerForm';
 import QuickStockItemForm from '../masters/QuickStockItemForm';
 import { GeminiService } from '../../../services/ai/GeminiService';
 import { CURRENCIES } from '../../../data/currencies';
+import { useLocalization } from '../../../hooks/useLocalization';
 
 type VoucherType = 'Payment' | 'Receipt' | 'Journal' | 'Contra' | 'Sales' | 'Purchase';
 
 export default function VoucherEntry() {
     const { provider, activeCompany } = usePersistence();
+    const { tax, formatCurrency, symbol, valuationLabel } = useLocalization();
     const navigate = useNavigate();
     const { id } = useParams();
 
@@ -844,17 +846,17 @@ export default function VoucherEntry() {
                             {/* Tax Breakdown */}
                             {(taxSummary.cgst > 0 || taxSummary.sgst > 0 || taxSummary.igst > 0) && (
                                 <div className="bg-primary/5 border border-primary/10 p-4 rounded-2xl space-y-2">
-                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">Tax Estimate</p>
-                                    {taxSummary.cgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>CGST Total</span><span>{activeCompany?.symbol || '₹'}{taxSummary.cgst.toLocaleString()}</span></div>}
-                                    {taxSummary.sgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>SGST Total</span><span>{activeCompany?.symbol || '₹'}{taxSummary.sgst.toLocaleString()}</span></div>}
-                                    {taxSummary.igst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>IGST Total</span><span>{activeCompany?.symbol || '₹'}{taxSummary.igst.toLocaleString()}</span></div>}
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">{tax.labels.total}</p>
+                                    {taxSummary.cgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>{tax.labels.tier1 || 'Tax 1'}</span><span>{formatCurrency(taxSummary.cgst)}</span></div>}
+                                    {taxSummary.sgst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>{tax.labels.tier2 || 'Tax 2'}</span><span>{formatCurrency(taxSummary.sgst)}</span></div>}
+                                    {taxSummary.igst > 0 && <div className="flex justify-between text-[10px] font-bold"><span>{tax.labels.tier3 || 'Tax 3'}</span><span>{formatCurrency(taxSummary.igst)}</span></div>}
                                 </div>
                             )}
 
                             {Math.abs(totalDebit - totalCredit) > 0.01 && (
                                 <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-2xl flex items-center justify-between text-rose-500 animate-pulse">
                                     <span className="text-[10px] font-black uppercase tracking-widest">Difference</span>
-                                    <span className="font-mono font-bold">{activeCompany?.symbol || '₹'}{Math.abs(totalDebit - totalCredit).toFixed(2)}</span>
+                                    <span className="font-mono font-bold">{formatCurrency(Math.abs(totalDebit - totalCredit))}</span>
                                 </div>
                             )}
                             <div className="flex gap-4">
@@ -919,7 +921,7 @@ export default function VoucherEntry() {
                                                 <th className="py-4 px-4 w-40">Batch No / Expiry</th>
                                                 <th className="py-4 px-4 w-32 text-right">Quantity</th>
                                                 <th className="py-4 px-4 w-36 text-right">Rate / Unit</th>
-                                                <th className="py-4 px-10 w-44 text-right">Value ({activeCompany?.symbol || '₹'})</th>
+                                                <th className="py-4 px-10 w-44 text-right">{valuationLabel} ({symbol})</th>
                                                 <th className="py-4 px-4 w-12"></th>
                                             </tr>
                                         </thead>
@@ -927,18 +929,36 @@ export default function VoucherEntry() {
                                             {tempAllocations.map((alloc) => (
                                                 <tr key={alloc.id} className="hover:bg-muted/5 transition-all">
                                                     <td className="py-4 px-10">
-                                                        <Select
-                                                            value={alloc.itemId}
-                                                            onChange={(val) => updateInventoryRow(alloc.id, 'itemId', val)}
-                                                            placeholder="Select Stock Item..."
-                                                            options={stockItems.map(item => ({
-                                                                value: item.id,
-                                                                label: item.name,
-                                                                description: units.find(u => u.id === item.unitId)?.name || 'Units',
-                                                                icon: Package
-                                                            }))}
-                                                            className="w-full"
-                                                        />
+                                                        <div className="space-y-2">
+                                                            <Select
+                                                                value={alloc.itemId}
+                                                                onChange={(val) => updateInventoryRow(alloc.id, 'itemId', val)}
+                                                                placeholder="Select Stock Item..."
+                                                                options={stockItems.map(item => ({
+                                                                    value: item.id,
+                                                                    label: item.name,
+                                                                    description: units.find(u => u.id === item.unitId)?.name || 'Units',
+                                                                    icon: Package
+                                                                }))}
+                                                                className="w-full"
+                                                            />
+                                                            {!alloc.itemId && stockItems.length === 0 && (
+                                                                <button
+                                                                    onClick={() => setShowQuickItem(true)}
+                                                                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider py-1 px-2 rounded bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-all w-full justify-center"
+                                                                >
+                                                                    <Plus className="w-3 h-3" /> Create First Item
+                                                                </button>
+                                                            )}
+                                                            {!alloc.itemId && stockItems.length > 0 && (
+                                                                <button
+                                                                    onClick={() => setShowQuickItem(true)}
+                                                                    className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider py-0.5 px-2 rounded text-emerald-600/70 hover:text-emerald-600 hover:bg-emerald-500/5 transition-all"
+                                                                >
+                                                                    <Plus className="w-3 h-3" /> New Item
+                                                                </button>
+                                                            )}
+                                                        </div>
                                                     </td>
                                                     <td className="py-4 px-4 space-y-1">
                                                         <input
@@ -974,7 +994,7 @@ export default function VoucherEntry() {
                                                         />
                                                     </td>
                                                     <td className="py-4 px-10 text-right font-mono font-black text-sm text-emerald-600">
-                                                        {activeCompany?.symbol || '₹'}{alloc.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                                        {formatCurrency(alloc.amount)}
                                                     </td>
                                                     <td className="py-4 px-4">
                                                         <button
@@ -1014,8 +1034,8 @@ export default function VoucherEntry() {
                                         </div>
                                         <div className="w-px h-10 bg-border" />
                                         <div>
-                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Total Valuation</p>
-                                            <p className="text-2xl font-black font-mono text-emerald-600">{activeCompany?.symbol || '₹'}{tempAllocations.reduce((sum, a) => sum + a.amount, 0).toLocaleString()}</p>
+                                            <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">{valuationLabel}</p>
+                                            <p className="text-2xl font-black font-mono text-emerald-600">{formatCurrency(tempAllocations.reduce((sum, a) => sum + a.amount, 0))}</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-4">
@@ -1063,10 +1083,17 @@ export default function VoucherEntry() {
                     <QuickStockItemForm
                         onClose={() => setShowQuickItem(false)}
                         initialName=""
-                        onSuccess={(_itemName, _itemId) => {
+                        onSuccess={(_itemName, itemId) => {
                             // Refresh items
                             if (provider && activeCompany) {
-                                provider.read<StockItem[]>('stock_items.json', activeCompany.path).then(data => setStockItems(data || []));
+                                provider.read<StockItem[]>('stock_items.json', activeCompany.path).then(data => {
+                                    setStockItems(data || []);
+                                    // Auto-select the newly created item in the last empty allocation row
+                                    const lastEmptyAlloc = tempAllocations.find(a => !a.itemId);
+                                    if (lastEmptyAlloc) {
+                                        updateInventoryRow(lastEmptyAlloc.id, 'itemId', itemId);
+                                    }
+                                });
                             }
                         }}
                     />

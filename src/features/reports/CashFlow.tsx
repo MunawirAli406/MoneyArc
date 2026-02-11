@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, TrendingDown, Landmark, IndianRupee, FileDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, Landmark, FileDown, Wallet } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 import { useReportDates } from './DateContext';
+import { useLocalization } from '../../hooks/useLocalization';
 
 import type { Voucher } from '../../services/accounting/VoucherService';
 
 export default function CashFlow() {
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency } = useLocalization();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
     const { startDate, endDate } = useReportDates();
@@ -85,7 +87,7 @@ export default function CashFlow() {
                     </button>
                     <div className="bg-card px-6 py-3 rounded-2xl border border-border shadow-sm">
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">Net Change in Cash</p>
-                        <p className="text-xl font-black text-primary tracking-tight">{activeCompany?.symbol || '₹'}{(operating + investing + financing).toLocaleString()}</p>
+                        <p className="text-xl font-black text-primary tracking-tight">{formatCurrency(operating + investing + financing)}</p>
                     </div>
                 </div>
             </div>
@@ -94,14 +96,14 @@ export default function CashFlow() {
                 {[
                     { label: 'Operating Activities', value: operating, icon: TrendingUp },
                     { label: 'Investing Activities', value: investing, icon: Landmark },
-                    { label: 'Financing Activities', value: financing, icon: IndianRupee },
+                    { label: 'Financing Activities', value: financing, icon: Wallet },
                 ].map((act, i) => (
                     <div key={i} className="bg-card p-8 rounded-[2rem] border border-border group hover:border-primary/50 transition-all shadow-sm">
                         <div className="w-12 h-12 bg-muted rounded-2xl flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors">
                             <act.icon className="w-6 h-6 text-primary" />
                         </div>
                         <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">{act.label}</p>
-                        <p className="text-3xl font-black text-foreground mb-4">{activeCompany?.symbol || '₹'}{act.value.toLocaleString()}</p>
+                        <p className="text-3xl font-black text-foreground mb-4">{formatCurrency(act.value)}</p>
                         <div className="flex items-center gap-2 text-xs font-bold">
                             {act.value >= 0 ? (
                                 <span className="text-emerald-500 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Net Inflow</span>
@@ -121,7 +123,7 @@ export default function CashFlow() {
                     <div className="space-y-4">
                         <div className="flex justify-between items-end border-b border-border pb-2">
                             <h3 className="font-black text-xs uppercase tracking-widest text-primary">A. Operating Activities</h3>
-                            <span className="font-mono font-bold text-foreground">{activeCompany?.symbol || '₹'}{operating.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-foreground">{formatCurrency(operating)}</span>
                         </div>
                         <p className="text-sm text-muted-foreground italic">Summarizes cash generated from core business operations including sales, inventory, and operational expenses.</p>
                     </div>
@@ -129,7 +131,7 @@ export default function CashFlow() {
                     <div className="space-y-4">
                         <div className="flex justify-between items-end border-b border-border pb-2">
                             <h3 className="font-black text-xs uppercase tracking-widest text-primary">B. Investing Activities</h3>
-                            <span className="font-mono font-bold text-foreground">{activeCompany?.symbol || '₹'}{investing.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-foreground">{formatCurrency(investing)}</span>
                         </div>
                         <p className="text-sm text-muted-foreground italic">Tracks cash flows related to purchasing or selling long-term assets like equipment, furniture, and investments.</p>
                     </div>
@@ -137,7 +139,7 @@ export default function CashFlow() {
                     <div className="space-y-4">
                         <div className="flex justify-between items-end border-b border-border pb-2">
                             <h3 className="font-black text-xs uppercase tracking-widest text-primary">C. Financing Activities</h3>
-                            <span className="font-mono font-bold text-foreground">{activeCompany?.symbol || '₹'}{financing.toLocaleString()}</span>
+                            <span className="font-mono font-bold text-foreground">{formatCurrency(financing)}</span>
                         </div>
                         <p className="text-sm text-muted-foreground italic">Reports cash movement between the business and its owners or creditors, such as capital infusions or loan repayments.</p>
                     </div>
@@ -149,7 +151,7 @@ export default function CashFlow() {
                                 <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">(A + B + C)</p>
                             </div>
                             <div className="text-right">
-                                <p className="text-3xl font-black text-primary">{activeCompany?.symbol || '₹'}{(operating + investing + financing).toLocaleString()}</p>
+                                <p className="text-3xl font-black text-primary">{formatCurrency(operating + investing + financing)}</p>
                             </div>
                         </div>
                     </div>

@@ -6,12 +6,14 @@ import type { Voucher } from '../../services/accounting/VoucherService';
 import type { Ledger } from '../../services/accounting/ReportService';
 import type { StockItem } from '../../services/inventory/types';
 import { useNavigate } from 'react-router-dom';
-import { GstService } from '../../services/accounting/GstService';
+import { TaxService } from '../../services/accounting/TaxService';
 import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
+import { useLocalization } from '../../hooks/useLocalization';
 
 export default function Gstr1Report() {
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency, tax } = useLocalization();
     const navigate = useNavigate();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
@@ -55,11 +57,11 @@ export default function Gstr1Report() {
     });
 
     const calculateTotal = (invoices: Voucher[]) => {
-        return GstService.aggregateSummaries(invoices).taxableValue;
+        return TaxService.aggregateSummaries(invoices).taxableValue;
     };
 
     const calculateTax = (invoices: Voucher[]) => {
-        return GstService.aggregateSummaries(invoices).totalTax;
+        return TaxService.aggregateSummaries(invoices).totalTax;
     };
 
     // HSN Summary logic
@@ -105,7 +107,7 @@ export default function Gstr1Report() {
                         <ArrowLeft className="w-5 h-5" />
                     </button>
                     <div>
-                        <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">GSTR-1 Details</h1>
+                        <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">{tax.taxName} Details</h1>
                         <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-1">
                             Outward Supplies Statement // {activeCompany?.name}
                         </p>
@@ -128,18 +130,18 @@ export default function Gstr1Report() {
                             <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary">
                                 <Users className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xs font-black uppercase tracking-widest">B2B Invoices (4A, 4B, 4C, 6B, 6C)</h2>
+                            <h2 className="text-xs font-black uppercase tracking-widest">{tax.taxName} Register Invoices</h2>
                         </div>
                         <span className="text-xl font-black font-mono">{b2bInvoices.length}</span>
                     </div>
                     <div className="p-8 space-y-6">
                         <div className="flex justify-between items-end border-b border-border pb-4">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase">Taxable Value</p>
-                            <p className="text-2xl font-black font-mono text-primary">{activeCompany?.symbol || '₹'}{calculateTotal(b2bInvoices).toLocaleString()}</p>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase">{tax.labels.taxable}</p>
+                            <p className="text-2xl font-black font-mono text-primary">{formatCurrency(calculateTotal(b2bInvoices))}</p>
                         </div>
                         <div className="flex justify-between items-end">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase">Tax Amount</p>
-                            <p className="text-xl font-black font-mono text-foreground/70">{activeCompany?.symbol || '₹'}{calculateTax(b2bInvoices).toLocaleString()}</p>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase">{tax.labels.total}</p>
+                            <p className="text-xl font-black font-mono text-foreground/70">{formatCurrency(calculateTax(b2bInvoices))}</p>
                         </div>
                     </div>
                 </div>
@@ -151,18 +153,18 @@ export default function Gstr1Report() {
                             <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center text-orange-600">
                                 <User className="w-5 h-5" />
                             </div>
-                            <h2 className="text-xs font-black uppercase tracking-widest">B2C Others (7)</h2>
+                            <h2 className="text-xs font-black uppercase tracking-widest">Consumer Sales</h2>
                         </div>
                         <span className="text-xl font-black font-mono">{b2cInvoices.length}</span>
                     </div>
                     <div className="p-8 space-y-6">
                         <div className="flex justify-between items-end border-b border-border pb-4">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase">Taxable Value</p>
-                            <p className="text-2xl font-black font-mono text-orange-600">{activeCompany?.symbol || '₹'}{calculateTotal(b2cInvoices).toLocaleString()}</p>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase">{tax.labels.taxable}</p>
+                            <p className="text-2xl font-black font-mono text-orange-600">{formatCurrency(calculateTotal(b2cInvoices))}</p>
                         </div>
                         <div className="flex justify-between items-end">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase">Tax Amount</p>
-                            <p className="text-xl font-black font-mono text-foreground/70">{activeCompany?.symbol || '₹'}{calculateTax(b2cInvoices).toLocaleString()}</p>
+                            <p className="text-[10px] font-black text-muted-foreground uppercase">{tax.labels.total}</p>
+                            <p className="text-xl font-black font-mono text-foreground/70">{formatCurrency(calculateTax(b2cInvoices))}</p>
                         </div>
                     </div>
                 </div>
@@ -171,7 +173,7 @@ export default function Gstr1Report() {
             {/* HSN Summary */}
             <div className="bg-card rounded-[3rem] border border-border shadow-md overflow-hidden">
                 <div className="p-8 bg-muted/10 border-b border-border flex items-center justify-between">
-                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">HSN/SAC Summary (12)</h3>
+                    <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">{tax.itemCodeLabel} Summary</h3>
                     <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                         <Hash className="w-4 h-4" />
                     </div>
@@ -180,7 +182,7 @@ export default function Gstr1Report() {
                     <table className="w-full">
                         <thead>
                             <tr className="text-left text-[9px] font-black text-muted-foreground uppercase tracking-widest border-b border-border bg-muted/5">
-                                <th className="px-10 py-5">HSN/SAC</th>
+                                <th className="px-10 py-5">{tax.itemCodeLabel}</th>
                                 <th className="px-4 py-5">Item Description</th>
                                 <th className="px-4 py-5 text-right">Total Quantity</th>
                                 <th className="px-4 py-5 text-right">Total Taxable Value</th>
@@ -193,8 +195,8 @@ export default function Gstr1Report() {
                                     <td className="px-10 py-5 font-mono text-xs text-primary">{hsn.hsn}</td>
                                     <td className="px-4 py-5 uppercase text-xs">{hsn.description}</td>
                                     <td className="px-4 py-5 text-right font-mono">{hsn.qty.toFixed(2)}</td>
-                                    <td className="px-4 py-5 text-right font-mono">{activeCompany?.symbol || '₹'}{hsn.taxableValue.toLocaleString()}</td>
-                                    <td className="px-10 py-5 text-right font-mono text-primary font-black">{activeCompany?.symbol || '₹'}{hsn.taxAmount.toLocaleString()}</td>
+                                    <td className="px-4 py-5 text-right font-mono">{formatCurrency(hsn.taxableValue)}</td>
+                                    <td className="px-10 py-5 text-right font-mono text-primary font-black">{formatCurrency(hsn.taxAmount)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -213,9 +215,9 @@ export default function Gstr1Report() {
                             <tr className="text-left text-[9px] font-black text-muted-foreground uppercase tracking-widest border-b border-border bg-muted/5">
                                 <th className="px-10 py-5">Date</th>
                                 <th className="px-4 py-5">Particulars</th>
-                                <th className="px-4 py-5">GSTIN/UIN</th>
+                                <th className="px-4 py-5">{tax.idLabel}</th>
                                 <th className="px-4 py-5 text-right">Taxable Value</th>
-                                <th className="px-4 py-5 text-right">GST Amount</th>
+                                <th className="px-4 py-5 text-right">{tax.taxName} Amount</th>
                                 <th className="px-10 py-5 text-right">Total</th>
                             </tr>
                         </thead>
@@ -223,7 +225,7 @@ export default function Gstr1Report() {
                             {salesVouchers.map(v => {
                                 const partyRow = v.rows.find(r => r.type === 'Dr');
                                 const ledger = ledgers.find(l => l.name === partyRow?.account);
-                                const vSummary = GstService.calculateVoucherSummary(v);
+                                const vSummary = TaxService.calculateVoucherSummary(v);
                                 const taxableValue = vSummary.taxableValue;
                                 const taxAmount = vSummary.totalTax;
                                 const invoiceValue = vSummary.invoiceValue;
@@ -236,9 +238,9 @@ export default function Gstr1Report() {
                                             <div className="text-[9px] text-muted-foreground uppercase font-black tracking-widest">{v.voucherNo}</div>
                                         </td>
                                         <td className="px-4 py-5 font-mono text-xs text-primary font-black">{ledger?.gstin || '-'}</td>
-                                        <td className="px-4 py-5 text-right font-mono text-sm">{activeCompany?.symbol || '₹'}{taxableValue.toLocaleString()}</td>
-                                        <td className="px-4 py-5 text-right font-mono text-sm text-primary">{activeCompany?.symbol || '₹'}{taxAmount.toLocaleString()}</td>
-                                        <td className="px-10 py-5 text-right font-mono font-black text-base">{activeCompany?.symbol || '₹'}{invoiceValue.toLocaleString()}</td>
+                                        <td className="px-4 py-5 text-right font-mono text-sm">{formatCurrency(taxableValue)}</td>
+                                        <td className="px-4 py-5 text-right font-mono text-sm text-primary">{formatCurrency(taxAmount)}</td>
+                                        <td className="px-10 py-5 text-right font-mono font-black text-base">{formatCurrency(invoiceValue)}</td>
                                     </tr>
                                 );
                             })}

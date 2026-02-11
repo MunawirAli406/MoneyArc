@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 import AIReportAdvisor from '../../components/ai/AIReportAdvisor';
+import { useLocalization } from '../../hooks/useLocalization';
 
 interface StockSummaryRow {
     itemId: string;
@@ -25,6 +26,7 @@ interface StockSummaryRow {
 
 export default function StockSummary() {
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency, valuationLabel } = useLocalization();
     const navigate = useNavigate();
     const [summary, setSummary] = useState<StockSummaryRow[]>([]);
     const [loading, setLoading] = useState(true);
@@ -147,7 +149,7 @@ export default function StockSummary() {
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Inventory Valuation</h1>
+                    <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">{valuationLabel}</h1>
                     <p className="text-muted-foreground font-medium">Closing stock & movement summary: {activeCompany?.name}</p>
                 </div>
                 <div className="flex items-center gap-4">
@@ -163,7 +165,7 @@ export default function StockSummary() {
             </div>
 
             <AIReportAdvisor
-                reportName="Inventory Valuation"
+                reportName={valuationLabel}
                 data={{
                     totalValue: totalClosingVal,
                     itemCount: filteredSummary.length,
@@ -207,7 +209,7 @@ export default function StockSummary() {
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right bg-muted/20">Opening Balance</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">Inward Activity</th>
                                 <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right bg-muted/20">Outward Flow</th>
-                                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">Closing Valuation</th>
+                                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">{valuationLabel}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/30">
@@ -247,47 +249,46 @@ export default function StockSummary() {
                                             </div>
                                         </td>
                                         <td className="px-6 py-6 text-right font-mono bg-muted/10 group-hover:bg-muted/20">
-                                            <div className="font-black text-foreground">{activeCompany?.symbol || '₹'}{item.openingVal.toLocaleString()}</div>
+                                            <div className="font-black text-foreground">{formatCurrency(item.openingVal)}</div>
                                             <div className="text-[10px] font-bold text-muted-foreground opacity-50">{item.openingQty.toLocaleString()} {item.unit}</div>
                                         </td>
                                         <td className="px-6 py-6 text-right font-mono">
                                             <div className="flex items-center justify-end gap-1.5 text-emerald-500">
                                                 <ArrowUpRight className="w-3 h-3" />
-                                                <span className="font-black">{activeCompany?.symbol || '₹'}{item.inwardVal.toLocaleString()}</span>
+                                                <span className="font-black">{formatCurrency(item.inwardVal)}</span>
                                             </div>
                                             <div className="text-[10px] font-bold text-muted-foreground opacity-50">+{item.inwardQty.toLocaleString()} {item.unit}</div>
                                         </td>
                                         <td className="px-6 py-6 text-right font-mono bg-muted/10 group-hover:bg-muted/20">
                                             <div className="flex items-center justify-end gap-1.5 text-rose-500">
                                                 <ArrowDownRight className="w-3 h-3" />
-                                                <span className="font-black">{activeCompany?.symbol || '₹'}{item.outwardVal.toLocaleString()}</span>
+                                                <span className="font-black">{formatCurrency(item.outwardVal)}</span>
                                             </div>
                                             <div className="text-[10px] font-bold text-muted-foreground opacity-50">-{item.outwardQty.toLocaleString()} {item.unit}</div>
                                         </td>
                                         <td className="px-8 py-6 text-right">
-                                            <div className="font-black text-xl text-primary tracking-tighter">{activeCompany?.symbol || '₹'}{item.closingVal.toLocaleString()}</div>
+                                            <div className="font-black text-xl text-primary tracking-tighter">{formatCurrency(item.closingVal)}</div>
                                             <div className="text-xs font-black text-muted-foreground tracking-widest uppercase mt-0.5">{item.closingQty.toLocaleString()} {item.unit}</div>
                                         </td>
                                     </motion.tr>
                                 ))
                             )}
                         </tbody>
-                        <tfoot>
-                            <tr className="bg-primary/5 border-t-2 border-primary/20">
-                                <td colSpan={4} className="px-8 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-primary">Consolidated Inventory Value</td>
-                                <td className="px-8 py-8 text-right">
-                                    <div className="text-3xl font-black text-primary tracking-tighter">{activeCompany?.symbol || '₹'}{totalClosingVal.toLocaleString()}</div>
-                                    <div className="text-[10px] font-black uppercase tracking-widest text-primary/60 opacity-60">Net Stock Holdings</div>
-                                </td>
-                            </tr>
-                        </tfoot>
+                        Footer */
+                        <tr className="bg-primary/5 border-t-2 border-primary/20">
+                            <td colSpan={4} className="px-8 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-primary">Consolidated {valuationLabel}</td>
+                            <td className="px-8 py-8 text-right">
+                                <div className="text-3xl font-black text-primary tracking-tighter">{formatCurrency(totalClosingVal)}</div>
+                                <div className="text-[10px] font-black uppercase tracking-widest text-primary/60 opacity-60">Net Stock Holdings</div>
+                            </td>
+                        </tr>
                     </table>
                 </div>
             </div>
 
             <div className="p-10 rounded-[2.5rem] bg-emerald-500/5 border-2 border-emerald-500/20 text-center">
                 <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600/60 mb-3">Inventory Health</p>
-                <h3 className="text-xl font-black text-emerald-600 tracking-tight">Your total inventory is valued at approximately {activeCompany?.symbol || '₹'}{totalClosingVal.toLocaleString()}</h3>
+                <h3 className="text-xl font-black text-emerald-600 tracking-tight">Your total inventory is valued at approximately {formatCurrency(totalClosingVal)}</h3>
             </div>
         </motion.div >
     );

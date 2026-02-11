@@ -4,8 +4,8 @@ import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { useNavigate } from 'react-router-dom';
 import type { Company } from '../../services/persistence/types';
 import Select from '../../components/ui/Select';
-import { INDIAN_STATES } from '../../data/indian_states';
 import { CURRENCIES } from '../../data/currencies';
+import { COUNTRIES, COUNTRIES_DATA } from '../../data/countries';
 
 export default function CompanySelect() {
     // Verified Dark Mode Support: 2026-02-05
@@ -376,18 +376,25 @@ export default function CompanySelect() {
                                                     onChange={(val) => setNewCompany({ ...newCompany, state: val })}
                                                     options={[
                                                         { value: '', label: 'Select State' },
-                                                        ...INDIAN_STATES.map((state) => ({ value: state, label: state }))
+                                                        ...(COUNTRIES_DATA[newCompany.country] || []).map((state) => ({ value: state, label: state }))
                                                     ]}
                                                     className="w-full"
                                                 />
                                             </div>
                                             <div>
                                                 <label className="block text-sm font-bold text-foreground mb-1">Country</label>
-                                                <input
-                                                    type="text"
+                                                <Select
                                                     value={newCompany.country}
-                                                    onChange={(e) => setNewCompany({ ...newCompany, country: e.target.value })}
-                                                    className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:ring-2 focus:ring-primary-500 outline-none transition-all text-foreground"
+                                                    onChange={(val) => {
+                                                        const states = COUNTRIES_DATA[val] || [];
+                                                        setNewCompany({
+                                                            ...newCompany,
+                                                            country: val,
+                                                            state: states.length > 0 ? states[0] : ''
+                                                        });
+                                                    }}
+                                                    options={COUNTRIES.map(country => ({ value: country, label: country }))}
+                                                    className="w-full"
                                                 />
                                             </div>
                                         </div>

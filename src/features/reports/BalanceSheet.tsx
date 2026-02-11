@@ -8,10 +8,12 @@ import type { Voucher } from '../../services/accounting/VoucherService';
 import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 import AIReportAdvisor from '../../components/ai/AIReportAdvisor';
+import { useLocalization } from '../../hooks/useLocalization';
 
 
 export default function BalanceSheet() {
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency } = useLocalization();
     const [liabilities, setLiabilities] = useState<GroupSummary[]>([]);
     const [assets, setAssets] = useState<GroupSummary[]>([]);
     const [closingStock, setClosingStock] = useState(0);
@@ -139,7 +141,7 @@ export default function BalanceSheet() {
                                                 <span className="text-sm font-black text-foreground uppercase tracking-tight">{group.groupName}</span>
                                             </div>
                                             <span className={`font-mono font-black text-base ${group.total < 0 ? 'text-amber-500' : 'text-foreground'}`}>
-                                                {activeCompany?.symbol || '₹'}{Math.abs(group.total).toLocaleString()} {group.total < 0 ? '(Dr)' : ''}
+                                                {formatCurrency(Math.abs(group.total))} {group.total < 0 ? '(Dr)' : ''}
                                             </span>
                                         </div>
 
@@ -167,7 +169,7 @@ export default function BalanceSheet() {
                                 <div className="p-2 -mx-2">
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm font-black text-emerald-500 uppercase tracking-tight">Net Profit</span>
-                                        <span className="font-mono font-black text-emerald-600 text-base">{activeCompany?.symbol || '₹'}{netProfit.toLocaleString()}</span>
+                                        <span className="font-mono font-black text-emerald-600 text-base">{formatCurrency(netProfit)}</span>
                                     </div>
                                 </div>
                             )}
@@ -175,14 +177,14 @@ export default function BalanceSheet() {
                                 <div className="space-y-2 p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10 mt-4">
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm font-black text-amber-500 uppercase tracking-tight">Opening Diff</span>
-                                        <span className="font-mono font-black text-amber-600">{activeCompany?.symbol || '₹'}{tbDiff.toLocaleString()}</span>
+                                        <span className="font-mono font-black text-amber-600">{formatCurrency(tbDiff)}</span>
                                     </div>
                                 </div>
                             )}
                         </div>
                         <div className="p-8 bg-muted/30 border-t border-border flex justify-between items-center">
                             <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Capital & Liabilities</span>
-                            <span className="text-2xl font-black text-foreground font-mono">{activeCompany?.symbol || '₹'}{totalLiabilities.toLocaleString()}</span>
+                            <span className="text-2xl font-black text-foreground font-mono">{formatCurrency(totalLiabilities)}</span>
                         </div>
                     </div>
 
@@ -196,7 +198,7 @@ export default function BalanceSheet() {
                                 <div className="p-2 -mx-2">
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm font-black text-foreground uppercase tracking-tight">Closing Stock</span>
-                                        <span className="font-mono font-black text-foreground text-base">{activeCompany?.symbol || '₹'}{closingStock.toLocaleString()}</span>
+                                        <span className="font-mono font-black text-foreground text-base">{formatCurrency(closingStock)}</span>
                                     </div>
                                 </div>
                             )}
@@ -216,7 +218,7 @@ export default function BalanceSheet() {
                                                 <span className="text-sm font-black text-foreground uppercase tracking-tight">{group.groupName}</span>
                                             </div>
                                             <span className={`font-mono font-black text-base ${group.total < 0 ? 'text-amber-500' : 'text-foreground'}`}>
-                                                {activeCompany?.symbol || '₹'}{Math.abs(group.total).toLocaleString()} {group.total < 0 ? '(Cr)' : ''}
+                                                {formatCurrency(Math.abs(group.total))} {group.total < 0 ? '(Cr)' : ''}
                                             </span>
                                         </div>
 
@@ -244,14 +246,14 @@ export default function BalanceSheet() {
                                 <div className="p-2 -mx-2">
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm font-black text-rose-500 uppercase tracking-tight">Net Loss</span>
-                                        <span className="font-mono font-black text-rose-600 text-base">{activeCompany?.symbol || '₹'}{Math.abs(netProfit).toLocaleString()}</span>
+                                        <span className="font-mono font-black text-rose-600 text-base">{formatCurrency(Math.abs(netProfit))}</span>
                                     </div>
                                 </div>
                             )}
                         </div>
                         <div className="p-8 bg-muted/30 border-t border-border flex justify-between items-center">
                             <span className="text-xs font-black uppercase tracking-widest text-muted-foreground">Assets & Values</span>
-                            <span className="text-2xl font-black text-foreground font-mono">{activeCompany?.symbol || '₹'}{totalAssets.toLocaleString()}</span>
+                            <span className="text-2xl font-black text-foreground font-mono">{formatCurrency(totalAssets)}</span>
                         </div>
                     </div>
                 </div>

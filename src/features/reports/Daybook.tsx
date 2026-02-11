@@ -9,9 +9,11 @@ import { useReportDates } from './DateContext';
 import LedgerQuickView from './LedgerQuickView';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 import Select from '../../components/ui/Select';
+import { useLocalization } from '../../hooks/useLocalization';
 
 export default function Daybook() {
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency } = useLocalization();
     const navigate = useNavigate();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [filteredVouchers, setFilteredVouchers] = useState<Voucher[]>([]);
@@ -304,7 +306,7 @@ export default function Daybook() {
                                                     )}
                                                 </td>
                                                 <td className="px-8 py-6 text-right font-mono font-black text-lg text-foreground">
-                                                    {activeCompany?.symbol || '₹'}{totalAmt.toLocaleString()}
+                                                    {formatCurrency(totalAmt)}
                                                 </td>
                                                 <td className="px-8 py-6 text-center">
                                                     <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">

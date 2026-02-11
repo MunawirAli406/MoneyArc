@@ -9,10 +9,12 @@ import LedgerQuickView from './LedgerQuickView';
 import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 import AIReportAdvisor from '../../components/ai/AIReportAdvisor';
+import { useLocalization } from '../../hooks/useLocalization';
 
 
 export default function ProfitAndLoss() {
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency } = useLocalization();
     const [expenses, setExpenses] = useState<GroupSummary[]>([]);
     const [incomes, setIncomes] = useState<GroupSummary[]>([]);
     const [closingStock, setClosingStock] = useState(0);
@@ -170,7 +172,7 @@ export default function ProfitAndLoss() {
                                         </div>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Net Profit</span>
                                     </div>
-                                    <span className="font-mono font-black text-emerald-600 text-lg">{activeCompany?.symbol || '₹'}{netProfit.toLocaleString()}</span>
+                                    <span className="font-mono font-black text-emerald-600 text-lg">{formatCurrency(netProfit)}</span>
                                 </motion.div>
                             )}
                         </div>
@@ -231,7 +233,7 @@ export default function ProfitAndLoss() {
                                 <div className="p-2 -mx-2">
                                     <div className="flex justify-between items-center">
                                         <span className="text-sm font-black text-foreground uppercase tracking-tight hover:text-accent-500 transition-colors">Closing Stock</span>
-                                        <span className="font-mono font-black text-foreground text-base">{activeCompany?.symbol || '₹'}{closingStock.toLocaleString()}</span>
+                                        <span className="font-mono font-black text-foreground text-base">{formatCurrency(closingStock)}</span>
                                     </div>
                                 </div>
                             )}
@@ -248,7 +250,7 @@ export default function ProfitAndLoss() {
                                         </div>
                                         <span className="text-[10px] font-black uppercase tracking-widest text-rose-600">Net Loss</span>
                                     </div>
-                                    <span className="font-mono font-black text-rose-600 text-lg">{activeCompany?.symbol || '₹'}{Math.abs(netProfit).toLocaleString()}</span>
+                                    <span className="font-mono font-black text-rose-600 text-lg">{formatCurrency(Math.abs(netProfit))}</span>
                                 </motion.div>
                             )}
                         </div>
@@ -263,8 +265,8 @@ export default function ProfitAndLoss() {
             {/* Performance Summary Pill */}
             <div className={`p-8 rounded-[2rem] border-2 text-center font-black text-sm tracking-widest uppercase transition-all ${netProfit >= 0 ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/5 border-rose-500/20 text-rose-500'}`}>
                 {netProfit >= 0
-                    ? `🎉 Excellent Performance: Net Profit of ${activeCompany?.symbol || '₹'}{netProfit.toLocaleString()}`
-                    : `⚠ Critical Attention: Net Loss of ${activeCompany?.symbol || '₹'}{Math.abs(netProfit).toLocaleString()}`
+                    ? `🎉 Excellent Performance: Net Profit of ${formatCurrency(netProfit)}`
+                    : `⚠ Critical Attention: Net Loss of ${formatCurrency(Math.abs(netProfit))}`
                 }
             </div>
         </motion.div >

@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, DollarSign, Activity, Wallet, Shield, Target, ArrowRight, Clock, Loader2, Globe, Sparkles } from 'lucide-react';
+import { TrendingUp, TrendingDown, Activity, Wallet, Shield, Target, ArrowRight, Clock, Loader2, Globe, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
@@ -8,18 +8,20 @@ import type { Voucher } from '../../services/accounting/VoucherService';
 import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
 import { GeminiService } from '../../services/ai/GeminiService';
 import { useAuth } from '../auth/AuthContext.provider';
+import { useLocalization } from '../../hooks/useLocalization';
 
 export default function Dashboard() {
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency } = useLocalization();
     const { user } = useAuth();
     const navigate = useNavigate();
 
     // Data States
     const [stats, setStats] = useState([
-        { label: 'Revenue', value: '₹0', change: '+0%', icon: DollarSign, color: 'hsl(var(--google-blue))', bg: 'bg-google-blue/10', sparkData: [] as any[], path: '/reports/profit-loss' },
-        { label: 'Expenses', value: '₹0', change: '-0%', icon: TrendingDown, color: 'hsl(var(--google-red))', bg: 'bg-google-red/10', sparkData: [] as any[], path: '/reports/profit-loss' },
-        { label: 'Net Profit', value: '₹0', change: '+0%', icon: TrendingUp, color: 'hsl(var(--google-green))', bg: 'bg-google-green/10', sparkData: [] as any[], path: '/reports/profit-loss' },
-        { label: 'Vouchers', value: '0', change: '0', icon: Activity, color: 'hsl(var(--google-yellow))', bg: 'bg-google-yellow/10', sparkData: [] as any[], path: '/reports/daybook' },
+        { label: 'Revenue', value: '0', change: '+0%', icon: TrendingUp, color: 'hsl(var(--google-blue))', bg: 'bg-google-blue/10', sparkData: [] as any[], path: '/reports/profit-loss' },
+        { label: 'Expenses', value: '0', change: '-0%', icon: TrendingDown, color: 'hsl(var(--google-red))', bg: 'bg-google-red/10', sparkData: [] as any[], path: '/reports/profit-loss' },
+        { label: 'Net Profit', value: '0', change: '+0%', icon: Activity, color: 'hsl(var(--google-green))', bg: 'bg-google-green/10', sparkData: [] as any[], path: '/reports/profit-loss' },
+        { label: 'Vouchers', value: '0', change: '0', icon: Wallet, color: 'hsl(var(--google-yellow))', bg: 'bg-google-yellow/10', sparkData: [] as any[], path: '/reports/daybook' },
     ]);
 
     const [recentVouchers, setRecentVouchers] = useState<Voucher[]>([]);
@@ -44,7 +46,7 @@ export default function Dashboard() {
         setAiLoading(true);
         try {
             const service = new GeminiService(apiKey);
-            const prompt = `Provide a one-sentence high-end "Executive Heartbeat" for this dashboard. Stats: Rev ${activeCompany?.symbol}${rev}, Exp ${activeCompany?.symbol}${exp}, Margin ${vit.netMargin}%, Liquidity ${vit.liquidRatio}. One emoji only. Be professional.`;
+            const prompt = `Provide a one-sentence high-end "Executive Heartbeat" for this dashboard. Stats: Rev ${activeCompany?.symbol}${rev}, Exp ${activeCompany?.symbol}${exp}, Margin ${vit.netMargin}%. One emoji only. Be professional.`;
             const summary = await service.generateInsight(prompt, { vouchers: vList, ledgers: lList, companyName: activeCompany?.name || '', symbol: activeCompany?.symbol || '₹' });
             setAiSummary(summary);
         } catch (e) {
@@ -99,10 +101,10 @@ export default function Dashboard() {
             const profit = revenue + closingVal - (expenses + openingVal);
 
             setStats([
-                { label: 'Revenue', value: `${activeCompany.symbol}${revenue.toLocaleString()}`, change: '+12%', icon: DollarSign, color: 'hsl(var(--google-blue))', bg: 'bg-google-blue/10', sparkData: last7.map(d => ({ v: sparkMap[d].rev })), path: '/reports/profit-loss' },
-                { label: 'Expenses', value: `${activeCompany.symbol}${expenses.toLocaleString()}`, change: '-5%', icon: TrendingDown, color: 'hsl(var(--google-red))', bg: 'bg-google-red/10', sparkData: last7.map(d => ({ v: sparkMap[d].exp })), path: '/reports/profit-loss' },
-                { label: 'Net Profit', value: `${activeCompany.symbol}${profit.toLocaleString()}`, change: '+8%', icon: TrendingUp, color: 'hsl(var(--google-green))', bg: 'bg-google-green/10', sparkData: last7.map(d => ({ v: sparkMap[d].rev - sparkMap[d].exp })), path: '/reports/profit-loss' },
-                { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Activity, color: 'hsl(var(--google-yellow))', bg: 'bg-google-yellow/10', sparkData: last7.map(d => ({ v: sparkMap[d].count })), path: '/reports/daybook' },
+                { label: 'Revenue', value: revenue.toString(), change: '+12%', icon: TrendingUp, color: 'hsl(var(--google-blue))', bg: 'bg-google-blue/10', sparkData: last7.map(d => ({ v: sparkMap[d].rev })), path: '/reports/profit-loss' },
+                { label: 'Expenses', value: expenses.toString(), change: '-5%', icon: TrendingDown, color: 'hsl(var(--google-red))', bg: 'bg-google-red/10', sparkData: last7.map(d => ({ v: sparkMap[d].exp })), path: '/reports/profit-loss' },
+                { label: 'Net Profit', value: profit.toString(), change: '+8%', icon: Activity, color: 'hsl(var(--google-green))', bg: 'bg-google-green/10', sparkData: last7.map(d => ({ v: sparkMap[d].rev - sparkMap[d].exp })), path: '/reports/profit-loss' },
+                { label: 'Vouchers', value: vouchers.length.toString(), change: `+${vouchers.length}`, icon: Wallet, color: 'hsl(var(--google-yellow))', bg: 'bg-google-yellow/10', sparkData: last7.map(d => ({ v: sparkMap[d].count })), path: '/reports/daybook' },
             ]);
 
             const curM = new Date().getMonth();
@@ -175,10 +177,7 @@ export default function Dashboard() {
 
                     <div className="flex justify-between items-start relative z-10 mb-8">
                         <div>
-                            <h2 className="text-2xl font-black tracking-tighter flex items-center gap-2">
-                                <TrendingUp className="w-6 h-6 text-primary" />
-                                Growth Trajectory
-                            </h2>
+                            <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">Growth Trajectory Details</h1>
                             <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground opacity-50">6-Month Fiscal Cycle</p>
                         </div>
                         <div className="flex bg-muted/20 p-1.5 rounded-2xl border border-border/50">
@@ -230,7 +229,9 @@ export default function Dashboard() {
                                 </div>
                                 <div>
                                     <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</h3>
-                                    <p className="text-2xl font-black tabular-nums tracking-tighter">{stat.value}</p>
+                                    <p className="text-2xl font-black tabular-nums tracking-tighter">
+                                        {stat.label === 'Vouchers' ? stat.value : formatCurrency(Number(stat.value))}
+                                    </p>
                                 </div>
                                 <div className="ml-auto text-right">
                                     <span className="text-[10px] font-black px-2 py-1 rounded-lg bg-google-green/10 text-google-green border border-google-green/20">
@@ -280,7 +281,7 @@ export default function Dashboard() {
                             <div key={i} className="p-4 rounded-2xl bg-muted/10 border border-border/50 hover:bg-muted/20 transition-all cursor-pointer group">
                                 <div className="flex justify-between items-start mb-2">
                                     <span className="text-[9px] font-black uppercase text-primary tracking-tighter">{v.type} #{v.voucherNo}</span>
-                                    <span className="text-[10px] font-black">{activeCompany?.symbol}{v.rows[0]?.type === 'Dr' ? v.rows[0]?.debit.toLocaleString() : v.rows[0]?.credit.toLocaleString()}</span>
+                                    <span className="text-[10px] font-black">{formatCurrency(v.rows[0]?.type === 'Dr' ? v.rows[0]?.debit : v.rows[0]?.credit)}</span>
                                 </div>
                                 <p className="text-[10px] font-bold text-muted-foreground truncate group-hover:text-foreground transition-colors">{v.rows[0]?.account}</p>
                             </div>
@@ -298,7 +299,7 @@ export default function Dashboard() {
                         {stockWatch.length > 0 ? stockWatch.map((itemVal, i) => (
                             <div key={i} className="flex justify-between items-center group/item hover:bg-white/5 p-2 rounded-xl transition-colors">
                                 <span className="text-[10px] font-bold uppercase tracking-tight text-foreground/70 truncate max-w-[120px]">{itemVal.name}</span>
-                                <span className="text-[10px] font-black tabular-nums text-primary">{activeCompany?.symbol}{((itemVal.currentBalance || itemVal.openingStock) * (itemVal.currentRate || itemVal.openingRate)).toLocaleString()}</span>
+                                <span className="text-[10px] font-black tabular-nums text-primary">{formatCurrency((itemVal.currentBalance || itemVal.openingStock) * (itemVal.currentRate || itemVal.openingRate))}</span>
                             </div>
                         )) : (
                             <div className="flex flex-col items-center justify-center py-8 opacity-40">

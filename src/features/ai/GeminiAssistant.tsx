@@ -7,6 +7,7 @@ import { GeminiService } from '../../services/ai/GeminiService';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import type { Ledger } from '../../services/accounting/ReportService';
+import { useLocalization } from '../../hooks/useLocalization';
 
 interface GeminiAssistantProps {
     isOpen: boolean;
@@ -15,6 +16,7 @@ interface GeminiAssistantProps {
 
 export default function GeminiAssistant({ isOpen, onClose }: GeminiAssistantProps) {
     const { provider, activeCompany } = usePersistence();
+    const { symbol } = useLocalization();
     const [apiKey, setApiKey] = useState(localStorage.getItem('moneyarc_gemini_key') || '');
     const [query, setQuery] = useState('');
     const [messages, setMessages] = useState<{ role: 'user' | 'ai', text: string }[]>([
@@ -107,7 +109,7 @@ export default function GeminiAssistant({ isOpen, onClose }: GeminiAssistantProp
                 vouchers: vouchers || [],
                 ledgers: ledgers || [],
                 companyName: activeCompany.name,
-                symbol: activeCompany.symbol || '₹'
+                symbol: symbol
             });
 
             setMessages(prev => [...prev, { role: 'ai', text: response }]);

@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { FileText, ArrowUpRight, IndianRupee, FileDown, Calculator } from 'lucide-react';
+import { FileText, ArrowUpRight, FileDown, Calculator, DollarSign } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { ExportService } from '../../services/reports/ExportService';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { useNavigate } from 'react-router-dom';
 import clsx from 'clsx';
-import { GstService } from '../../services/accounting/GstService';
+import { TaxService } from '../../services/accounting/TaxService';
 import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
+import { useLocalization } from '../../hooks/useLocalization';
 
 export default function GstReport() {
     const navigate = useNavigate();
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency, tax } = useLocalization();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
     const { startDate, endDate } = useReportDates();
@@ -33,24 +35,24 @@ export default function GstReport() {
         loadData();
     }, [provider, activeCompany, startDate, endDate]);
 
-    // Use centralized GstService for robust calculations
+    // Use centralized TaxService for robust calculations
     const salesVouchers = vouchers.filter(v => v.type === 'Sales');
     const purchaseVouchers = vouchers.filter(v => v.type === 'Purchase');
 
-    const salesSummary = GstService.aggregateSummaries(salesVouchers);
-    const purchaseSummary = GstService.aggregateSummaries(purchaseVouchers);
+    const salesSummary = TaxService.aggregateSummaries(salesVouchers);
+    const purchaseSummary = TaxService.aggregateSummaries(purchaseVouchers);
 
     const totalTaxable = salesSummary.taxableValue;
     const purchaseTaxable = purchaseSummary.taxableValue;
 
-    const outputCGST = salesSummary.cgst;
-    const outputSGST = salesSummary.sgst;
-    const outputIGST = salesSummary.igst;
+    const outputT1 = salesSummary.tax1;
+    const outputT2 = salesSummary.tax2;
+    const outputT3 = salesSummary.tax3;
     const totalOutputTax = salesSummary.totalTax;
 
-    const inputCGST = purchaseSummary.cgst;
-    const inputSGST = purchaseSummary.sgst;
-    const inputIGST = purchaseSummary.igst;
+    const inputT1 = purchaseSummary.tax1;
+    const inputT2 = purchaseSummary.tax2;
+    const inputT3 = purchaseSummary.tax3;
     const totalInputTax = purchaseSummary.totalTax;
 
     const totalInvoiceValue = salesSummary.invoiceValue;
@@ -65,7 +67,7 @@ export default function GstReport() {
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight">GST Report</h1>
+                    <h1 className="text-3xl font-black text-foreground tracking-tight">{tax.taxName} Report</h1>
                     <p className="text-muted-foreground font-medium">Tax liability and credit summary for {activeCompany?.name}</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
@@ -98,7 +100,7 @@ export default function GstReport() {
                         className="flex items-center gap-2 px-6 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
                     >
                         <FileText className="w-4 h-4" />
-                        GSTR-1 Details
+                        {tax.taxName}-1 Details
                     </button>
                     <button className="flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10">
                         <FileText className="w-4 h-4" />
@@ -110,13 +112,13 @@ export default function GstReport() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                     { label: 'Total Output Tax', value: totalOutputTax, icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                    { label: 'Total Taxable Value', value: totalTaxable, icon: IndianRupee, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    { label: 'Total Invoice Value', value: totalInvoiceValue, icon: IndianRupee, color: 'text-blue-500', bg: 'bg-blue-500/10' },
+                    { label: `Total ${tax.labels.taxable}`, value: totalTaxable, icon: Calculator, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { label: 'Total Invoice Value', value: totalInvoiceValue, icon: DollarSign, color: 'text-blue-500', bg: 'bg-blue-500/10' },
                 ].map((stat, i) => (
                     <div key={i} className="bg-card p-6 rounded-3xl border border-border flex items-center justify-between shadow-sm">
                         <div>
                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">{stat.label}</p>
-                            <p className="text-2xl font-black text-foreground tracking-tight">{activeCompany?.symbol || '₹'}{stat.value.toLocaleString()}</p>
+                            <p className="text-2xl font-black text-foreground tracking-tight">{formatCurrency(stat.value)}</p>
                         </div>
                         <div className={clsx("w-12 h-12 rounded-2xl flex items-center justify-center", stat.bg, stat.color)}>
                             <stat.icon className="w-6 h-6" />
@@ -133,7 +135,7 @@ export default function GstReport() {
                     <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-4 group-hover:scale-110 transition-transform">
                         <FileText className="w-6 h-6" />
                     </div>
-                    <h3 className="text-xs font-black uppercase tracking-widest mb-1">GSTR-1 Details</h3>
+                    <h3 className="text-xs font-black uppercase tracking-widest mb-1">{tax.taxName}-1 Details</h3>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Outward Supplies Detail</p>
                 </button>
                 <button
@@ -143,7 +145,7 @@ export default function GstReport() {
                     <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-600 mb-4 group-hover:scale-110 transition-transform">
                         <Calculator className="w-6 h-6" />
                     </div>
-                    <h3 className="text-xs font-black uppercase tracking-widest mb-1">GSTR-3B Summary</h3>
+                    <h3 className="text-xs font-black uppercase tracking-widest mb-1">{tax.taxName}-3B Summary</h3>
                     <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">Self-Assessment Summary</p>
                 </button>
             </div>
@@ -160,11 +162,11 @@ export default function GstReport() {
                         <thead>
                             <tr className="text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest border-b border-border pb-4">
                                 <th className="pb-4">Component</th>
-                                <th className="pb-4 text-right">Taxable Value</th>
-                                <th className="pb-4 text-right">IGST</th>
-                                <th className="pb-4 text-right">CGST</th>
-                                <th className="pb-4 text-right">SGST</th>
-                                <th className="pb-4 text-right">Total Tax</th>
+                                <th className="pb-4 text-right">{tax.labels.taxable}</th>
+                                <th className="pb-4 text-right">{tax.labels.tier3 || 'Tax 3'}</th>
+                                <th className="pb-4 text-right">{tax.labels.tier1 || 'Tax 1'}</th>
+                                <th className="pb-4 text-right">{tax.labels.tier2 || 'Tax 2'}</th>
+                                <th className="pb-4 text-right">{tax.labels.total}</th>
                                 <th className="pb-4 text-right">Total Value</th>
                             </tr>
                         </thead>
@@ -173,30 +175,30 @@ export default function GstReport() {
                                 {
                                     head: 'Output Liability (Sales)',
                                     taxable: totalTaxable,
-                                    igst: outputIGST,
-                                    cgst: outputCGST,
-                                    sgst: outputSGST,
+                                    t3: outputT3,
+                                    t1: outputT1,
+                                    t2: outputT2,
                                     totalTax: totalOutputTax,
                                     totalValue: totalTaxable + totalOutputTax
                                 },
                                 {
                                     head: 'Input Credit (Purchases)',
                                     taxable: purchaseTaxable,
-                                    igst: inputIGST,
-                                    cgst: inputCGST,
-                                    sgst: inputSGST,
+                                    t3: inputT3,
+                                    t1: inputT1,
+                                    t2: inputT2,
                                     totalTax: totalInputTax,
                                     totalValue: purchaseTaxable + totalInputTax
                                 },
                             ].map((row, i) => (
                                 <tr key={i} className="group hover:bg-muted/10 transition-colors">
                                     <td className="py-5 font-bold text-foreground">{row.head}</td>
-                                    <td className="py-5 font-mono text-sm text-foreground text-right">{activeCompany?.symbol || '₹'}{row.taxable.toLocaleString()}</td>
-                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{activeCompany?.symbol || '₹'}{row.igst.toLocaleString()}</td>
-                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{activeCompany?.symbol || '₹'}{row.cgst.toLocaleString()}</td>
-                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{activeCompany?.symbol || '₹'}{row.sgst.toLocaleString()}</td>
-                                    <td className="py-5 font-mono text-sm text-foreground text-right">{activeCompany?.symbol || '₹'}{row.totalTax.toLocaleString()}</td>
-                                    <td className="py-5 font-black text-foreground text-right">{activeCompany?.symbol || '₹'}{row.totalValue.toLocaleString()}</td>
+                                    <td className="py-5 font-mono text-sm text-foreground text-right">{formatCurrency(row.taxable)}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.t3)}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.t1)}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.t2)}</td>
+                                    <td className="py-5 font-mono text-sm text-foreground text-right">{formatCurrency(row.totalTax)}</td>
+                                    <td className="py-5 font-black text-foreground text-right">{formatCurrency(row.totalValue)}</td>
                                 </tr>
                             ))}
                         </tbody>
@@ -204,10 +206,10 @@ export default function GstReport() {
                             <tr className="bg-muted/40 font-black">
                                 <td className="py-6 px-1 text-sm uppercase tracking-widest">Net Payable</td>
                                 <td className="py-6 text-right"></td>
-                                <td className="py-6 font-mono text-right">{activeCompany?.symbol || '₹'}{Math.max(0, outputIGST - inputIGST).toLocaleString()}</td>
-                                <td className="py-6 font-mono text-right">{activeCompany?.symbol || '₹'}{Math.max(0, outputCGST - inputCGST).toLocaleString()}</td>
-                                <td className="py-6 font-mono text-right">{activeCompany?.symbol || '₹'}{Math.max(0, outputSGST - inputSGST).toLocaleString()}</td>
-                                <td className="py-6 font-mono text-right">{activeCompany?.symbol || '₹'}{Math.max(0, totalOutputTax - totalInputTax).toLocaleString()}</td>
+                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputT3 - inputT3))}</td>
+                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputT1 - inputT1))}</td>
+                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputT2 - inputT2))}</td>
+                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, totalOutputTax - totalInputTax))}</td>
                                 <td className="py-6 text-right text-lg text-emerald-500"></td>
                             </tr>
                         </tfoot>

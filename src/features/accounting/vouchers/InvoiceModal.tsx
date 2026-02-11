@@ -3,6 +3,8 @@ import { Printer, X, FileText } from 'lucide-react';
 import type { Voucher } from '../../../services/accounting/VoucherService';
 import type { Company } from '../../../services/persistence/types';
 import type { Ledger } from '../../../services/accounting/ReportService';
+import { useLocalization } from '../../../hooks/useLocalization';
+import { TaxService } from '../../../services/accounting/TaxService';
 
 interface InvoiceModalProps {
     voucher: Voucher;
@@ -12,7 +14,7 @@ interface InvoiceModalProps {
 }
 
 export default function InvoiceModal({ voucher, company, party, onClose }: InvoiceModalProps) {
-    // Verified Dark Mode Support: 2026-02-05
+    const { formatCurrency, tax } = useLocalization();
     const printRef = useRef<HTMLDivElement>(null);
 
     const handlePrint = () => {
@@ -44,17 +46,8 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
     };
 
     const hasInventory = voucher.rows.some(r => r.inventoryAllocations && r.inventoryAllocations.length > 0);
-
-    // Calculation Logic
-    const taxableValue = voucher.rows.find((r) => r.type === 'Cr' && !r.account.includes('GST'))?.credit || 0;
-    const cgst = voucher.rows.find((r) => r.account.includes('Central GST'))?.credit || 0;
-    const sgst = voucher.rows.find((r) => r.account.includes('State GST'))?.credit || 0;
-    const igst = voucher.rows.find((r) => r.account.includes('Integrated GST'))?.credit || 0;
-
-    // For non-inventory vouchers, total is usually the sum of the main party amount or just the total of rows / 2 (since it balances)
-    // Actually, for Payment/Receipt, the total amount is the amount paid/received.
-    // Let's use the total of the 'Dr' side for simplicity or the party amount.
-    const totalAmount = voucher.rows.reduce((sum, r) => sum + (r.type === 'Dr' ? r.debit : 0), 0);
+    const summary = TaxService.calculateVoucherSummary(voucher);
+    const { taxableValue, tax1, tax2, tax3, invoiceValue: totalAmount } = summary;
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -98,7 +91,7 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                             <h1 className="text-4xl font-black tracking-tighter uppercase text-foreground">{company.name}</h1>
                             <p className="text-sm font-bold text-muted-foreground mt-2 max-w-xs">{company.address}</p>
                             <div className="mt-4 inline-block px-3 py-1 bg-muted rounded-lg">
-                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">GSTIN: <span className="text-foreground">{company.gstin}</span></p>
+                                <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{tax.idLabel}: <span className="text-foreground">{company.gstin}</span></p>
                             </div>
                         </div>
                         <div className="text-right">
@@ -114,7 +107,7 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-3">{getPartyLabel(voucher.type)}</p>
                             <h3 className="text-xl font-black text-foreground uppercase">{party.name}</h3>
                             <p className="text-sm font-bold text-muted-foreground mt-2 whitespace-pre-line">{party.address || "Address not provided"}</p>
-                            {party.gstin && <p className="text-xs font-black text-foreground mt-3 uppercase tracking-widest">GSTIN: {party.gstin}</p>}
+                            {party.gstin && <p className="text-xs font-black text-foreground mt-3 uppercase tracking-widest">{tax.idLabel}: {party.gstin}</p>}
                         </div>
                         {/* Only show 'Ship From' / Company details again if it's Sales/Purchase, otherwise maybe less relevant? 
                             Actually, standard format usually shows Company as header (done) and 'Receiver/Payer' details.
@@ -153,8 +146,8 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                                             <div className="text-[9px] text-muted-foreground font-bold mt-1">BATCH: {(item as any).batchNo || '-'} // EXP: {(item as any).expiryDate || '-'}</div>
                                         </td>
                                         <td className="py-6 text-right font-bold text-foreground">{(item as any).quantity}</td>
-                                        <td className="py-6 text-right font-bold text-foreground">{company.symbol || '₹'}{(item as any).rate.toLocaleString()}</td>
-                                        <td className="py-6 text-right font-black text-foreground">{company.symbol || '₹'}{(item as any).amount.toLocaleString()}</td>
+                                        <td className="py-6 text-right font-bold text-foreground">{formatCurrency((item as any).rate)}</td>
+                                        <td className="py-6 text-right font-black text-foreground">{formatCurrency((item as any).amount)}</td>
                                     </tr>
                                 ))
                             ) : (
@@ -166,7 +159,7 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                                             <div className="text-[9px] text-muted-foreground font-bold mt-1 uppercase tracking-wider">{row.type === 'Dr' ? 'Debit' : 'Credit'}</div>
                                         </td>
                                         {/* Empty cells for Qty/Rate if generic table structure used, but we are conditionally rendering headers, so no need */}
-                                        <td className="py-6 text-right font-black text-foreground">{company.symbol || '₹'}{(row.type === 'Dr' ? row.debit : row.credit).toLocaleString()}</td>
+                                        <td className="py-6 text-right font-black text-foreground">{formatCurrency(row.type === 'Dr' ? row.debit : row.credit)}</td>
                                     </tr>
                                 ))
                             )}
@@ -177,28 +170,28 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                     <div className="flex justify-end">
                         <div className="w-full max-w-xs space-y-4">
                             {/* Only show Tax Breakdown if it's a Tax Invoice or has Tax */}
-                            {(cgst > 0 || sgst > 0 || igst > 0) && (
+                            {(tax1 > 0 || tax2 > 0 || tax3 > 0) && (
                                 <>
                                     <div className="flex justify-between text-sm">
-                                        <span className="font-bold text-muted-foreground uppercase tracking-widest">Taxable Value</span>
-                                        <span className="font-black text-foreground">{company.symbol || '₹'}{taxableValue.toLocaleString()}</span>
+                                        <span className="font-bold text-muted-foreground uppercase tracking-widest">{tax.labels.taxable}</span>
+                                        <span className="font-black text-foreground">{formatCurrency(taxableValue)}</span>
                                     </div>
-                                    {cgst > 0 && (
+                                    {tax1 > 0 && (
                                         <div className="flex justify-between text-sm">
-                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">CGST</span>
-                                            <span className="font-black text-foreground">{company.symbol || '₹'}{cgst.toLocaleString()}</span>
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">{tax.labels.tier1 || 'Tax 1'}</span>
+                                            <span className="font-black text-foreground">{formatCurrency(tax1)}</span>
                                         </div>
                                     )}
-                                    {sgst > 0 && (
+                                    {tax2 > 0 && (
                                         <div className="flex justify-between text-sm">
-                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">SGST</span>
-                                            <span className="font-black text-foreground">{company.symbol || '₹'}{sgst.toLocaleString()}</span>
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">{tax.labels.tier2 || 'Tax 2'}</span>
+                                            <span className="font-black text-foreground">{formatCurrency(tax2)}</span>
                                         </div>
                                     )}
-                                    {igst > 0 && (
+                                    {tax3 > 0 && (
                                         <div className="flex justify-between text-sm">
-                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">IGST</span>
-                                            <span className="font-black text-foreground">{company.symbol || '₹'}{igst.toLocaleString()}</span>
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">{tax.labels.tier3 || 'Tax 3'}</span>
+                                            <span className="font-black text-foreground">{formatCurrency(tax3)}</span>
                                         </div>
                                     )}
                                 </>
@@ -206,7 +199,7 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
 
                             <div className="flex justify-between items-center pt-4 border-t-2 border-foreground">
                                 <span className="text-sm font-black uppercase tracking-widest text-foreground">Total Amount</span>
-                                <span className="text-2xl font-black text-foreground tracking-tighter">{company.symbol || '₹'}{totalAmount.toLocaleString()}</span>
+                                <span className="text-2xl font-black text-foreground tracking-tighter">{formatCurrency(totalAmount)}</span>
                             </div>
                         </div>
                     </div>

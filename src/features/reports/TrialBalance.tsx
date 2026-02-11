@@ -8,9 +8,11 @@ import PeriodSelector from '../../components/ui/PeriodSelector';
 import LedgerQuickView from './LedgerQuickView';
 import React from 'react';
 import { useReportDates } from './DateContext';
+import { useLocalization } from '../../hooks/useLocalization';
 
 export default function TrialBalance() {
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency } = useLocalization();
     const [groups, setGroups] = useState<GroupSummary[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -115,8 +117,8 @@ export default function TrialBalance() {
                     <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
                         <tr>
                             <th className="px-8 py-4 text-left">Particulars</th>
-                            <th className="px-8 py-4 text-right w-48">Debit ({activeCompany?.symbol || '₹'})</th>
-                            <th className="px-8 py-4 text-right w-48">Credit ({activeCompany?.symbol || '₹'})</th>
+                            <th className="px-8 py-4 text-right w-48">Debit</th>
+                            <th className="px-8 py-4 text-right w-48">Credit</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-border/50">
@@ -140,10 +142,10 @@ export default function TrialBalance() {
                                                     </LedgerQuickView>
                                                 </td>
                                                 <td className="px-8 py-3 text-right font-mono font-bold text-foreground">
-                                                    {ledger.type === 'Dr' ? ledger.balance.toLocaleString() : ''}
+                                                    {ledger.type === 'Dr' ? formatCurrency(ledger.balance) : ''}
                                                 </td>
                                                 <td className="px-8 py-3 text-right font-mono font-bold text-foreground">
-                                                    {ledger.type === 'Cr' ? ledger.balance.toLocaleString() : ''}
+                                                    {ledger.type === 'Cr' ? formatCurrency(ledger.balance) : ''}
                                                 </td>
                                             </tr>
                                         )
@@ -154,8 +156,8 @@ export default function TrialBalance() {
 
                         <tr className="bg-muted/50 font-black text-foreground border-t-2 border-border">
                             <td className="px-8 py-5 uppercase tracking-widest text-xs">Grand Total</td>
-                            <td className="px-8 py-5 text-right font-mono text-base">{activeCompany?.symbol || '₹'}{totalDebit.toLocaleString()}</td>
-                            <td className="px-8 py-5 text-right font-mono text-base">{activeCompany?.symbol || '₹'}{totalCredit.toLocaleString()}</td>
+                            <td className="px-8 py-5 text-right font-mono text-base">{formatCurrency(totalDebit)}</td>
+                            <td className="px-8 py-5 text-right font-mono text-base">{formatCurrency(totalCredit)}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -163,7 +165,7 @@ export default function TrialBalance() {
 
             {Math.abs(totalDebit - totalCredit) > 0.01 && (
                 <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-600 font-bold text-center text-sm">
-                    ⚠️ Difference in Opening Balances: {(totalDebit - totalCredit).toLocaleString()}
+                    ⚠️ Difference in Opening Balances: {formatCurrency(totalDebit - totalCredit)}
                 </div>
             )}
         </motion.div>
