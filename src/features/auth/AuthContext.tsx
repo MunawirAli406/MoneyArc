@@ -43,21 +43,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const login = async (email: string, password?: string) => {
         setIsLoading(true);
+        console.log(`[Auth] Attempting login for: ${email}`);
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await new Promise<void>((resolve: any) => { setTimeout(() => { resolve(); }, 600); });
+            await new Promise<void>((resolve) => { setTimeout(() => { resolve(); }, 600); });
             const users = await getUsers();
+            console.log(`[Auth] Retrieved ${users.length} total users.`);
+
             const foundUser = users.find((u) => u.email === email && (!password || u.password === password));
 
             if (foundUser) {
+                console.log(`[Auth] Login successful for: ${email}`);
                 const userSafe = { ...foundUser, provider: 'Local' as const };
                 delete userSafe.password;
                 setUser(userSafe as User);
                 AuditService.setCurrentUser({ ...userSafe, name: userSafe.name || 'User' });
                 localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
             } else {
-                throw new Error('Invalid credentials or user not found in this directory.');
+                console.warn(`[Auth] Login failed: User not found or invalid credentials for ${email}`);
+                throw new Error('Invalid credentials or user not found. Please ensure you have selected the correct data source.');
             }
+        } catch (err) {
+            console.error('[Auth] Login error:', err);
+            throw err;
         } finally {
             setIsLoading(false);
         }
@@ -65,24 +72,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const signup = async (email: string, name: string, password?: string) => {
         setIsLoading(true);
+        console.log(`[Auth] Attempting signup for: ${email} (${name})`);
         try {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            await new Promise<void>((resolve: any) => { setTimeout(() => { resolve(); }, 800); });
+            await new Promise<void>((resolve) => { setTimeout(() => { resolve(); }, 800); });
             const users = await getUsers();
 
             if (users.find((u) => u.email === email)) {
+                console.warn(`[Auth] Signup failed: User ${email} already exists.`);
                 throw new Error('User already exists in this directory.');
             }
 
             const newUser = { id: Math.random().toString(36).substr(2, 9), email, name, password, provider: 'Local' as const };
             const updatedUsers = [...users, newUser];
             await saveUsers(updatedUsers);
+            console.log(`[Auth] Signup successful: ${email}`);
 
             const userSafe = { ...newUser } as User;
             delete userSafe.password;
             setUser(userSafe);
             AuditService.setCurrentUser({ ...userSafe, name: userSafe.name || 'User' });
             localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
+        } catch (err) {
+            console.error('[Auth] Signup error:', err);
+            throw err;
         } finally {
             setIsLoading(false);
         }
@@ -90,13 +102,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const loginWithSocial = async (email: string, name: string, socialProvider: 'Google' | 'Microsoft') => {
         setIsLoading(true);
+        console.log(`[Auth] Social Login starting (${socialProvider}) for: ${email}`);
         try {
-            await new Promise((resolve) => setTimeout(resolve, 800)); // Simulate OAuth delay
+            await new Promise((resolve) => setTimeout(resolve, 800));
             const users = await getUsers();
             let foundUser = users.find((u) => u.email === email);
 
             if (!foundUser) {
-                // Auto-signup for social users if they don't exist
+                console.log(`[Auth] Social Login: New user detected, auto-registering: ${email}`);
                 const newUser = { id: Math.random().toString(36).substr(2, 9), email, name, provider: socialProvider };
                 await saveUsers([...users, newUser]);
                 foundUser = newUser;
@@ -107,7 +120,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(userSafe as User);
             AuditService.setCurrentUser({ ...userSafe, name: userSafe.name || 'User' });
             localStorage.setItem(AUTH_KEY, JSON.stringify(userSafe));
-            console.log(`Social Login (${socialProvider}) success for ${email}`);
+            console.log(`[Auth] Social Login (${socialProvider}) success for ${email}`);
+        } catch (err) {
+            console.error(`[Auth] Social Login (${socialProvider}) error:`, err);
+            throw err;
         } finally {
             setIsLoading(false);
         }

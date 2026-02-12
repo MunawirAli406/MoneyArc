@@ -12,11 +12,12 @@ export default function SignUpPage() {
     const [error, setError] = useState('');
 
     const { signup, loginWithSocial } = useAuth();
-    const { provider, initializeStorage } = usePersistence();
+    const { provider, initializeStorage, isInitialized } = usePersistence();
     const navigate = useNavigate();
 
     const handleSignUp = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('[SignUpPage] Signup attempt started');
         if (!provider) {
             setError('Please select a data source folder first.');
             return;
@@ -33,12 +34,14 @@ export default function SignUpPage() {
         }
     };
 
-    const handleSelectDir = async () => {
+    const handleSelectDir = async (type: 'local' | 'browser') => {
+        console.log(`[SignUpPage] Selecting storage type: ${type}`);
         try {
-            await initializeStorage('local');
+            await initializeStorage(type);
             setError('');
         } catch (err) {
-            console.error(err);
+            console.error(`[SignUpPage] Failed to select ${type} storage:`, err);
+            setError(`Failed to initialize storage: ${(err as Error).message}`);
         }
     };
 
@@ -69,7 +72,12 @@ export default function SignUpPage() {
                         <p className="text-slate-500 text-sm">Join the elite accounting ecosystem.</p>
                     </div>
 
-                    {!provider ? (
+                    {!isInitialized ? (
+                        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Restoring Session...</p>
+                        </div>
+                    ) : !provider ? (
                         <div className="bg-slate-50 border border-slate-200 p-8 rounded-[2rem] text-center">
                             <FolderOpen className="w-12 h-12 text-primary mx-auto mb-4 animate-pulse" />
                             <h4 className="text-slate-900 font-bold text-lg mb-2">
@@ -80,13 +88,21 @@ export default function SignUpPage() {
                                     ? 'Account data must be anchored to a physical directory. Please initialize your storage vault.'
                                     : 'Mobile usage detected. Data will be stored securely in this browser instance and cannot be accessed externally.'}
                             </p>
-                            <button
-                                onClick={handleSelectDir}
-                                className="w-full py-4.5 bg-primary text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[10px] hover:shadow-2xl hover:shadow-primary/30 transition-all flex items-center justify-center gap-3 shadow-xl"
-                            >
-                                {'showDirectoryPicker' in window ? 'Initialize Vault' : 'Initialize Local Storage'}
-                                <ArrowRight className="w-4 h-4" />
-                            </button>
+                            <div className="space-y-3">
+                                <button
+                                    onClick={() => handleSelectDir('local')}
+                                    className="w-full py-4.5 bg-primary text-white rounded-[1.25rem] font-black uppercase tracking-widest text-[10px] hover:shadow-2xl hover:shadow-primary/30 transition-all flex items-center justify-center gap-3 shadow-xl"
+                                >
+                                    {'showDirectoryPicker' in window ? 'Initialize Vault' : 'Initialize Local Storage'}
+                                    <ArrowRight className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={() => handleSelectDir('browser')}
+                                    className="w-full py-3 bg-white text-slate-600 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center justify-center gap-3 border border-slate-200"
+                                >
+                                    Use Browser Storage (Mobile)
+                                </button>
+                            </div>
                         </div>
                     ) : (
                         <div className="space-y-6">

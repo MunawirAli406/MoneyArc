@@ -16,12 +16,10 @@ export default function Daybook() {
     const { formatCurrency } = useLocalization();
     const navigate = useNavigate();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
-    const [filteredVouchers, setFilteredVouchers] = useState<Voucher[]>([]);
     const [loading, setLoading] = useState(true);
-
     const { startDate, endDate } = useReportDates();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [typeFilter, setTypeFilter] = useState<string>('ALL');
+    const [searchTerm, setSearchTerm] = useState('');
+    const [typeFilter, setTypeFilter] = useState<string>('All');
     const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
     useEffect(() => {
@@ -29,8 +27,8 @@ export default function Daybook() {
             if (!provider || !activeCompany) return;
             setLoading(true);
             try {
-                const data = await provider.read<Voucher[]>('vouchers.json', activeCompany.path);
-                setVouchers(data || []);
+                const data = await provider.read<Voucher[]>('vouchers.json', activeCompany.path) || [];
+                setVouchers(data.sort((a, b) => b.date.localeCompare(a.date)));
             } catch (e) {
                 console.error("Failed to load vouchers", e);
             } finally {
@@ -40,32 +38,16 @@ export default function Daybook() {
         loadData();
     }, [provider, activeCompany]);
 
-    useEffect(() => {
-        let result = vouchers;
+    const filteredVouchers = vouchers.filter(v => {
+        const dateMatch = v.date >= startDate && v.date <= endDate;
+        const typeMatch = typeFilter === 'All' || typeFilter === 'ALL' || v.type === typeFilter;
+        const searchMatch = !searchTerm ||
+            v.voucherNo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            (v.narration && v.narration.toLowerCase().includes(searchTerm.toLowerCase())) ||
+            v.rows.some(r => r.account.toLowerCase().includes(searchTerm.toLowerCase()));
 
-        // Date Filter
-        result = result.filter(v => v.date >= startDate && v.date <= endDate);
-
-        // Type Filter
-        if (typeFilter !== 'ALL') {
-            result = result.filter(v => v.type === typeFilter);
-        }
-
-        // Search
-        if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            result = result.filter(v =>
-                v.voucherNo.toLowerCase().includes(query) ||
-                (v.narration && v.narration.toLowerCase().includes(query)) ||
-                v.rows.some(r => r.account.toLowerCase().includes(query))
-            );
-        }
-
-        // Sort by Date Descending
-        result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-        setFilteredVouchers(result);
-    }, [vouchers, startDate, endDate, typeFilter, searchQuery]);
+        return dateMatch && typeMatch && searchMatch;
+    });
 
     const handleDelete = async (id: string) => {
         if (!confirm('Are you sure you want to delete this voucher? This will reverse all ledger impacts.')) return;
@@ -153,8 +135,8 @@ export default function Daybook() {
                     <input
                         type="text"
                         placeholder="Search by Voucher No, Ledger, or Narration..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-12 pr-4 py-3.5 bg-muted/20 rounded-2xl border-none outline-none font-black text-sm focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/50 transition-all"
                     />
                 </div>
@@ -192,7 +174,7 @@ export default function Daybook() {
                         a.download = `Daybook_${startDate}.csv`;
                         a.click();
                     }}
-                    className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500/20 transition-all active:scale-95"
+                    className="p-4 bg-google-green/10 text-google-green rounded-2xl hover:bg-google-green/20 transition-all active:scale-95"
                     title="Export CSV"
                 >
                     <FileDown className="w-5 h-5" />
@@ -287,7 +269,7 @@ export default function Daybook() {
                                                 </td>
                                                 <td className="px-8 py-6">
                                                     <div className="flex items-center gap-3">
-                                                        <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${v.type === 'Sales' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-500' :
+                                                        <div className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest border ${v.type === 'Sales' ? 'bg-google-green/10 border-google-green/20 text-google-green' :
                                                             v.type === 'Purchase' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
                                                                 v.type === 'Payment' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-500' :
                                                                     'bg-amber-500/10 border-amber-500/20 text-amber-500'

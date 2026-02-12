@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Download, Calculator, TrendingUp, TrendingDown } from 'lucide-react';
+import { Calculator, TrendingUp, TrendingDown, FileDown, ShieldCheck } from 'lucide-react';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { ExportService } from '../../services/reports/ExportService';
-import type { Voucher } from '../../services/accounting/VoucherService';
-import { useNavigate } from 'react-router-dom';
 import { TaxService } from '../../services/accounting/TaxService';
+import type { Voucher } from '../../services/accounting/VoucherService';
+import type { Ledger } from '../../services/accounting/ReportService';
 import { useReportDates } from './DateContext';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 import { useLocalization } from '../../hooks/useLocalization';
@@ -13,151 +12,156 @@ import { useLocalization } from '../../hooks/useLocalization';
 export default function Gstr3bReport() {
     const { provider, activeCompany } = usePersistence();
     const { formatCurrency, tax } = useLocalization();
-    const navigate = useNavigate();
     const [vouchers, setVouchers] = useState<Voucher[]>([]);
+    const [ledgers, setLedgers] = useState<Ledger[]>([]);
     const [loading, setLoading] = useState(true);
     const { startDate, endDate } = useReportDates();
 
     useEffect(() => {
         const loadData = async () => {
             if (provider && activeCompany) {
-                const vData = await provider.read<Voucher[]>('vouchers.json', activeCompany.path);
+                const [vData, lData] = await Promise.all([
+                    provider.read<Voucher[]>('vouchers.json', activeCompany.path),
+                    provider.read<Ledger[]>('ledgers.json', activeCompany.path)
+                ]);
                 setVouchers(vData || []);
+                setLedgers(lData || []);
                 setLoading(false);
             }
         };
         loadData();
     }, [provider, activeCompany]);
 
-    const filteredVouchers = vouchers.filter(v => v.date >= startDate && v.date <= endDate);
+    const filteredVouchers = vouchers.filter((v: Voucher) => v.date >= startDate && v.date <= endDate);
 
-    const salesVouchers = filteredVouchers.filter(v => v.type === 'Sales');
-    const purchaseVouchers = filteredVouchers.filter(v => v.type === 'Purchase');
+    const salesVouchers = filteredVouchers.filter((v: Voucher) => v.type === 'Sales');
+    const purchaseVouchers = filteredVouchers.filter((v: Voucher) => v.type === 'Purchase');
 
-    const salesSummary = TaxService.aggregateSummaries(salesVouchers);
-    const purchaseSummary = TaxService.aggregateSummaries(purchaseVouchers);
+    const outwardSummary = TaxService.aggregateSummaries(salesVouchers, ledgers);
+    const inwardSummary = TaxService.aggregateSummaries(purchaseVouchers, ledgers);
 
-    const outwardTaxable = salesSummary.taxableValue;
-    const outwardTax = salesSummary.totalTax;
-    const eligibleItc = purchaseSummary.totalTax;
-    const netTaxPayable = outwardTax - eligibleItc;
+    const totalOutputTax = outwardSummary.totalTax;
+    const totalInputTax = inwardSummary.totalTax;
+    const netTaxPayable = Math.max(0, totalOutputTax - totalInputTax);
 
-    if (loading) return <div className="p-12 text-center text-muted-foreground font-black uppercase tracking-[0.3em] animate-pulse">Computing {tax.taxName} {tax.summaryLabel}...</div>;
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center p-24 space-y-4">
+            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Aggregating Statutory Data...</p>
+        </div>
+    );
+
+    const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+    const item = { hidden: { y: 20, opacity: 0 }, show: { y: 0, opacity: 1 } };
 
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="max-w-6xl mx-auto space-y-8 pb-20"
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="max-w-7xl mx-auto space-y-10 px-6 lg:px-12 pb-24 pt-4"
         >
-            <div className="flex flex-wrap items-center justify-between gap-4">
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => navigate('/reports/gst')}
-                        className="p-3 hover:bg-muted rounded-2xl transition-all"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
-                    </button>
-                    <div>
-                        <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">{tax.taxName} Summary</h1>
-                        <p className="text-muted-foreground font-bold uppercase tracking-widest text-[10px] mt-1">
-                            {tax.summaryLabel} Statement // {activeCompany?.name}
-                        </p>
+            <motion.div variants={item} className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                <div>
+                    <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase leading-[0.9] bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent">
+                        {tax.summaryLabel}
+                    </h1>
+                    <div className="text-muted-foreground font-black uppercase tracking-[0.3em] text-[10px] mt-4 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-google-blue animate-pulse" />
+                        Summary of Outward & Inward Supplies // {activeCompany?.name}
                     </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4 no-print">
                     <PeriodSelector />
                     <button
-                        onClick={() => {
-                            const cols = ['Description', 'Amount'];
-                            const rows = [
-                                ['Total Taxable Value (Sales)', outwardTaxable],
-                                ['Total Outward Tax', outwardTax],
-                                ['Total Eligible ITC (Purchases)', eligibleItc],
-                                ['Net Tax Payable', netTaxPayable]
-                            ];
-                            ExportService.exportToExcel(`${tax.taxName} ${tax.summaryLabel}`, cols, rows);
-                        }}
-                        className="flex items-center gap-2 px-6 py-3 bg-card border border-border rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-muted transition-all"
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-95 group"
                     >
-                        <Download className="w-4 h-4" />
-                        Export Excel
+                        <FileDown className="w-4 h-4 group-hover:animate-bounce" />
+                        Export Archive
                     </button>
-                </div>
-            </div>      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                <div className="bg-card p-8 rounded-[2.5rem] border border-border shadow-xl">
-                    <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Total {tax.outwardTaxLabel}</p>
-                    <p className="text-3xl font-black text-accent-500">{formatCurrency(outwardTax)}</p>
-                    <div className="mt-4 flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                        <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
-                        Liability
+                    <div className="glass-panel px-8 py-4 rounded-[2rem] border-primary/10 shadow-2xl flex items-center gap-6 group">
+                        <div className="text-right">
+                            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Net Payability</p>
+                            <p className="text-2xl font-black text-primary tracking-tighter tabular-nums">{formatCurrency(netTaxPayable)}</p>
+                        </div>
+                        <div className="w-px h-10 bg-border/50" />
+                        <div className="w-10 h-10 rounded-full bg-google-green/10 flex items-center justify-center border border-google-green/20">
+                            <ShieldCheck className="w-5 h-5 text-google-green" />
+                        </div>
                     </div>
                 </div>
-                <div className="bg-card p-8 rounded-[2.5rem] border border-border shadow-xl">
-                    <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Eligible {tax.itcLabel}</p>
-                    <p className="text-3xl font-black text-indigo-500">{formatCurrency(eligibleItc)}</p>
-                    <div className="mt-4 flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                        <TrendingDown className="w-3.5 h-3.5 text-indigo-500" />
-                        Tax Credit
-                    </div>
-                </div>
-                <div className={`bg-card p-8 rounded-[2.5rem] border border-border shadow-xl border-b-4 ${netTaxPayable >= 0 ? 'border-b-rose-500' : 'border-b-emerald-500'}`}>
-                    <p className="text-[10px] font-black text-muted-foreground uppercase mb-2">Net Tax Payable</p>
-                    <p className="text-3xl font-black">{formatCurrency(netTaxPayable)}</p>
-                    <div className="mt-4 flex items-center gap-2 text-xs font-bold text-muted-foreground">
-                        <Calculator className="w-3.5 h-3.5 text-primary" />
-                        Final Settlement
-                    </div>
-                </div>
+            </motion.div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {[
+                    { label: tax.outwardTaxLabel, value: totalOutputTax, icon: TrendingUp, color: 'rose' },
+                    { label: tax.itcLabel, value: totalInputTax, icon: TrendingDown, color: 'google-green' },
+                    { label: 'Net Liability', value: netTaxPayable, icon: Calculator, color: 'amber' },
+                ].map((stat, i) => (
+                    <motion.div
+                        key={i}
+                        variants={item}
+                        className="glass-panel p-8 rounded-[2.5rem] border-primary/5 shadow-2xl relative overflow-hidden group hover:scale-[1.02] transition-transform"
+                    >
+                        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" />
+                        <div className="w-12 h-12 bg-muted/20 rounded-2xl flex items-center justify-center mb-6 group-hover:bg-primary/10 transition-colors border border-border/50">
+                            <stat.icon className="w-6 h-6 text-primary" />
+                        </div>
+                        <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">{stat.label}</p>
+                        <p className="text-3xl font-black text-foreground tracking-tighter tabular-nums">{formatCurrency(stat.value)}</p>
+                    </motion.div>
+                ))}
             </div>
 
-            <div className="bg-card rounded-[3rem] border border-border overflow-hidden shadow-2xl">
-                <div className="p-10 bg-muted/20 border-b border-border">
-                    <h2 className="text-lg font-black uppercase tracking-tight">3.1 Details of {tax.outwardTaxLabel} Supplies</h2>
-                </div>
-                <div className="p-10 space-y-8">
-                    <div className="flex justify-between items-center py-6 border-b border-border/50">
-                        <div>
-                            <p className="font-black text-sm uppercase">Taxable {tax.outwardTaxLabel.toLowerCase()} supplies (other than zero rated, nil rated and exempted)</p>
-                            <p className="text-[10px] font-bold text-muted-foreground">Total of all sales vouchers with tax</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">{tax.labels.taxable}</p>
-                            <p className="text-xl font-black font-mono">{formatCurrency(outwardTaxable)}</p>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <motion.div variants={item} className="glass-panel rounded-[3.5rem] border-primary/10 overflow-hidden shadow-2xl">
+                    <div className="p-10 border-b border-border/50 bg-muted/20">
+                        <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-foreground">Outward Supplies Detail</h2>
+                    </div>
+                    <div className="p-10 space-y-6">
+                        {[
+                            { label: tax.labels.taxable, value: outwardSummary.taxableValue },
+                            { label: 'IGST', value: outwardSummary.igst },
+                            { label: 'CGST', value: outwardSummary.cgst },
+                            { label: 'SGST', value: outwardSummary.sgst },
+                            { label: 'Cess', value: outwardSummary.cess },
+                        ].map((row, i) => (
+                            <div key={i} className="flex justify-between items-center py-2 border-b border-border/30 last:border-0 group/row">
+                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest group-hover/row:text-primary transition-colors">{row.label}</span>
+                                <span className="text-lg font-black text-foreground tabular-nums tracking-tighter">{formatCurrency(row.value)}</span>
+                            </div>
+                        ))}
+                        <div className="mt-8 pt-8 border-t-2 border-primary/20 flex justify-between items-center">
+                            <span className="text-[12px] font-black text-primary uppercase tracking-[0.3em]">Total Output Liability</span>
+                            <span className="text-2xl font-black text-primary tabular-nums tracking-tighter">{formatCurrency(totalOutputTax)}</span>
                         </div>
                     </div>
-                    <div className="flex justify-between items-center pt-2">
-                        <p className="font-black text-sm uppercase text-muted-foreground">Tax breakup</p>
-                        <div className="flex gap-12">
-                            <div className="text-right">
-                                <p className="text-[9px] font-black text-muted-foreground uppercase">Output {tax.labels.tier1}</p>
-                                <p className="text-lg font-bold font-mono">{formatCurrency(salesSummary.tax1)}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className="text-[9px] font-black text-muted-foreground uppercase">Output {tax.labels.tier2}</p>
-                                <p className="text-lg font-bold font-mono">{formatCurrency(salesSummary.tax2)}</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+                </motion.div>
 
-            <div className="bg-card rounded-[3rem] border border-border overflow-hidden shadow-2xl">
-                <div className="p-10 bg-indigo-500/5 border-b border-border">
-                    <h2 className="text-lg font-black uppercase tracking-tight text-indigo-600">4. Eligible {tax.itcLabel}</h2>
-                </div>
-                <div className="p-10 space-y-8">
-                    <div className="flex justify-between items-center py-6 border-b border-border/50">
-                        <div>
-                            <p className="font-black text-sm uppercase">All other {tax.itcLabel}</p>
-                            <p className="text-[10px] font-bold text-muted-foreground">Total tax paid on purchases</p>
-                        </div>
-                        <div className="text-right">
-                            <p className="text-[10px] font-black text-muted-foreground uppercase mb-1">{tax.itcLabel} Amount</p>
-                            <p className="text-xl font-black font-mono text-indigo-600">{formatCurrency(eligibleItc)}</p>
+                <motion.div variants={item} className="glass-panel rounded-[3.5rem] border-primary/10 overflow-hidden shadow-2xl">
+                    <div className="p-10 border-b border-border/50 bg-muted/20">
+                        <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-foreground">Inward Supplies (ITC Claims)</h2>
+                    </div>
+                    <div className="p-10 space-y-6">
+                        {[
+                            { label: tax.labels.taxable, value: inwardSummary.taxableValue },
+                            { label: 'IGST', value: inwardSummary.igst },
+                            { label: 'CGST', value: inwardSummary.cgst },
+                            { label: 'SGST', value: inwardSummary.sgst },
+                            { label: 'Cess', value: inwardSummary.cess },
+                        ].map((row, i) => (
+                            <div key={i} className="flex justify-between items-center py-2 border-b border-border/30 last:border-0 group/row">
+                                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest group-hover/row:text-primary transition-colors">{row.label}</span>
+                                <span className="text-lg font-black text-foreground tabular-nums tracking-tighter">{formatCurrency(row.value)}</span>
+                            </div>
+                        ))}
+                        <div className="mt-8 pt-8 border-t-2 border-primary/20 flex justify-between items-center">
+                            <span className="text-[12px] font-black text-primary uppercase tracking-[0.3em]">Total Eligible Credits</span>
+                            <span className="text-2xl font-black text-primary tabular-nums tracking-tighter">{formatCurrency(totalInputTax)}</span>
                         </div>
                     </div>
-                </div>
+                </motion.div>
             </div>
         </motion.div>
     );

@@ -26,9 +26,24 @@ export function DateProvider({ children }: { children: React.ReactNode }) {
         return `${year}-${month}-${day}`;
     });
 
+    const updateEndDate = (date: string) => {
+        setEndDate(date);
+        if (selectionType === 'Date') {
+            setStartDate(date);
+        }
+    };
+
+    const updateSelectionType = (type: SelectionType) => {
+        setSelectionType(type);
+        if (type === 'Date') {
+            setStartDate(endDate);
+        }
+    };
+
     const setRange = (start: string, end: string) => {
         setStartDate(start);
         setEndDate(end);
+        setSelectionType(start === end ? 'Date' : 'Period');
     };
 
     return (
@@ -37,8 +52,8 @@ export function DateProvider({ children }: { children: React.ReactNode }) {
             endDate,
             selectionType,
             setStartDate,
-            setEndDate,
-            setSelectionType,
+            setEndDate: updateEndDate,
+            setSelectionType: updateSelectionType,
             setRange
         }}>
             {children}

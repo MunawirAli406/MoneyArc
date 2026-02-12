@@ -45,14 +45,16 @@ export default function GstReport() {
     const totalTaxable = salesSummary.taxableValue;
     const purchaseTaxable = purchaseSummary.taxableValue;
 
-    const outputT1 = salesSummary.tax1;
-    const outputT2 = salesSummary.tax2;
-    const outputT3 = salesSummary.tax3;
+    const outputCgst = salesSummary.cgst;
+    const outputSgst = salesSummary.sgst;
+    const outputIgst = salesSummary.igst;
+    const outputCess = salesSummary.cess;
     const totalOutputTax = salesSummary.totalTax;
 
-    const inputT1 = purchaseSummary.tax1;
-    const inputT2 = purchaseSummary.tax2;
-    const inputT3 = purchaseSummary.tax3;
+    const inputCgst = purchaseSummary.cgst;
+    const inputSgst = purchaseSummary.sgst;
+    const inputIgst = purchaseSummary.igst;
+    const inputCess = purchaseSummary.cess;
     const totalInputTax = purchaseSummary.totalTax;
 
     const totalInvoiceValue = salesSummary.invoiceValue;
@@ -92,7 +94,7 @@ export default function GstReport() {
                         }}
                         className="flex items-center gap-2 px-5 py-2.5 bg-card border border-border rounded-xl text-xs font-black uppercase tracking-widest hover:bg-muted transition-all"
                     >
-                        <FileDown className="w-4 h-4 text-emerald-500" />
+                        <FileDown className="w-4 h-4 text-google-green" />
                         Export Excel
                     </button>
                     <button
@@ -112,7 +114,7 @@ export default function GstReport() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {[
                     { label: 'Total Output Tax', value: totalOutputTax, icon: ArrowUpRight, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                    { label: `Total ${tax.labels.taxable}`, value: totalTaxable, icon: Calculator, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { label: `Total ${tax.labels.taxable}`, value: totalTaxable, icon: Calculator, color: 'text-google-green', bg: 'bg-google-green/10' },
                     { label: 'Total Invoice Value', value: totalInvoiceValue, icon: DollarSign, color: 'text-blue-500', bg: 'bg-blue-500/10' },
                 ].map((stat, i) => (
                     <div key={i} className="bg-card p-6 rounded-3xl border border-border flex items-center justify-between shadow-sm">
@@ -163,9 +165,10 @@ export default function GstReport() {
                             <tr className="text-left text-[10px] font-black text-muted-foreground uppercase tracking-widest border-b border-border pb-4">
                                 <th className="pb-4">Component</th>
                                 <th className="pb-4 text-right">{tax.labels.taxable}</th>
-                                <th className="pb-4 text-right">{tax.labels.tier3 || 'Tax 3'}</th>
-                                <th className="pb-4 text-right">{tax.labels.tier1 || 'Tax 1'}</th>
-                                <th className="pb-4 text-right">{tax.labels.tier2 || 'Tax 2'}</th>
+                                <th className="pb-4 text-right">IGST</th>
+                                <th className="pb-4 text-right">CGST</th>
+                                <th className="pb-4 text-right">SGST</th>
+                                <th className="pb-4 text-right">Cess</th>
                                 <th className="pb-4 text-right">{tax.labels.total}</th>
                                 <th className="pb-4 text-right">Total Value</th>
                             </tr>
@@ -175,18 +178,20 @@ export default function GstReport() {
                                 {
                                     head: 'Output Liability (Sales)',
                                     taxable: totalTaxable,
-                                    t3: outputT3,
-                                    t1: outputT1,
-                                    t2: outputT2,
+                                    igst: outputIgst,
+                                    cgst: outputCgst,
+                                    sgst: outputSgst,
+                                    cess: outputCess,
                                     totalTax: totalOutputTax,
                                     totalValue: totalTaxable + totalOutputTax
                                 },
                                 {
                                     head: 'Input Credit (Purchases)',
                                     taxable: purchaseTaxable,
-                                    t3: inputT3,
-                                    t1: inputT1,
-                                    t2: inputT2,
+                                    igst: inputIgst,
+                                    cgst: inputCgst,
+                                    sgst: inputSgst,
+                                    cess: inputCess,
                                     totalTax: totalInputTax,
                                     totalValue: purchaseTaxable + totalInputTax
                                 },
@@ -194,9 +199,10 @@ export default function GstReport() {
                                 <tr key={i} className="group hover:bg-muted/10 transition-colors">
                                     <td className="py-5 font-bold text-foreground">{row.head}</td>
                                     <td className="py-5 font-mono text-sm text-foreground text-right">{formatCurrency(row.taxable)}</td>
-                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.t3)}</td>
-                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.t1)}</td>
-                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.t2)}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.igst)}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.cgst)}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.sgst)}</td>
+                                    <td className="py-5 font-mono text-sm text-muted-foreground text-right">{formatCurrency(row.cess)}</td>
                                     <td className="py-5 font-mono text-sm text-foreground text-right">{formatCurrency(row.totalTax)}</td>
                                     <td className="py-5 font-black text-foreground text-right">{formatCurrency(row.totalValue)}</td>
                                 </tr>
@@ -206,11 +212,12 @@ export default function GstReport() {
                             <tr className="bg-muted/40 font-black">
                                 <td className="py-6 px-1 text-sm uppercase tracking-widest">Net Payable</td>
                                 <td className="py-6 text-right"></td>
-                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputT3 - inputT3))}</td>
-                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputT1 - inputT1))}</td>
-                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputT2 - inputT2))}</td>
+                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputIgst - inputIgst))}</td>
+                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputCgst - inputCgst))}</td>
+                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputSgst - inputSgst))}</td>
+                                <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, outputCess - inputCess))}</td>
                                 <td className="py-6 font-mono text-right">{formatCurrency(Math.max(0, totalOutputTax - totalInputTax))}</td>
-                                <td className="py-6 text-right text-lg text-emerald-500"></td>
+                                <td className="py-6 text-right text-lg text-google-green"></td>
                             </tr>
                         </tfoot>
                     </table>

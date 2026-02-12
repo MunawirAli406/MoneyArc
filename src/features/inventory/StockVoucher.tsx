@@ -187,11 +187,15 @@ export default function StockVoucher({ externalSelectedItemId, onItemChange, isE
                 <div className="space-y-4 flex-1">
                     {!isEmbedded && (
                         <div>
-                            <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
-                                <Package className="w-6 h-6 text-primary" />
+                            <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase leading-[0.9] mb-4">
                                 Stock Register
                             </h1>
-                            <p className="text-muted-foreground text-sm font-medium">Monthly item-wise movement & valuation</p>
+                            <div className="flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-google-blue animate-pulse" />
+                                <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] opacity-70">
+                                    Monthly item-wise movement & valuation
+                                </p>
+                            </div>
                         </div>
                     )}
 
@@ -213,15 +217,15 @@ export default function StockVoucher({ externalSelectedItemId, onItemChange, isE
                             />
                         </div>
                         <div className="space-y-1">
+                            <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Start Date</label>
                             <DatePicker
-                                label="Start Date"
                                 value={startDate}
                                 onChange={setStartDate}
                             />
                         </div>
                         <div className="space-y-1">
+                            <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">End Date</label>
                             <DatePicker
-                                label="End Date"
                                 value={endDate}
                                 onChange={setEndDate}
                             />
@@ -255,7 +259,7 @@ export default function StockVoucher({ externalSelectedItemId, onItemChange, isE
                                     {openingQty.toLocaleString()} <span className="text-xs text-muted-foreground">{getUnitName(selectedItem.unitId)}</span>
                                 </div>
                             </div>
-                            <div className="space-y-1 p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 shadow-sm text-emerald-600">
+                            <div className="space-y-1 p-4 rounded-2xl bg-google-green/5 border border-google-green/10 shadow-sm text-google-green">
                                 <span className="text-[10px] uppercase font-black opacity-70 tracking-widest">Inwards (+)</span>
                                 <div className="font-mono font-bold text-lg">
                                     {totalInward.toLocaleString()}
@@ -308,7 +312,7 @@ export default function StockVoucher({ externalSelectedItemId, onItemChange, isE
                                             <td className="px-6 py-3 text-xs font-bold uppercase text-muted-foreground">
                                                 {t.voucherType} <span className="opacity-50">#{t.voucherNo}</span>
                                             </td>
-                                            <td className="px-6 py-3 font-mono text-right text-emerald-600 font-bold">
+                                            <td className="px-6 py-3 font-mono text-right text-google-green font-bold">
                                                 {t.inwardQty > 0 ? t.inwardQty.toLocaleString() : '-'}
                                             </td>
                                             <td className="px-6 py-3 font-mono text-right text-rose-600 font-bold">
@@ -331,7 +335,7 @@ export default function StockVoucher({ externalSelectedItemId, onItemChange, isE
                                 <tfoot className="bg-muted/30 border-t-2 border-border font-black">
                                     <tr>
                                         <td className="px-6 py-4" colSpan={3}>Total Period Movement</td>
-                                        <td className="px-6 py-4 text-right text-emerald-600">{totalInward.toLocaleString()}</td>
+                                        <td className="px-6 py-4 text-right text-google-green">{totalInward.toLocaleString()}</td>
                                         <td className="px-6 py-4 text-right text-rose-600">{totalOutward.toLocaleString()}</td>
                                         <td className="px-6 py-4"></td>
                                     </tr>

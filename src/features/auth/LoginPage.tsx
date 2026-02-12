@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext.provider';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import Logo from '../../components/ui/Logo';
+import CloudAuthModal from '../../components/modals/CloudAuthModal';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
@@ -13,7 +14,11 @@ export default function LoginPage() {
     const [error, setError] = useState('');
 
     const { login, loginWithSocial } = useAuth();
-    const { provider, initializeStorage } = usePersistence();
+    const { provider, initializeStorage, isInitialized } = usePersistence();
+    const [authModal, setAuthModal] = useState<{ isOpen: boolean; type: 'google-drive' | 'onedrive' }>({
+        isOpen: false,
+        type: 'google-drive'
+    });
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -21,6 +26,7 @@ export default function LoginPage() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        console.log('[LoginPage] Login attempt started');
         if (!provider) {
             setError('Please select a data source folder first.');
             return;
@@ -37,12 +43,14 @@ export default function LoginPage() {
         }
     };
 
-    const handleSelectDir = async () => {
+    const handleSelectDir = async (type: 'local' | 'browser') => {
+        console.log(`[LoginPage] Selecting storage type: ${type}`);
         try {
-            await initializeStorage('local');
+            await initializeStorage(type);
             setError('');
         } catch (err) {
-            console.error(err);
+            console.error(`[LoginPage] Failed to select ${type} storage:`, err);
+            setError(`Failed to initialize storage: ${(err as Error).message}`);
         }
     };
 
@@ -73,7 +81,12 @@ export default function LoginPage() {
                         <p className="text-slate-500 text-sm">Unlock your financial data with precision.</p>
                     </div>
 
-                    {!provider ? (
+                    {!isInitialized ? (
+                        <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                            <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                            <p className="text-slate-500 text-xs font-bold uppercase tracking-widest">Restoring Session...</p>
+                        </div>
+                    ) : !provider ? (
                         <div className="space-y-6">
                             <div className="bg-slate-50 border border-slate-200 p-6 rounded-[2rem] text-center">
                                 <FolderOpen className="w-10 h-10 text-primary mx-auto mb-4" />
@@ -83,7 +96,7 @@ export default function LoginPage() {
                                         <>
                                             <p className="text-slate-500 text-xs mb-2 px-4">Select the folder on your computer where your accounting data is stored.</p>
                                             <button
-                                                onClick={handleSelectDir}
+                                                onClick={() => handleSelectDir('local')}
                                                 className="w-full py-4 bg-primary text-white rounded-2xl font-black uppercase tracking-widest text-[10px] hover:shadow-xl hover:shadow-primary/20 transition-all flex items-center justify-center gap-3"
                                             >
                                                 Select Local Folder
@@ -99,7 +112,7 @@ export default function LoginPage() {
                                     )}
 
                                     <button
-                                        onClick={() => initializeStorage('browser')}
+                                        onClick={() => handleSelectDir('browser')}
                                         className="w-full py-3 bg-white text-slate-600 rounded-2xl font-bold uppercase tracking-widest text-[10px] hover:bg-slate-50 hover:text-slate-900 transition-all flex items-center justify-center gap-3 border border-slate-200"
                                     >
                                         Use Browser Storage (Mobile)
@@ -177,14 +190,7 @@ export default function LoginPage() {
                             <div className="grid grid-cols-2 gap-4">
                                 <button
                                     type="button"
-                                    onClick={async () => {
-                                        try {
-                                            await loginWithSocial('google.user@example.com', 'Google User', 'Google');
-                                            navigate('/dashboard');
-                                        } catch (err) {
-                                            console.error("Google login failed", err);
-                                        }
-                                    }}
+                                    onClick={() => setAuthModal({ isOpen: true, type: 'google-drive' })}
                                     className="flex items-center justify-center gap-2 py-3 bg-white text-slate-900 rounded-xl font-bold text-xs hover:bg-slate-100 transition-colors shadow-sm"
                                 >
                                     <svg className="w-4 h-4" viewBox="0 0 24 24">
@@ -197,14 +203,7 @@ export default function LoginPage() {
                                 </button>
                                 <button
                                     type="button"
-                                    onClick={async () => {
-                                        try {
-                                            await loginWithSocial('microsoft.user@example.com', 'Microsoft User', 'Microsoft');
-                                            navigate('/dashboard');
-                                        } catch (err) {
-                                            console.error("Microsoft login failed", err);
-                                        }
-                                    }}
+                                    onClick={() => setAuthModal({ isOpen: true, type: 'onedrive' })}
                                     className="flex items-center justify-center gap-2 py-3 bg-slate-50 text-slate-600 rounded-xl font-bold text-xs hover:bg-slate-100 transition-colors"
                                 >
                                     <svg className="w-4 h-4" viewBox="0 0 23 23">
@@ -226,6 +225,21 @@ export default function LoginPage() {
                     </p>
                 </div>
             </motion.div>
+
+            <CloudAuthModal
+                isOpen={authModal.isOpen}
+                onClose={() => setAuthModal(prev => ({ ...prev, isOpen: false }))}
+                type={authModal.type}
+                onConnect={async (_id, key) => {
+                    await initializeStorage(authModal.type, key);
+                    if (authModal.type === 'google-drive') {
+                        await loginWithSocial('google.user@example.com', 'Google User', 'Google');
+                    } else {
+                        await loginWithSocial('microsoft.user@example.com', 'Microsoft User', 'Microsoft');
+                    }
+                    navigate('/dashboard');
+                }}
+            />
         </div >
     );
 }

@@ -121,7 +121,7 @@ export default function AuditLogViewer() {
                                         </div>
                                     </td>
                                     <td className="px-6 py-5">
-                                        <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${log.action === 'CREATE' ? 'bg-emerald-500/10 text-emerald-600' :
+                                        <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${log.action === 'CREATE' ? 'bg-google-green/10 text-google-green' :
                                             log.action === 'UPDATE' ? 'bg-blue-500/10 text-blue-600' :
                                                 'bg-rose-500/10 text-rose-600'
                                             }`}>

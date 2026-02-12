@@ -58,10 +58,15 @@ export interface StorageProvider {
     sync?(): Promise<void>;
 
     /**
+     * Optional logout for cloud providers
+     */
+    logout?(): Promise<void>;
+
+    /**
      * Check if storage is ready
      */
     isReady: boolean;
     readonly: boolean;
 }
 
-export type StorageType = 'local' | 'cloud' | 'browser' | 'github' | null;
+export type StorageType = 'local' | 'cloud' | 'browser' | 'github' | 'google-drive' | 'onedrive' | null;

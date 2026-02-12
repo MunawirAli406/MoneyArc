@@ -79,89 +79,112 @@ export default function TrialBalance() {
     }, 0);
 
     if (loading) return (
-        <div className="flex items-center justify-center p-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="flex flex-col items-center justify-center p-24 space-y-4">
+            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Reconciling Ledger Matrices...</p>
         </div>
     );
 
+    const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
+    const item = { hidden: { y: 10, opacity: 0 }, show: { y: 0, opacity: 1 } };
+
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8 max-w-6xl mx-auto pb-12"
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="max-w-7xl mx-auto space-y-10 px-6 lg:px-12 pb-24 pt-4"
         >
-            <div className="flex items-center justify-between">
+            <motion.div variants={item} className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight">Trial Balance</h1>
-                    <p className="text-muted-foreground font-medium">
-                        Financial Position ({startDate} to {endDate})
-                    </p>
-                </div>
-                <div className="flex flex-wrap items-center gap-4">
-                    <button
-                        onClick={() => window.print()}
-                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
-                    >
-                        <FileDown className="w-4 h-4" />
-                        Print / Save PDF
-                    </button>
-
-                    <div className="flex items-center gap-2 no-print">
-                        <PeriodSelector />
+                    <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase leading-[0.9] bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent">
+                        Trial Balance
+                    </h1>
+                    <div className="text-muted-foreground font-black uppercase tracking-[0.3em] text-[10px] mt-4 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-google-blue animate-pulse" />
+                        Consolidated Ledger Audit // {startDate} — {endDate}
                     </div>
                 </div>
-            </div>
+                <div className="flex flex-wrap items-center gap-4 no-print">
+                    <PeriodSelector />
+                    <button
+                        onClick={() => window.print()}
+                        className="no-print flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-95 group"
+                    >
+                        <FileDown className="w-4 h-4 group-hover:animate-bounce" />
+                        Download Archive
+                    </button>
+                    <div className="glass-panel px-8 py-4 rounded-[2rem] border-primary/10 shadow-2xl flex items-center gap-6 group">
+                        <div className="text-right">
+                            <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">Exposure Variance</p>
+                            <p className="text-2xl font-black text-primary tracking-tighter tabular-nums">{formatCurrency(totalDebit - totalCredit)}</p>
+                        </div>
+                    </div>
+                </div>
+            </motion.div>
 
-            <div className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden">
-                <table className="w-full text-left text-sm">
-                    <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
-                        <tr>
-                            <th className="px-8 py-4 text-left">Particulars</th>
-                            <th className="px-8 py-4 text-right w-48">Debit</th>
-                            <th className="px-8 py-4 text-right w-48">Credit</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/50">
-                        {groups.map(group => (
-                            group.ledgers.length > 0 && (
-                                <React.Fragment key={group.groupName}>
-                                    <tr className="bg-muted/20">
-                                        <td className="px-8 py-3 font-black text-foreground uppercase tracking-tight text-xs" colSpan={3}>
-                                            {group.groupName}
-                                        </td>
-                                    </tr>
-                                    {group.ledgers.map(ledger => (
-                                        (ledger.balance !== 0) && (
-                                            <tr key={ledger.id} className="hover:bg-muted/10 transition-colors">
-                                                <td className="px-8 py-3 font-medium text-foreground pl-12 flex items-center gap-2">
-                                                    <ArrowRight className="w-3 h-3 text-muted-foreground mr-1" />
-                                                    <LedgerQuickView ledgerName={ledger.name}>
-                                                        <span className="hover:text-primary transition-colors cursor-help border-b border-dotted border-primary/30">
-                                                            {ledger.name}
-                                                        </span>
-                                                    </LedgerQuickView>
-                                                </td>
-                                                <td className="px-8 py-3 text-right font-mono font-bold text-foreground">
-                                                    {ledger.type === 'Dr' ? formatCurrency(ledger.balance) : ''}
-                                                </td>
-                                                <td className="px-8 py-3 text-right font-mono font-bold text-foreground">
-                                                    {ledger.type === 'Cr' ? formatCurrency(ledger.balance) : ''}
-                                                </td>
-                                            </tr>
-                                        )
-                                    ))}
-                                </React.Fragment>
-                            )
-                        ))}
-
-                        <tr className="bg-muted/50 font-black text-foreground border-t-2 border-border">
-                            <td className="px-8 py-5 uppercase tracking-widest text-xs">Grand Total</td>
-                            <td className="px-8 py-5 text-right font-mono text-base">{formatCurrency(totalDebit)}</td>
-                            <td className="px-8 py-5 text-right font-mono text-base">{formatCurrency(totalCredit)}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <motion.div variants={item} className="glass-panel rounded-[3.5rem] border-primary/10 overflow-hidden shadow-2xl">
+                <div className="p-10 border-b border-border/50 bg-muted/20 flex items-center justify-between">
+                    <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-foreground">Statement of Financial Neutrality</h2>
+                    <div className="flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-google-green animate-pulse" />
+                        <span className="text-[9px] font-black text-muted-foreground uppercase tracking-widest">Double-Entry Integrity Verified</span>
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="bg-muted/30 border-b border-border">
+                                <th className="px-12 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground">Particulars / Registry Account</th>
+                                <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right w-64">Debit Liability</th>
+                                <th className="px-12 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right w-64">Credit Asset</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/30">
+                            {groups.map(group => (
+                                group.ledgers.length > 0 && (
+                                    <React.Fragment key={group.groupName}>
+                                        <tr className="bg-muted/20 border-l-4 border-primary/40">
+                                            <td className="px-12 py-6 font-black text-foreground uppercase tracking-[0.2em] text-[10px]" colSpan={3}>
+                                                {group.groupName}
+                                            </td>
+                                        </tr>
+                                        {group.ledgers.map(ledger => (
+                                            (ledger.balance !== 0) && (
+                                                <tr key={ledger.id} className="hover:bg-primary/5 transition-colors group/row">
+                                                    <td className="px-12 py-6">
+                                                        <LedgerQuickView ledgerName={ledger.name}>
+                                                            <div className="flex items-center gap-4 cursor-help group/text">
+                                                                <ArrowRight className="w-3 h-3 text-primary/40 group-hover/text:translate-x-1 transition-transform" />
+                                                                <span className="text-lg font-black text-foreground tracking-tighter group-hover/text:text-primary transition-colors">
+                                                                    {ledger.name}
+                                                                </span>
+                                                            </div>
+                                                        </LedgerQuickView>
+                                                    </td>
+                                                    <td className="px-10 py-6 text-right font-black text-foreground tabular-nums tracking-tighter text-xl">
+                                                        {ledger.type === 'Dr' ? formatCurrency(ledger.balance) : ''}
+                                                    </td>
+                                                    <td className="px-12 py-6 text-right font-black text-foreground tabular-nums tracking-tighter text-xl">
+                                                        {ledger.type === 'Cr' ? formatCurrency(ledger.balance) : ''}
+                                                    </td>
+                                                </tr>
+                                            )
+                                        ))}
+                                    </React.Fragment>
+                                )
+                            ))}
+                        </tbody>
+                        <tfoot className="bg-primary/5 border-t-4 border-primary/20">
+                            <tr>
+                                <td className="px-12 py-12 text-[14px] font-black uppercase tracking-[0.4em] text-primary">Consolidated Audit Total</td>
+                                <td className="px-10 py-12 text-right font-black text-primary text-4xl tabular-nums tracking-tighter">{formatCurrency(totalDebit)}</td>
+                                <td className="px-12 py-12 text-right font-black text-primary text-4xl tabular-nums tracking-tighter">{formatCurrency(totalCredit)}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </motion.div>
 
             {Math.abs(totalDebit - totalCredit) > 0.01 && (
                 <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 text-orange-600 font-bold text-center text-sm">

@@ -43,9 +43,9 @@ export default function ProfitAndLoss() {
             const { AccountGroupManager } = await import('../../services/accounting/ReportService');
             customGroups.forEach((c: any) => AccountGroupManager.registerGroup(c.name, c.parentType));
 
-            const expenseData = ReportService.getPeriodGroupSummary(ledgers as Ledger[], vouchers, new Date(startDate), new Date(endDate), 'EXPENSES');
-            const incomeData = ReportService.getPeriodGroupSummary(ledgers as Ledger[], vouchers, new Date(startDate), new Date(endDate), 'INCOME');
-            const cs = ReportService.getClosingStockValue(stockItems);
+            const expenseData = ReportService.getPeriodGroupSummary(ledgers as Ledger[], vouchers, startDate, endDate, 'EXPENSES');
+            const incomeData = ReportService.getPeriodGroupSummary(ledgers as Ledger[], vouchers, startDate, endDate, 'INCOME');
+            const cs = ReportService.getClosingStockValue(stockItems, vouchers, endDate);
 
             setExpenses(expenseData);
             setIncomes(incomeData);
@@ -164,15 +164,15 @@ export default function ProfitAndLoss() {
                                 <motion.div
                                     initial={{ opacity: 0, x: -10 }}
                                     animate={{ opacity: 1, x: 0 }}
-                                    className="flex justify-between items-center bg-emerald-500/5 p-4 rounded-2xl border border-emerald-500/10 mt-4"
+                                    className="flex justify-between items-center bg-google-green/5 p-4 rounded-2xl border border-google-green/10 mt-4"
                                 >
                                     <div className="flex items-center gap-3">
-                                        <div className="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-500">
+                                        <div className="w-8 h-8 rounded-lg bg-google-green/20 flex items-center justify-center text-google-green">
                                             <TrendingUp className="w-4 h-4" />
                                         </div>
-                                        <span className="text-[10px] font-black uppercase tracking-widest text-emerald-600">Net Profit</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest text-google-green">Net Profit</span>
                                     </div>
-                                    <span className="font-mono font-black text-emerald-600 text-lg">{formatCurrency(netProfit)}</span>
+                                    <span className="font-mono font-black text-google-green text-lg">{formatCurrency(netProfit)}</span>
                                 </motion.div>
                             )}
                         </div>
@@ -263,7 +263,7 @@ export default function ProfitAndLoss() {
             </div>
 
             {/* Performance Summary Pill */}
-            <div className={`p-8 rounded-[2rem] border-2 text-center font-black text-sm tracking-widest uppercase transition-all ${netProfit >= 0 ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/5 border-rose-500/20 text-rose-500'}`}>
+            <div className={`p-8 rounded-[2rem] border-2 text-center font-black text-sm tracking-widest uppercase transition-all ${netProfit >= 0 ? 'bg-google-green/5 border-google-green/20 text-google-green' : 'bg-rose-500/5 border-rose-500/20 text-rose-500'}`}>
                 {netProfit >= 0
                     ? `🎉 Excellent Performance: Net Profit of ${formatCurrency(netProfit)}`
                     : `⚠ Critical Attention: Net Loss of ${formatCurrency(Math.abs(netProfit))}`

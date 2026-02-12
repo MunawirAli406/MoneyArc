@@ -46,7 +46,7 @@ export default function InventoryMaster() {
             {/* Bento Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Stock Value', val: 'Calculated in List', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
+                    { label: 'Total Stock Value', val: 'Calculated in List', icon: TrendingUp, color: 'text-google-green', bg: 'bg-google-green/10' },
                     { label: 'Low Stock Items', val: 0, icon: BarChart3, color: 'text-rose-500', bg: 'bg-rose-500/10' },
                     { label: 'Stock Categories', val: 0, icon: Layers, color: 'text-primary', bg: 'bg-primary/10' },
                     { label: 'Active Items', val: 0, icon: Box, color: 'text-indigo-500', bg: 'bg-indigo-500/10' }

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { FileDown, Search, Package, FileText, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { FileDown, Search, Package, FileText, ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react';
 import type { StockItem, UnitOfMeasure } from '../../services/inventory/types';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { useNavigate } from 'react-router-dom';
@@ -141,48 +141,59 @@ export default function StockSummary() {
         </div>
     );
 
+    const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+    const item = { hidden: { y: 20, opacity: 0 }, show: { y: 0, opacity: 1 } };
+
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8 max-w-7xl mx-auto pb-12"
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="space-y-10 max-w-[1600px] mx-auto px-6 lg:px-12 pb-24 pt-4"
         >
-            <div className="flex items-center justify-between">
+            <motion.div variants={item} className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">{valuationLabel}</h1>
-                    <p className="text-muted-foreground font-medium">Closing stock & movement summary: {activeCompany?.name}</p>
+                    <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase leading-[0.9] bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent">
+                        {valuationLabel}
+                    </h1>
+                    <div className="text-muted-foreground font-black uppercase tracking-[0.3em] text-[10px] mt-4 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-google-blue animate-pulse" />
+                        Executive Inventory Pulse // {activeCompany?.name}
+                    </div>
                 </div>
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-4 no-print">
                     <PeriodSelector />
                     <button
                         onClick={() => window.print()}
-                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10"
+                        className="no-print flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-95 group"
                     >
-                        <FileText className="w-4 h-4" />
-                        Print / Save PDF
+                        <FileText className="w-4 h-4 group-hover:animate-bounce" />
+                        Download Portfolio
                     </button>
                 </div>
-            </div>
+            </motion.div>
 
-            <AIReportAdvisor
-                reportName={valuationLabel}
-                data={{
-                    totalValue: totalClosingVal,
-                    itemCount: filteredSummary.length,
-                    topItems: filteredSummary.slice(0, 5).map(i => ({ name: i.itemName, closingVal: i.closingVal, in: i.inwardQty, out: i.outwardQty }))
-                }}
-            />
+            <motion.div variants={item}>
+                <AIReportAdvisor
+                    reportName={valuationLabel}
+                    data={{
+                        totalValue: totalClosingVal,
+                        itemCount: filteredSummary.length,
+                        topItems: filteredSummary.slice(0, 5).map(i => ({ name: i.itemName, closingVal: i.closingVal, in: i.inwardQty, out: i.outwardQty }))
+                    }}
+                />
+            </motion.div>
 
-            <div className="flex items-center gap-6 glass-panel p-6 rounded-[2rem] border-white/10 shadow-2xl relative overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none" />
-                <div className="relative flex-1 group">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+            <motion.div variants={item} className="flex items-center gap-6 glass-panel p-6 rounded-[2.5rem] border-primary/10 shadow-2xl relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="relative flex-1 group/input">
+                    <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
                     <input
                         type="text"
-                        placeholder="Search Inventory Items..."
+                        placeholder="Search Inventory Portfolio..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-12 pr-4 py-4 bg-muted/20 rounded-[1.25rem] border-none outline-none font-black text-sm focus:ring-2 focus:ring-primary/20 transition-all placeholder:text-muted-foreground/40"
+                        className="w-full pl-14 pr-6 py-5 bg-muted/20 rounded-[1.5rem] border-none outline-none font-black text-sm focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground/30 uppercase tracking-widest"
                     />
                 </div>
                 <button
@@ -193,23 +204,23 @@ export default function StockSummary() {
                         const url = URL.createObjectURL(blob);
                         const a = document.createElement('a'); a.href = url; a.download = 'inventory.csv'; a.click();
                     }}
-                    className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl hover:bg-emerald-500/20 transition-all active:scale-95"
+                    className="p-5 bg-google-green/10 text-google-green rounded-[1.5rem] hover:bg-google-green/20 transition-all active:scale-95 border border-google-green/20"
                 >
                     <FileDown className="w-5 h-5" />
                 </button>
-            </div>
+            </motion.div>
 
-            <div className="glass-panel rounded-[2.5rem] shadow-2xl border-white/10 overflow-hidden relative group/report">
+            <motion.div variants={item} className="glass-panel rounded-[3rem] shadow-2xl border-primary/10 overflow-hidden relative group/report">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent-500/5 opacity-50 pointer-events-none" />
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="bg-muted/30 border-b border-border">
-                                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Product Detail</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right bg-muted/20">Opening Balance</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">Inward Activity</th>
-                                <th className="px-6 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right bg-muted/20">Outward Flow</th>
-                                <th className="px-8 py-6 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground text-right">{valuationLabel}</th>
+                                <th className="px-10 py-8 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground">Asset Identity</th>
+                                <th className="px-8 py-8 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right bg-muted/20">Initial Position</th>
+                                <th className="px-8 py-8 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right">Inflow Activity</th>
+                                <th className="px-8 py-8 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right bg-muted/20">Outflow Velocity</th>
+                                <th className="px-12 py-8 text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right">{valuationLabel}</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border/30">
@@ -218,78 +229,95 @@ export default function StockSummary() {
                                     <td colSpan={5} className="px-8 py-20 text-center text-muted-foreground/50 font-black uppercase tracking-widest">No Inventory Data Found</td>
                                 </tr>
                             ) : (
-                                filteredSummary.map((item, idx) => (
+                                filteredSummary.map((item) => (
                                     <motion.tr
                                         key={item.itemId}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: idx * 0.02 }}
-                                        className="hover:bg-muted/5 transition-colors cursor-pointer group"
+                                        className="hover:bg-primary/5 transition-colors cursor-pointer group/row"
                                         onClick={() => navigate(`/reports/stock-voucher/${item.itemId}`)}
                                     >
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm shrink-0">
-                                                    <Package className="w-5 h-5" />
+                                        <td className="px-10 py-8">
+                                            <div className="flex items-center gap-6">
+                                                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-2xl shrink-0 group-hover/row:scale-110 transition-transform">
+                                                    <Package className="w-6 h-6" />
                                                 </div>
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="font-black text-base text-foreground tracking-tight group-hover:text-primary transition-colors truncate">{item.itemName}</div>
-                                                    <div className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Unit: {item.unit}</div>
+                                                    <div className="font-black text-xl text-foreground tracking-tighter group-hover/row:text-primary transition-colors truncate">{item.itemName}</div>
+                                                    <div className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] opacity-50 mt-1 flex items-center gap-2">
+                                                        <span className="w-4 h-px bg-border" />
+                                                        SKU ID: {item.itemId.slice(-6).toUpperCase()} // {item.unit}
+                                                    </div>
                                                 </div>
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
                                                         navigate(`/inventory/items/${item.itemId}`);
                                                     }}
-                                                    className="p-2 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                                    title="Edit Item"
+                                                    className="p-3 text-muted-foreground hover:text-primary hover:bg-primary/10 rounded-xl transition-all opacity-0 group-hover/row:opacity-100 border border-transparent hover:border-primary/20"
+                                                    title="Edit Asset"
                                                 >
-                                                    <FileText className="w-4 h-4" />
+                                                    <FileText className="w-5 h-5" />
                                                 </button>
                                             </div>
                                         </td>
-                                        <td className="px-6 py-6 text-right font-mono bg-muted/10 group-hover:bg-muted/20">
-                                            <div className="font-black text-foreground">{formatCurrency(item.openingVal)}</div>
-                                            <div className="text-[10px] font-bold text-muted-foreground opacity-50">{item.openingQty.toLocaleString()} {item.unit}</div>
+                                        <td className="px-8 py-8 text-right font-mono bg-muted/5 group-hover/row:bg-muted/10 transition-colors">
+                                            <div className="font-black text-foreground text-lg tabular-nums tracking-tighter">{formatCurrency(item.openingVal)}</div>
+                                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40 mt-1">{item.openingQty.toLocaleString()} Units</div>
                                         </td>
-                                        <td className="px-6 py-6 text-right font-mono">
-                                            <div className="flex items-center justify-end gap-1.5 text-emerald-500">
-                                                <ArrowUpRight className="w-3 h-3" />
-                                                <span className="font-black">{formatCurrency(item.inwardVal)}</span>
+                                        <td className="px-8 py-8 text-right font-mono">
+                                            <div className="flex items-center justify-end gap-2 text-google-green">
+                                                <ArrowUpRight className="w-4 h-4" />
+                                                <span className="font-black text-lg tabular-nums tracking-tighter">{formatCurrency(item.inwardVal)}</span>
                                             </div>
-                                            <div className="text-[10px] font-bold text-muted-foreground opacity-50">+{item.inwardQty.toLocaleString()} {item.unit}</div>
+                                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40 mt-1">+{item.inwardQty.toLocaleString()} Added</div>
                                         </td>
-                                        <td className="px-6 py-6 text-right font-mono bg-muted/10 group-hover:bg-muted/20">
-                                            <div className="flex items-center justify-end gap-1.5 text-rose-500">
-                                                <ArrowDownRight className="w-3 h-3" />
-                                                <span className="font-black">{formatCurrency(item.outwardVal)}</span>
+                                        <td className="px-8 py-8 text-right font-mono bg-muted/5 group-hover/row:bg-muted/10 transition-colors">
+                                            <div className="flex items-center justify-end gap-2 text-rose-500">
+                                                <ArrowDownRight className="w-4 h-4" />
+                                                <span className="font-black text-lg tabular-nums tracking-tighter">{formatCurrency(item.outwardVal)}</span>
                                             </div>
-                                            <div className="text-[10px] font-bold text-muted-foreground opacity-50">-{item.outwardQty.toLocaleString()} {item.unit}</div>
+                                            <div className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40 mt-1">-{item.outwardQty.toLocaleString()} Released</div>
                                         </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <div className="font-black text-xl text-primary tracking-tighter">{formatCurrency(item.closingVal)}</div>
-                                            <div className="text-xs font-black text-muted-foreground tracking-widest uppercase mt-0.5">{item.closingQty.toLocaleString()} {item.unit}</div>
+                                        <td className="px-12 py-8 text-right">
+                                            <div className="font-black text-3xl text-primary tracking-tighter tabular-nums mb-1">{formatCurrency(item.closingVal)}</div>
+                                            <div className="flex items-center justify-end gap-2">
+                                                <div className="w-8 h-1 bg-muted rounded-full">
+                                                    <div className="h-full bg-primary/40 rounded-full" style={{ width: '60%' }} />
+                                                </div>
+                                                <div className="text-[10px] font-black text-muted-foreground tracking-[0.2em] uppercase">{item.closingQty.toLocaleString()} {item.unit}</div>
+                                            </div>
                                         </td>
                                     </motion.tr>
                                 ))
                             )}
                         </tbody>
-                        Footer */
-                        <tr className="bg-primary/5 border-t-2 border-primary/20">
-                            <td colSpan={4} className="px-8 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-primary">Consolidated {valuationLabel}</td>
-                            <td className="px-8 py-8 text-right">
-                                <div className="text-3xl font-black text-primary tracking-tighter">{formatCurrency(totalClosingVal)}</div>
-                                <div className="text-[10px] font-black uppercase tracking-widest text-primary/60 opacity-60">Net Stock Holdings</div>
+                        <tr className="bg-primary/5 border-t-4 border-primary/20">
+                            <td colSpan={4} className="px-10 py-12">
+                                <span className="text-[12px] font-black uppercase tracking-[0.4em] text-primary">Consolidated Portfolio Value</span>
+                                <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-2 opacity-60">Verified Valuation // {activeCompany?.name}</p>
+                            </td>
+                            <td className="px-12 py-12 text-right">
+                                <div className="text-5xl font-black text-primary tracking-tighter tabular-nums mb-1">{formatCurrency(totalClosingVal)}</div>
+                                <div className="text-[10px] font-black uppercase tracking-[0.3em] text-primary/60">Net Asset Holdings</div>
                             </td>
                         </tr>
                     </table>
                 </div>
-            </div>
+            </motion.div>
 
-            <div className="p-10 rounded-[2.5rem] bg-emerald-500/5 border-2 border-emerald-500/20 text-center">
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] text-emerald-600/60 mb-3">Inventory Health</p>
-                <h3 className="text-xl font-black text-emerald-600 tracking-tight">Your total inventory is valued at approximately {formatCurrency(totalClosingVal)}</h3>
-            </div>
+            <motion.div variants={item} className="p-12 rounded-[3.5rem] bg-google-green/5 border-2 border-google-green/20 text-center relative overflow-hidden group shadow-2xl">
+                <div className="absolute inset-0 bg-gradient-to-r from-google-green/5 to-transparent pointer-events-none" />
+                <div className="relative">
+                    <p className="text-[10px] font-black uppercase tracking-[0.5em] text-google-green/60 mb-6 underline decoration-google-green/30 underline-offset-8">Inventory Integrity Score: Optimal</p>
+                    <h3 className="text-3xl font-black text-google-green tracking-tighter uppercase italic leading-tight">
+                        Asset Liquidity at {formatCurrency(totalClosingVal)}
+                    </h3>
+                    <div className="flex justify-center gap-12 mt-8 opacity-40 grayscale group-hover:grayscale-0 transition-all duration-700">
+                        <Package className="w-6 h-6 text-google-green" />
+                        <ArrowUpRight className="w-6 h-6 text-google-green" />
+                        <TrendingUp className="w-6 h-6 text-google-green" />
+                    </div>
+                </div>
+            </motion.div>
         </motion.div >
     );
 }

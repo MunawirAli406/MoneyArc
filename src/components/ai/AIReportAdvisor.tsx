@@ -73,7 +73,7 @@ export default function AIReportAdvisor({ reportName, data, context }: AIReportA
         <div className="mb-8">
             <motion.div
                 layout
-                className="glass-panel overflow-hidden border-primary/20 shadow-2xl relative"
+                className="glass-panel overflow-hidden border-primary/20 shadow-xl relative"
                 initial={false}
             >
                 <div className="p-4 flex items-center justify-between bg-white/5">

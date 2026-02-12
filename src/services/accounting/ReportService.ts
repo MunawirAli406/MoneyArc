@@ -8,6 +8,9 @@ export interface Ledger {
     balance: number;
     type: 'Dr' | 'Cr';
     gstin?: string;
+    registrationType?: 'Regular' | 'Composition' | 'Unregistered' | 'Consumer';
+    partyType?: 'Not Applicable' | 'Deemed Export' | 'Embassy' | 'Government Entity' | 'SEZ';
+    placeOfSupply?: string;
     address?: string;
     state?: string;
     isGstEnabled: boolean;

@@ -15,7 +15,7 @@ export const BUSINESS_THEMES: Record<string, BusinessTheme> = {
         primary: '217 89% 61%', // Google Blue
         background: 'var(--background)',
         card: 'var(--card)',
-        accent: 'var(--accent)',
+        accent: '136 53% 43%', // Google Green
         greeting: 'Management Dashboard',
         icon: 'Building2',
         revenueLabel: 'Total Revenue',
@@ -78,10 +78,10 @@ export const BUSINESS_THEMES: Record<string, BusinessTheme> = {
         description: 'Educational institute records'
     },
     Hospital: {
-        primary: '165 85% 45%', // Clinical Mint
+        primary: '136 53% 43%', // Google Green
         background: '180 30% 98%', // Sterile White
         card: '0 0% 100%',
-        accent: '165 85% 95%',
+        accent: '136 53% 95%',
         greeting: 'Healthcare System',
         icon: 'HeartPulse',
         revenueLabel: 'Patient Billing',
@@ -122,10 +122,10 @@ export const BUSINESS_THEMES: Record<string, BusinessTheme> = {
         description: 'Service-based business'
     },
     RealEstate: {
-        primary: '190 90% 45%', // Cyan/Teal
+        primary: '217 89% 61%', // Google Blue
         background: '190 15% 98%',
         card: '0 0% 100%',
-        accent: '190 90% 95%',
+        accent: '217 89% 95%',
         greeting: 'Property Manager',
         icon: 'Building',
         revenueLabel: 'Rental Income',
@@ -133,7 +133,7 @@ export const BUSINESS_THEMES: Record<string, BusinessTheme> = {
         description: 'Real estate management'
     },
     Technology: {
-        primary: '260 90% 60%', // Cyber Violet
+        primary: '217 89% 61%', // Google Blue
         background: '260 15% 98%',
         card: '0 0% 100%',
         accent: '260 90% 95%',

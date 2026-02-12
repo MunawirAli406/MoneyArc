@@ -86,7 +86,7 @@ export default function LedgerQuickView({ ledgerName, children }: LedgerQuickVie
                                                 <span className="text-[9px] font-bold text-muted-foreground uppercase">{v.type} #{v.voucherNo}</span>
                                             </div>
                                             <div className="text-right">
-                                                <div className={`text-xs font-black ${type === 'Dr' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                <div className={`text-xs font-black ${type === 'Dr' ? 'text-google-green' : 'text-rose-500'}`}>
                                                     {type === 'Dr' ? '+' : '-'} {activeCompany?.symbol || '₹'}{amt.toLocaleString()}
                                                 </div>
                                             </div>

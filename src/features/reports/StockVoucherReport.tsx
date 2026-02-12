@@ -138,7 +138,7 @@ export default function StockVoucherReport() {
                         <ArrowLeft className="w-4 h-4" /> Back to Summary
                     </button>
                     <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Stock Vouchers</h1>
-                    <p className="text-emerald-600 font-bold uppercase tracking-widest text-sm mt-1">{itemDetails?.name}</p>
+                    <p className="text-google-green font-bold uppercase tracking-widest text-sm mt-1">{itemDetails?.name}</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <PeriodSelector />
@@ -159,7 +159,7 @@ export default function StockVoucherReport() {
                             <th className="px-6 py-4">Date</th>
                             <th className="px-6 py-4">Particulars</th>
                             <th className="px-6 py-4">Vch Type</th>
-                            <th className="px-4 py-4 text-right bg-emerald-500/5 text-emerald-600">Inwards Qty</th>
+                            <th className="px-4 py-4 text-right bg-google-green/5 text-google-green">Inwards Qty</th>
                             <th className="px-4 py-4 text-right bg-rose-500/5 text-rose-500">Outwards Qty</th>
                             <th className="px-4 py-4 text-right font-black text-foreground">Closing Balance</th>
                         </tr>
@@ -182,7 +182,7 @@ export default function StockVoucherReport() {
                                     <td className="px-6 py-4 font-bold text-muted-foreground uppercase text-xs tracking-wider">
                                         {row.voucherType}
                                     </td>
-                                    <td className="px-4 py-4 text-right font-mono font-bold text-emerald-600 bg-emerald-500/5">
+                                    <td className="px-4 py-4 text-right font-mono font-bold text-google-green bg-google-green/5">
                                         {row.quantityIn > 0 ? row.quantityIn : '-'}
                                     </td>
                                     <td className="px-4 py-4 text-right font-mono font-bold text-rose-500 bg-rose-500/5">

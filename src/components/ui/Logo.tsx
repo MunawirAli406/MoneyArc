@@ -13,9 +13,9 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
     return (
         <div className={`flex items-center gap-4 ${className}`}>
             <div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-                {/* Background Ambient Glow - Reduced for cleaner look */}
+                {/* Background Ambient Glow */}
                 <motion.div
-                    className="absolute inset-[-10%] bg-blue-500/10 blur-2xl rounded-full"
+                    className="absolute inset-[-10%] bg-google-blue/10 blur-2xl rounded-full"
                     animate={{
                         scale: [1, 1.1, 1],
                         opacity: [0.2, 0.4, 0.2],
@@ -47,11 +47,10 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                         fill="none"
                         xmlns="http://www.w3.org/2000/svg"
                     >
-                        {/* The Nexus Arc (The Bridge) - Google Blue */}
+                        {/* The Nexus Arc - Google Blue */}
                         <motion.path
                             d="M 20 70 C 20 30 80 30 80 70"
                             stroke="#4285F4"
-                            className="text-google-blue"
                             strokeWidth={bridgeStroke}
                             strokeLinecap="round"
                             initial={{ pathLength: 0 }}
@@ -59,14 +58,13 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                             transition={{ duration: 1, ease: "easeInOut" }}
                         />
 
-                        {/* Interconnected Nodes with Pulse Effect */}
+                        {/* Interconnected Nodes - Authentic Google Palette */}
                         {[
-                            { cx: 20, cy: 70, color: '#EA4335', delay: 0 },   // Red - Left
-                            { cx: 50, cy: 35, color: '#FBBC04', delay: 0.3 }, // Yellow - Top
-                            { cx: 80, cy: 70, color: '#34A853', delay: 0.6 }  // Green - Right
+                            { cx: 20, cy: 70, color: '#EA4335', delay: 0 },   // Red
+                            { cx: 50, cy: 35, color: '#FBBC05', delay: 0.3 }, // Yellow
+                            { cx: 80, cy: 70, color: '#34A853', delay: 0.6 }  // Green
                         ].map((node, i) => (
                             <g key={i}>
-                                {/* Node Glow */}
                                 <motion.circle
                                     cx={node.cx} cy={node.cy} r={nodeRadius * 2}
                                     fill={node.color}
@@ -82,7 +80,6 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                                         ease: "easeInOut"
                                     }}
                                 />
-                                {/* Solid Node Core */}
                                 <motion.circle
                                     cx={node.cx} cy={node.cy} r={nodeRadius}
                                     fill={node.color}
@@ -90,7 +87,6 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                                     animate={{ scale: 1 }}
                                     transition={{ delay: node.delay, type: "spring", stiffness: 300 }}
                                 />
-                                {/* White ring around core for contrast */}
                                 <circle
                                     cx={node.cx} cy={node.cy} r={nodeRadius + 1}
                                     stroke="white"
@@ -99,7 +95,6 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                             </g>
                         ))}
 
-                        {/* Connection Lines (Inner Core Bridge) - Subtle White */}
                         <motion.path
                             d="M 20 70 L 50 35 L 80 70"
                             stroke="white"
@@ -120,15 +115,15 @@ export default function Logo({ className = "", size = 42, showText = true }: Log
                     transition={{ delay: 0.2 }}
                     className="flex flex-col justify-center items-center text-center select-none"
                 >
-                    <div className="text-2xl font-black tracking-tight leading-none flex items-baseline justify-center">
-                        <span style={{ color: '#4285F4' }}>M</span>
-                        <span style={{ color: '#EA4335' }}>o</span>
-                        <span style={{ color: '#FBBC04' }}>n</span>
-                        <span style={{ color: '#4285F4' }}>e</span>
-                        <span style={{ color: '#34A853' }}>y</span>
-                        <span style={{ color: '#EA4335' }}>A</span>
-                        <span style={{ color: '#4285F4' }}>r</span>
-                        <span style={{ color: '#FBBC04' }}>c</span>
+                    <div className="text-2xl font-black tracking-tight leading-none text-[#4285F4] flex items-baseline justify-center">
+                        <span>M</span>
+                        <span>o</span>
+                        <span>n</span>
+                        <span>e</span>
+                        <span>y</span>
+                        <span>A</span>
+                        <span>r</span>
+                        <span>c</span>
                     </div>
                 </motion.div>
             )}

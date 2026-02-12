@@ -2,16 +2,12 @@ import { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Edit2, Trash2, BookOpen, FileText, Sparkles, TrendingUp, TrendingDown, Building2, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import clsx from 'clsx';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
 import type { Voucher } from '../../../services/accounting/VoucherService';
+import { ReportService, type Ledger } from '../../../services/accounting/ReportService';
 
-interface Ledger {
-    id: string;
-    name: string;
-    group: string;
-    balance: number;
-    type: 'Dr' | 'Cr';
-}
+// Ledger interface is imported from ReportService
 
 interface LedgerListProps {
     onViewTransactions?: (ledgerId: string) => void;
@@ -34,8 +30,8 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
                     ]);
                     setLedgers(ledgerData || []);
                     setVouchers(voucherData || []);
-                } catch (error) {
-                    console.error('Failed to load data:', error);
+                } catch {
+                    console.error('Failed to load data');
                 } finally {
                     setLoading(false);
                 }
@@ -118,8 +114,11 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">Chart of Accounts</h1>
-                    <p className="text-muted-foreground font-bold text-[10px] uppercase tracking-[0.2em] mt-1 opacity-70">Master ledger management: {activeCompany?.name}</p>
+                    <h1 className="text-4xl font-black text-foreground tracking-tight uppercase tracking-[-0.02em]">Chart of Accounts</h1>
+                    <div className="flex items-center gap-2 mt-2">
+                        <div className="w-2 h-2 rounded-full bg-google-green animate-pulse" />
+                        <p className="text-muted-foreground font-black text-[10px] uppercase tracking-[0.2em] opacity-70">Node Managed: {activeCompany?.name}</p>
+                    </div>
                 </div>
                 <div className="flex items-center gap-4">
                     <button
@@ -142,34 +141,53 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
             {/* Bento Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                 {[
-                    { label: 'Total Assets', val: ledgers.filter(l => l.group.includes('Asset') || l.group.includes('Bank') || l.group.includes('Cash')).reduce((s, l) => s + (l.type === 'Dr' ? l.balance : -l.balance), 0), icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/10' },
-                    { label: 'Total Liability', val: Math.abs(ledgers.filter(l => l.group.includes('Liability') || l.group.includes('Loan')).reduce((s, l) => s + (l.type === 'Cr' ? l.balance : -l.balance), 0)), icon: TrendingDown, color: 'text-rose-500', bg: 'bg-rose-500/10' },
-                    { label: 'Equity/Capital', val: Math.abs(ledgers.filter(l => l.group.includes('Capital') || l.group.includes('Reserves')).reduce((s, l) => s + (l.type === 'Cr' ? l.balance : -l.balance), 0)), icon: Building2, color: 'text-primary', bg: 'bg-primary/10' },
-                    { label: 'Total Accounts', val: ledgers.length, icon: Users, color: 'text-indigo-500', bg: 'bg-indigo-500/10', sub: 'Active' }
+                    {
+                        label: 'Aggregate Assets',
+                        val: ReportService.calculateTotal(ReportService.getGroupSummary(ledgers, 'ASSETS')),
+                        icon: TrendingUp, color: 'text-google-blue', bg: 'bg-google-blue/10'
+                    },
+                    {
+                        label: 'Total Liabilities',
+                        val: Math.abs(ReportService.calculateTotal(ReportService.getGroupSummary(ledgers, 'LIABILITIES').filter(g => !['Capital Account', 'Reserves & Surplus'].includes(g.groupName)))),
+                        icon: TrendingDown, color: 'text-google-red', bg: 'bg-google-red/10'
+                    },
+                    {
+                        label: 'Shareholder Equity',
+                        val: Math.abs(ReportService.calculateTotal(ReportService.getGroupSummary(ledgers, 'LIABILITIES').filter(g => ['Capital Account', 'Reserves & Surplus'].includes(g.groupName)))),
+                        icon: Building2, color: 'text-google-green', bg: 'bg-google-green/10'
+                    },
+                    {
+                        label: 'Active Node Accounts',
+                        val: ledgers.length,
+                        icon: Users,
+                        color: 'text-google-yellow',
+                        bg: 'bg-google-yellow/10',
+                        sub: 'Live'
+                    }
                 ].map((stat, i) => (
                     <motion.div
                         key={i}
                         whileHover={{ y: -5 }}
-                        className="glass-panel p-6 rounded-3xl border-white/5 shadow-xl relative overflow-hidden group/stat"
+                        className="glass-panel p-8 rounded-[2.5rem] border-white/5 shadow-2xl relative overflow-hidden group/stat"
                     >
-                        <div className="flex items-center justify-between mb-4">
-                            <div className={`p-3 rounded-2xl ${stat.bg} ${stat.color} shadow-inner`}>
-                                <stat.icon className="w-5 h-5" />
+                        <div className="flex items-center justify-between mb-6">
+                            <div className={clsx("p-4 rounded-2xl shadow-lg ring-1 ring-inset ring-white/10", stat.bg, stat.color)}>
+                                <stat.icon className="w-6 h-6" />
                             </div>
-                            <div className="h-1.5 w-12 bg-white/5 rounded-full overflow-hidden">
+                            <div className="h-1.5 w-16 bg-white/5 rounded-full overflow-hidden">
                                 <motion.div
                                     initial={{ width: 0 }}
-                                    animate={{ width: '70%' }}
-                                    className={`h-full ${stat.color.replace('text', 'bg')}`}
+                                    animate={{ width: '85%' }}
+                                    className={clsx("h-full", stat.color.replace('text', 'bg'))}
                                 />
                             </div>
                         </div>
-                        <h4 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-60">{stat.label}</h4>
-                        <div className="text-2xl font-black mt-1 tracking-tighter">
-                            {typeof stat.val === 'number' && stat.label !== 'Total Accounts' ? `${activeCompany?.symbol || '₹'}${stat.val.toLocaleString()}` : stat.val}
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground opacity-60 mb-2">{stat.label}</h4>
+                        <div className="text-3xl font-black tracking-tighter tabular-nums">
+                            {typeof stat.val === 'number' && stat.label !== 'Active Node Accounts' ? `${activeCompany?.symbol || '₹'}${stat.val.toLocaleString()}` : stat.val}
                         </div>
-                        <div className="absolute -right-4 -bottom-4 opacity-5 group-hover/stat:scale-110 transition-transform">
-                            <stat.icon size={80} />
+                        <div className="absolute -right-6 -bottom-6 opacity-[0.03] group-hover/stat:scale-110 group-hover/stat:rotate-12 transition-all duration-700">
+                            <stat.icon size={120} />
                         </div>
                     </motion.div>
                 ))}
@@ -209,15 +227,15 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
                         </div>
                     ) : (
                         <table className="w-full text-left text-sm">
-                            <thead className="bg-muted/50 text-muted-foreground font-black uppercase tracking-widest text-[10px] border-b border-border">
+                            <thead className="bg-card/40 text-foreground font-black uppercase tracking-[0.1em] text-[10px] border-b border-white/10">
                                 <tr>
-                                    <th className="px-4 py-3 min-w-[200px]">Account Name</th>
-                                    <th className="px-4 py-3 min-w-[150px]">Group</th>
-                                    <th className="px-4 py-3 text-right min-w-[120px]">Opening Bal</th>
-                                    <th className="px-4 py-3 text-right min-w-[120px]">Debit</th>
-                                    <th className="px-4 py-3 text-right min-w-[120px]">Credit</th>
-                                    <th className="px-4 py-3 text-right min-w-[120px]">Closing Bal</th>
-                                    <th className="px-4 py-3 text-center w-[120px]">Actions</th>
+                                    <th className="px-6 py-5 min-w-[200px]">Node / Account</th>
+                                    <th className="px-6 py-5 min-w-[150px]">Classification</th>
+                                    <th className="px-6 py-5 text-right min-w-[120px]">Opening Position</th>
+                                    <th className="px-6 py-5 text-right min-w-[120px]">Aggregate Debit</th>
+                                    <th className="px-6 py-5 text-right min-w-[120px]">Aggregate Credit</th>
+                                    <th className="px-6 py-5 text-right min-w-[120px]">Final Settlement</th>
+                                    <th className="px-6 py-5 text-center w-[120px]">Management</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/50">
@@ -233,7 +251,7 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
                                             </td>
                                             <td className="px-4 py-3 text-right font-mono text-muted-foreground">
                                                 {stats.openingBalance > 0 ? (
-                                                    <span className={stats.openingType === 'Cr' ? 'text-rose-500/70' : 'text-emerald-500/70'}>
+                                                    <span className={stats.openingType === 'Cr' ? 'text-rose-500/70' : 'text-google-green/70'}>
                                                         {stats.openingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {stats.openingType}
                                                     </span>
                                                 ) : '-'}
@@ -245,7 +263,7 @@ export default function LedgerList({ onViewTransactions }: LedgerListProps) {
                                                 {stats.totalCredit > 0 ? stats.totalCredit.toLocaleString('en-IN', { minimumFractionDigits: 2 }) : '-'}
                                             </td>
                                             <td className="px-4 py-3 text-right font-mono font-bold">
-                                                <span className={stats.closingType === 'Cr' ? 'text-rose-500' : 'text-emerald-500'}>
+                                                <span className={stats.closingType === 'Cr' ? 'text-rose-500' : 'text-google-green'}>
                                                     {stats.closingBalance.toLocaleString('en-IN', { minimumFractionDigits: 2 })} {stats.closingType}
                                                 </span>
                                             </td>

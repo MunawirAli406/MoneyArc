@@ -90,8 +90,11 @@ export default function BalanceSheet() {
         >
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-3xl font-black text-foreground tracking-tight uppercase">Balance Sheet</h1>
-                    <p className="text-muted-foreground font-medium">Financial health ({startDate} to {endDate})</p>
+                    <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase leading-[0.9] bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent">Balance Sheet</h1>
+                    <div className="text-muted-foreground font-black uppercase tracking-[0.3em] text-[10px] mt-4 flex items-center gap-3">
+                        <div className="w-2 h-2 rounded-full bg-google-blue animate-pulse" />
+                        Snap-shot of Financial Health // {startDate} — {endDate}
+                    </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-4">
                     <PeriodSelector />
@@ -168,8 +171,8 @@ export default function BalanceSheet() {
                             {netProfit > 0 && (
                                 <div className="p-2 -mx-2">
                                     <div className="flex justify-between items-center">
-                                        <span className="text-sm font-black text-emerald-500 uppercase tracking-tight">Net Profit</span>
-                                        <span className="font-mono font-black text-emerald-600 text-base">{formatCurrency(netProfit)}</span>
+                                        <span className="text-sm font-black text-google-green uppercase tracking-tight">Net Profit</span>
+                                        <span className="font-mono font-black text-google-green text-base">{formatCurrency(netProfit)}</span>
                                     </div>
                                 </div>
                             )}
@@ -260,7 +263,7 @@ export default function BalanceSheet() {
             </div>
 
             {/* Validation Check */}
-            <div className={`p-8 rounded-[2rem] border-2 text-center font-black text-sm tracking-widest uppercase ${Math.abs(totalAssets - totalLiabilities) < 0.01 ? 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500' : 'bg-rose-500/5 border-rose-500/20 text-rose-500'}`}>
+            <div className={`p-8 rounded-[2rem] border-2 text-center font-black text-sm tracking-widest uppercase ${Math.abs(totalAssets - totalLiabilities) < 0.01 ? 'bg-google-green/5 border-google-green/20 text-google-green' : 'bg-rose-500/5 border-rose-500/20 text-rose-500'}`}>
                 {Math.abs(totalAssets - totalLiabilities) < 0.01
                     ? '✓ Accounts are balanced'
                     : `⚠ System Imbalance: ${(totalAssets - totalLiabilities).toLocaleString()}`

@@ -3,13 +3,15 @@ import { motion } from 'framer-motion';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
 import { type Ledger, LedgerReportCalculator, type LedgerReportData } from '../../services/accounting/ReportService';
 import { type Voucher } from '../../services/accounting/VoucherService';
-import { FileDown, Wallet } from 'lucide-react';
+import { FileDown, Wallet, ArrowRight, ShieldCheck, Activity } from 'lucide-react';
 import PeriodSelector from '../../components/ui/PeriodSelector';
 import Select from '../../components/ui/Select';
 import { useReportDates } from './DateContext';
+import clsx from 'clsx';
 
 
 import { useNavigate } from 'react-router-dom';
+import { useLocalization } from '../../hooks/useLocalization';
 
 interface LedgerReportProps {
     externalSelectedLedgerId?: string;
@@ -19,6 +21,7 @@ interface LedgerReportProps {
 
 export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange, isEmbedded }: LedgerReportProps) {
     const { provider, activeCompany } = usePersistence();
+    const { formatCurrency } = useLocalization();
     const navigate = useNavigate();
     const [ledgers, setLedgers] = useState<Ledger[]>([]);
     const [selectedLedgerId, setSelectedLedgerId] = useState<string>(externalSelectedLedgerId || '');
@@ -65,7 +68,7 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                 // Actually Calculator expects SimpleVoucher which matches Voucher structure mostly
                 const data = LedgerReportCalculator.getLedgerVouchers(
                     targetLedger,
-                    vouchers as any[],
+                    vouchers as Voucher[],
                     new Date(startDate),
                     new Date(endDate)
                 );
@@ -77,31 +80,40 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
         const timer = setTimeout(fetchReport, 100); // Debounce
         return () => clearTimeout(timer);
     }, [provider, activeCompany, selectedLedgerId, startDate, endDate]);
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center p-24 space-y-4">
+            <div className="w-12 h-12 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Scanning Ledger Registry...</p>
+        </div>
+    );
 
-
+    const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.05 } } };
+    const item = { hidden: { y: 10, opacity: 0 }, show: { y: 0, opacity: 1 } };
 
     return (
         <motion.div
-            initial={{ opacity: 0, scale: 0.98 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="space-y-6 max-w-7xl mx-auto pb-12"
+            variants={container}
+            initial="hidden"
+            animate="show"
+            className="max-w-7xl mx-auto space-y-10 px-6 lg:px-12 pb-24 pt-4"
         >
-            {/* Header Controls */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 bg-card p-6 rounded-2xl border border-border shadow-sm">
-                <div className="space-y-4 flex-1 no-print">
+            <motion.div variants={item} className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                <div>
                     {!isEmbedded && (
-                        <div>
-                            <h1 className="text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
-                                <Wallet className="w-6 h-6 text-primary" />
-                                Ledger Vouchers
+                        <>
+                            <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase leading-[0.9] bg-gradient-to-br from-foreground to-foreground/50 bg-clip-text text-transparent">
+                                Ledger Registry
                             </h1>
-                            <p className="text-muted-foreground text-sm font-medium">Transaction history & running balance</p>
-                        </div>
+                            <div className="text-muted-foreground font-black uppercase tracking-[0.3em] text-[10px] mt-4 flex items-center gap-3">
+                                <div className="w-2 h-2 rounded-full bg-google-blue animate-pulse" />
+                                Comprehensive Transaction Audit // {activeCompany?.name}
+                            </div>
+                        </>
                     )}
-
+                </div>
+                <div className="flex flex-wrap items-center gap-4 no-print mt-4 lg:mt-0">
                     <div className="flex flex-wrap items-center gap-4">
-                        <div className="space-y-1 flex-1 min-w-[240px]">
-                            <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Select Ledger</label>
+                        <div className="w-64">
                             <Select
                                 value={selectedLedgerId}
                                 onChange={(val) => {
@@ -114,75 +126,60 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                                     description: l.group,
                                     icon: Wallet
                                 }))}
-                                className="w-full"
+                                className="premium-select"
                             />
                         </div>
-                        <div className="space-y-1">
-                            <label className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground ml-1">Reporting Period</label>
-                            <PeriodSelector />
-                        </div>
+                        <PeriodSelector />
                     </div>
-                </div>
-
-                <div className="flex items-end">
                     <button
                         onClick={() => window.print()}
                         disabled={!reportData}
-                        className="no-print flex items-center gap-2 px-6 py-2.5 bg-primary text-primary-foreground rounded-xl text-xs font-black uppercase tracking-widest hover:shadow-lg transition-all shadow-md shadow-primary/10 disabled:opacity-50"
+                        className="no-print flex items-center gap-3 px-8 py-4 bg-primary text-primary-foreground rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest hover:shadow-2xl hover:shadow-primary/30 transition-all active:scale-95 group disabled:opacity-50"
                     >
-                        <FileDown className="w-4 h-4" />
-                        Print / Save PDF
+                        <FileDown className="w-4 h-4 group-hover:animate-bounce" />
+                        Download PDF
                     </button>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Report Content */}
             <div className="bg-card rounded-3xl shadow-sm border border-border overflow-hidden min-h-[500px]">
-                {loading ? (
-                    <div className="flex items-center justify-center h-96">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                    </div>
-                ) : reportData ? (
+                {reportData ? (
                     <div className="flex flex-col h-full">
                         {/* Summary Header */}
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 bg-muted/30 border-b border-border">
-                            <div className="space-y-1">
-                                <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Opening Balance</span>
-                                <div className="font-mono font-bold text-lg text-foreground">
-                                    {activeCompany?.symbol || '₹'}{reportData.openingBalance.toLocaleString()} <span className="text-xs text-muted-foreground">{reportData.openingBalanceType}</span>
+                        <motion.div variants={item} className="grid grid-cols-1 md:grid-cols-4 gap-6 p-8 bg-muted/20 border-b border-border/50">
+                            {[
+                                { label: 'Opening Balance', value: reportData.openingBalance, type: reportData.openingBalanceType, icon: Wallet, color: 'primary' },
+                                { label: 'Total Debits', value: reportData.totalDebit, icon: Activity, color: 'google-green' },
+                                { label: 'Total Credits', value: reportData.totalCredit, icon: Activity, color: 'rose' },
+                                { label: 'Closing Balance', value: reportData.closingBalance, type: reportData.closingBalanceType, icon: ShieldCheck, color: reportData.closingBalanceType === 'Dr' ? 'google-green' : 'rose' },
+                            ].map((stat, i) => (
+                                <div key={i} className="glass-panel p-6 rounded-3xl border-primary/5 shadow-xl group hover:scale-[1.02] transition-transform">
+                                    <p className="text-[9px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-2">{stat.label}</p>
+                                    <div className="flex items-end gap-2">
+                                        <p className={clsx(
+                                            "text-2xl font-black tracking-tighter tabular-nums",
+                                            stat.color === 'google-green' ? "text-google-green" : stat.color === 'rose' ? "text-rose-500" : "text-primary"
+                                        )}>
+                                            {activeCompany?.symbol || '₹'}{stat.value.toLocaleString()}
+                                        </p>
+                                        {stat.type && <span className="text-[10px] font-black text-muted-foreground uppercase mb-1">{stat.type}</span>}
+                                    </div>
                                 </div>
-                            </div>
-                            <div className="space-y-1">
-                                <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Total Debits</span>
-                                <div className="font-mono font-bold text-lg text-foreground">
-                                    {activeCompany?.symbol || '₹'}{reportData.totalDebit.toLocaleString()}
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Total Credits</span>
-                                <div className="font-mono font-bold text-lg text-foreground">
-                                    {activeCompany?.symbol || '₹'}{reportData.totalCredit.toLocaleString()}
-                                </div>
-                            </div>
-                            <div className="space-y-1">
-                                <span className="text-[10px] uppercase font-black text-muted-foreground tracking-widest">Closing Balance</span>
-                                <div className={`font-mono font-bold text-lg ${reportData.closingBalanceType === 'Dr' ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                    {activeCompany?.symbol || '₹'}{reportData.closingBalance.toLocaleString()} <span className="text-xs">{reportData.closingBalanceType}</span>
-                                </div>
-                            </div>
-                        </div>
+                            ))}
+                        </motion.div>
 
                         {/* Table */}
                         <div className="overflow-x-auto">
-                            <table className="w-full text-sm text-left">
-                                <thead className="bg-muted/50 border-b border-border text-[10px] uppercase font-black tracking-widest text-muted-foreground">
-                                    <tr>
-                                        <th className="px-6 py-4">Date</th>
-                                        <th className="px-6 py-4 w-1/3">Particulars</th>
-                                        <th className="px-6 py-4">Vch Type</th>
-                                        <th className="px-6 py-4 text-right">Debit ({activeCompany?.symbol || '₹'})</th>
-                                        <th className="px-6 py-4 text-right">Credit ({activeCompany?.symbol || '₹'})</th>
-                                        <th className="px-6 py-4 text-right">Balance ({activeCompany?.symbol || '₹'})</th>
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="bg-muted/30 border-b border-border">
+                                        <th className="px-10 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground">Registry Entry</th>
+                                        <th className="px-8 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground w-1/3">Particulars / Journal Ref</th>
+                                        <th className="px-6 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground">Type</th>
+                                        <th className="px-8 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right">Debit</th>
+                                        <th className="px-8 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right bg-muted/20">Credit</th>
+                                        <th className="px-12 py-8 text-[11px] font-black uppercase tracking-[0.3em] text-muted-foreground text-right bg-primary/5">Net Balance</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-border">
@@ -199,8 +196,8 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
 
                                     {reportData.rows.length === 0 ? (
                                         <tr>
-                                            <td colSpan={6} className="px-6 py-12 text-center text-muted-foreground font-medium">
-                                                No transactions found in this period.
+                                            <td colSpan={6} className="px-12 py-32 text-center text-muted-foreground font-black uppercase tracking-[0.2em] text-[10px] opacity-50">
+                                                Zero transaction volatility detected in this period.
                                             </td>
                                         </tr>
                                     ) : (
@@ -208,35 +205,41 @@ export default function LedgerReport({ externalSelectedLedgerId, onLedgerChange,
                                             <tr
                                                 key={idx}
                                                 onClick={() => navigate(`/vouchers/edit/${row.id}`)}
-                                                className="group hover:bg-muted/30 transition-colors cursor-pointer"
+                                                className="group/row hover:bg-primary/5 transition-colors cursor-pointer border-b border-border/30 last:border-0"
                                             >
-                                                <td className="px-6 py-3 font-medium text-foreground whitespace-nowrap">
-                                                    {new Date(row.date).toLocaleDateString()}
+                                                <td className="px-10 py-6">
+                                                    <div className="font-black text-sm text-foreground tracking-tighter">{new Date(row.date).toLocaleDateString()}</div>
+                                                    <div className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-40">Entry ID: {row.id.slice(-8)}</div>
                                                 </td>
-                                                <td className="px-6 py-3 font-medium text-foreground/80 group-hover:text-primary transition-colors">
-                                                    {row.particulars}
+                                                <td className="px-8 py-6">
+                                                    <div className="flex items-center gap-4 group/text">
+                                                        <ArrowRight className="w-3 h-3 text-primary/40 group-hover/row:translate-x-1 transition-transform" />
+                                                        <span className="text-lg font-black text-foreground tracking-tighter group-hover/row:text-primary transition-colors">
+                                                            {row.particulars}
+                                                        </span>
+                                                    </div>
                                                 </td>
-                                                <td className="px-6 py-3 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                                                    {row.voucherType} <span className="text-foreground/50">#{row.voucherNo}</span>
+                                                <td className="px-6 py-6 font-black text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
+                                                    {row.voucherType} <span className="ml-2 text-primary/50">#{row.voucherNo}</span>
                                                 </td>
-                                                <td className="px-6 py-3 font-mono text-right font-medium">
-                                                    {row.debit > 0 ? row.debit.toLocaleString() : '-'}
+                                                <td className="px-8 py-6 text-right font-black text-foreground tabular-nums tracking-tighter text-xl">
+                                                    {row.debit > 0 ? formatCurrency(row.debit) : '—'}
                                                 </td>
-                                                <td className="px-6 py-3 font-mono text-right font-medium">
-                                                    {row.credit > 0 ? row.credit.toLocaleString() : '-'}
+                                                <td className="px-8 py-6 text-right font-black text-muted-foreground tabular-nums tracking-tighter text-xl bg-muted/5 group-hover/row:bg-muted/10 transition-colors">
+                                                    {row.credit > 0 ? formatCurrency(row.credit) : '—'}
                                                 </td>
-                                                <td className="px-6 py-3 font-mono text-right font-bold text-foreground">
-                                                    {row.balance.toLocaleString()} <span className="text-[10px] text-muted-foreground">{row.balanceType}</span>
+                                                <td className="px-12 py-6 text-right font-black text-foreground tabular-nums tracking-tighter text-xl bg-primary/5 group-hover/row:bg-primary/10 transition-colors">
+                                                    {formatCurrency(row.balance)} <span className="text-[9px] text-muted-foreground ml-1 uppercase">{row.balanceType}</span>
                                                 </td>
                                             </tr>
                                         ))
                                     )}
                                     {/* Footer Total Row */}
-                                    <tr className="bg-muted/20 font-black border-t-2 border-border text-foreground">
-                                        <td className="px-6 py-4" colSpan={3}>Total</td>
-                                        <td className="px-6 py-4 text-right font-mono">{activeCompany?.symbol || '₹'}{reportData.totalDebit.toLocaleString()}</td>
-                                        <td className="px-6 py-4 text-right font-mono">{activeCompany?.symbol || '₹'}{reportData.totalCredit.toLocaleString()}</td>
-                                        <td className="px-6 py-4"></td>
+                                    <tr className="bg-primary/5 border-t-4 border-primary/20">
+                                        <td className="px-10 py-12 text-[14px] font-black uppercase tracking-[0.4em] text-primary" colSpan={3}>Consolidated Audit Ledger Total</td>
+                                        <td className="px-8 py-12 text-right font-black text-primary text-3xl tabular-nums tracking-tighter">{formatCurrency(reportData.totalDebit)}</td>
+                                        <td className="px-8 py-12 text-right font-black text-primary text-3xl tabular-nums tracking-tighter">{formatCurrency(reportData.totalCredit)}</td>
+                                        <td className="px-12 py-12"></td>
                                     </tr>
                                 </tbody>
                             </table>

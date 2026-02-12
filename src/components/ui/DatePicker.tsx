@@ -23,11 +23,13 @@ export default function DatePicker({ value, onChange, label, className }: DatePi
 
     const [viewDate, setViewDate] = useState(getInitialDate); // Date for month/year navigation
 
-    // Sync viewDate when value changes externally
+    // Sync viewDate when value changes externally (only if it's a new date string)
+    const lastValueRef = useRef(value);
     useEffect(() => {
-        if (value) {
+        if (value && value !== lastValueRef.current) {
             const [y, m, d] = value.split('-').map(Number);
             setViewDate(new Date(y, m - 1, d));
+            lastValueRef.current = value;
         }
     }, [value]);
 
@@ -159,7 +161,7 @@ export default function DatePicker({ value, onChange, label, className }: DatePi
 
     return (
         <div className={clsx("relative", className)} ref={containerRef}>
-            {label && <label className="text-[8px] uppercase font-black tracking-widest text-muted-foreground ml-1 mb-1.5 block">{label}</label>}
+            {label && <label className="text-[10px] uppercase font-black tracking-widest text-primary opacity-60 ml-1 mb-2 block">{label}</label>}
             <div onClick={() => setIsOpen(!isOpen)} className="cursor-pointer group w-full">
                 <div className={clsx(
                     "flex items-center gap-2 bg-background/50 border border-primary/10 rounded-xl px-3 py-2 transition-all w-full",

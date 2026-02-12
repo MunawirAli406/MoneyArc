@@ -68,8 +68,8 @@ export default function RatioAnalysis() {
                 l.group.includes('Bank') || l.group.includes('Cash') || l.group.includes('Debtor')
             );
             const totalCA = caLedgers.reduce((sum, l) => sum + getBalanceAsOn(l), 0) +
-                // Add Stock Value (Closing Stock)
-                stockItems.reduce((sum, item) => sum + (item.currentBalance || 0) * (item.currentRate || 0), 0); // Simplified stock
+                // Add Stock Value (Closing Stock As On End Date)
+                ReportService.getClosingStockValue(stockItems, vouchers, endDate);
 
             // Current Liabilities: Creditors, Duties & Taxes, Provisions
             const clLedgers = ledgers.filter(l =>
@@ -79,7 +79,8 @@ export default function RatioAnalysis() {
             const totalCL = clLedgers.reduce((sum, l) => sum + Math.abs(getBalanceAsOn(l)), 0); // Use Abs as liabilities are Credit
 
 
-            const quickAssets = totalCA - stockItems.reduce((sum, item) => sum + (item.currentBalance || 0) * (item.currentRate || 0), 0);
+            const closingStockValue = ReportService.getClosingStockValue(stockItems, vouchers, endDate);
+            const quickAssets = totalCA - closingStockValue;
 
             // 2. P&L Items (For the Period)
             // Revenue (Direct Incomes + Sales)
@@ -126,8 +127,8 @@ export default function RatioAnalysis() {
                     target: '25%+',
                     desc: 'Profitability from core operations',
                     icon: TrendingUp,
-                    color: 'text-emerald-500',
-                    bg: 'bg-emerald-500/10'
+                    color: 'text-google-green',
+                    bg: 'bg-google-green/10'
                 },
                 {
                     name: 'Net Profit Margin',
@@ -204,7 +205,7 @@ export default function RatioAnalysis() {
                             <p className="text-xs font-bold text-muted-foreground mt-4 italic">{ratio.desc}</p>
                         </div>
                         <div className="pt-6 border-t border-border flex items-center justify-between relative z-10">
-                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-emerald-500 bg-emerald-500/10 px-3 py-1 rounded-full">Healthy</span>
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-google-green bg-google-green/10 px-3 py-1 rounded-full">Healthy</span>
                             <div className="w-24 h-1.5 bg-muted rounded-full overflow-hidden">
                                 <div className="w-3/4 h-full bg-primary" />
                             </div>

@@ -344,17 +344,17 @@ export default function LedgerForm() {
 
                         <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 transition-opacity duration-300 ${formData.isGstEnabled ? 'opacity-100' : 'opacity-40 pointer-events-none'}`}>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1">GSTIN Number</label>
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">GSTIN Number</label>
                                 <input
                                     type="text"
                                     value={formData.gstin}
                                     onChange={(e) => setFormData({ ...formData, gstin: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold uppercase"
+                                    className="input-premium w-full uppercase"
                                     placeholder="27AAACR1224A1Z1"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] ml-1">Registration State</label>
+                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Registration State</label>
                                 <Select
                                     value={formData.state}
                                     onChange={(val) => setFormData({ ...formData, state: val })}
@@ -380,7 +380,7 @@ export default function LedgerForm() {
                                     type="text"
                                     value={formData.mailingName}
                                     onChange={(e) => setFormData({ ...formData, mailingName: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold"
+                                    className="input-premium w-full"
                                     placeholder="Print name..."
                                 />
                             </div>
@@ -390,7 +390,7 @@ export default function LedgerForm() {
                                     rows={6}
                                     value={formData.address}
                                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                                    className="w-full px-5 py-3.5 bg-muted/20 border border-border rounded-2xl focus:ring-2 focus:ring-primary outline-none transition-all font-bold resize-none"
+                                    className="input-premium w-full resize-none"
                                     placeholder="Full street address..."
                                 />
                             </div>

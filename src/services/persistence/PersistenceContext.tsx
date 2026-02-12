@@ -2,6 +2,8 @@ import { createContext, useContext, useState, useEffect, type ReactNode } from '
 import type { StorageProvider, StorageType, Company } from './types';
 import { FileSystemProvider } from './FileSystemProvider';
 import { GitHubProvider } from './GitHubProvider';
+import { GoogleDriveProvider } from './GoogleDriveProvider';
+import { OneDriveProvider } from './OneDriveProvider';
 import { LedgerService } from '../accounting/LedgerService';
 import { useNotifications } from '../notifications/NotificationContext';
 
@@ -29,6 +31,7 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
 
     const restoreStorage = async () => {
         console.log('[Persistence] Starting restoration sequence...');
+        setIsInitialized(false);
         try {
             // Priority 1: Check Local Storage/IDB
             const localProvider = new FileSystemProvider();
@@ -77,10 +80,50 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
                 }
                 return true;
             }
+
+            // Priority 3: Check Google Drive
+            const gdProvider = new GoogleDriveProvider();
+            const gdRestored = await gdProvider.restore?.();
+            if (gdRestored) {
+                console.log('[Persistence] Google Drive storage restored.');
+                setProvider(gdProvider);
+                setStorageType('google-drive');
+                const savedCompany = localStorage.getItem('moneyarc_active_company');
+                if (savedCompany) {
+                    try {
+                        const company: Company = JSON.parse(savedCompany);
+                        setActiveCompany(company);
+                        LedgerService.ensureDataSanity(gdProvider, company).catch(e => console.error(e));
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                return true;
+            }
+
+            // Priority 4: Check OneDrive
+            const odProvider = new OneDriveProvider();
+            const odRestored = await odProvider.restore?.();
+            if (odRestored) {
+                console.log('[Persistence] OneDrive storage restored.');
+                setProvider(odProvider);
+                setStorageType('onedrive');
+                const savedCompany = localStorage.getItem('moneyarc_active_company');
+                if (savedCompany) {
+                    try {
+                        const company: Company = JSON.parse(savedCompany);
+                        setActiveCompany(company);
+                        LedgerService.ensureDataSanity(odProvider, company).catch(e => console.error(e));
+                    } catch (e) {
+                        console.error(e);
+                    }
+                }
+                return true;
+            }
         } catch (error) {
             console.error('[Persistence] Critical error during storage restoration:', error);
         } finally {
-            console.log('[Persistence] Initialization complete.');
+            console.log('[Persistence] Initialization complete (isInitialized set to true).');
             setIsInitialized(true);
         }
         return false;
@@ -93,17 +136,33 @@ export function PersistenceProvider({ children }: { children: ReactNode }) {
 
     const initializeStorage = async (type: StorageType, config?: any) => {
         let newProvider: StorageProvider | null = null;
-        if (type === 'local') {
+        if (type === 'local' || type === 'browser') {
+            console.log(`[Persistence] Initializing ${type} storage...`);
             newProvider = new FileSystemProvider();
         } else if (type === 'github') {
+            console.log('[Persistence] Initializing GitHub storage...');
             newProvider = new GitHubProvider();
+        } else if (type === 'google-drive') {
+            console.log('[Persistence] Initializing Google Drive storage...');
+            newProvider = new GoogleDriveProvider();
+        } else if (type === 'onedrive') {
+            console.log('[Persistence] Initializing OneDrive storage...');
+            newProvider = new OneDriveProvider();
         }
 
         if (newProvider) {
-            await newProvider.init(config);
-            if (newProvider.isReady) {
-                setProvider(newProvider);
-                setStorageType(type);
+            try {
+                await newProvider.init(config);
+                if (newProvider.isReady) {
+                    console.log(`[Persistence] ${type} storage provider is ready.`);
+                    setProvider(newProvider);
+                    setStorageType(type);
+                } else {
+                    console.error(`[Persistence] ${type} storage provider initialized but not ready.`);
+                }
+            } catch (err) {
+                console.error(`[Persistence] Failed to initialize ${type} storage:`, err);
+                throw err;
             }
         }
     };

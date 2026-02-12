@@ -19,9 +19,14 @@ export default function LedgerManagement() {
     useEffect(() => {
         const tab = searchParams.get('tab');
         const ledgerId = searchParams.get('ledgerId');
-        if (tab && (tab === 'list' || tab === 'vouchers')) setActiveTab(tab as 'list' | 'vouchers');
-        if (ledgerId) setSelectedLedgerId(ledgerId);
-    }, [searchParams]);
+
+        if (tab && (tab === 'list' || tab === 'vouchers') && tab !== activeTab) {
+            setActiveTab(tab as 'list' | 'vouchers');
+        }
+        if (ledgerId && ledgerId !== selectedLedgerId) {
+            setSelectedLedgerId(ledgerId);
+        }
+    }, [searchParams, activeTab, selectedLedgerId]);
 
     const handleViewTransactions = (ledgerId: string) => {
         setSelectedLedgerId(ledgerId);
@@ -38,30 +43,58 @@ export default function LedgerManagement() {
 
     return (
         <div className="max-w-7xl mx-auto space-y-6">
-            <div className="flex items-center gap-1 bg-card/50 p-1.5 rounded-2xl border border-border w-fit">
+            <div className="p-1 gap-1 flex items-center bg-card/80 backdrop-blur-2xl border border-white/10 dark:border-white/5 rounded-2xl shadow-xl w-fit">
                 <button
                     onClick={() => handleTabChange('list')}
                     className={clsx(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-                        activeTab === 'list'
-                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        "relative flex items-center gap-3 px-6 py-3 text-xs font-black uppercase tracking-widest transition-all duration-500 rounded-xl overflow-hidden group",
+                        activeTab === 'list' ? "text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                     )}
                 >
-                    <List className="w-4 h-4" />
-                    Accounts List
+                    {activeTab === 'list' && (
+                        <motion.div
+                            layoutId="activeTabGlow"
+                            className="absolute inset-0 bg-primary/20 backdrop-blur-xl"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5 }}
+                        />
+                    )}
+                    {activeTab === 'list' && (
+                        <motion.div
+                            layoutId="activeTabBase"
+                            className="absolute inset-0 primary-gradient"
+                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                    )}
+                    <List className="w-4 h-4 relative z-10" />
+                    <span className="relative z-10">Ledger Registry</span>
                 </button>
                 <button
                     onClick={() => handleTabChange('vouchers')}
                     className={clsx(
-                        "flex items-center gap-2 px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all",
-                        activeTab === 'vouchers'
-                            ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        "relative flex items-center gap-3 px-6 py-3 text-xs font-black uppercase tracking-widest transition-all duration-500 rounded-xl overflow-hidden group",
+                        activeTab === 'vouchers' ? "text-primary-foreground shadow-lg" : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                     )}
                 >
-                    <FileText className="w-4 h-4" />
-                    Ledger Vouchers
+                    {activeTab === 'vouchers' && (
+                        <motion.div
+                            layoutId="activeTabGlow"
+                            className="absolute inset-0 bg-primary/20 backdrop-blur-xl"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            transition={{ duration: 0.5 }}
+                        />
+                    )}
+                    {activeTab === 'vouchers' && (
+                        <motion.div
+                            layoutId="activeTabBase"
+                            className="absolute inset-0 primary-gradient"
+                            transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                    )}
+                    <FileText className="w-4 h-4 relative z-10" />
+                    <span className="relative z-10">Executive Ledger Report</span>
                 </button>
             </div>
 

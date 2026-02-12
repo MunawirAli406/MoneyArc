@@ -159,7 +159,7 @@ export default function DataPortability() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 20 }}
                         className={`fixed bottom-12 left-1/2 -translate-x-1/2 px-10 py-5 rounded-[2rem] shadow-2xl border-2 flex items-center gap-6 z-50 backdrop-blur-xl ${status.type === 'loading' ? 'bg-card border-google-blue/30' :
-                            status.type === 'success' ? 'bg-emerald-500 text-white border-transparent' :
+                            status.type === 'success' ? 'bg-google-green text-white border-transparent' :
                                 'bg-rose-500 text-white border-transparent'
                             }`}
                     >

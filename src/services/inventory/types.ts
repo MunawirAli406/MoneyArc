@@ -36,6 +36,7 @@ export interface StockItem {
     reorderLevel?: number;
     isBatchEnabled: boolean;
     isExpiryEnabled: boolean;
+    godown?: string; // Tally parity: Godown support
 
     // GST Details
     hsnCode?: string;

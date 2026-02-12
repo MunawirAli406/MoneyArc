@@ -124,11 +124,9 @@ function AppContent() {
     );
   }
 
-  console.log('AppContent: Rendering routes...');
-
   return (
     <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+      <Routes>
         <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
         <Route path="/signup" element={<PageTransition><SignUpPage /></PageTransition>} />
         <Route path="/select-source" element={<PageTransition><DataSourceSelect /></PageTransition>} />
@@ -190,8 +188,10 @@ function App() {
         <ThemeProvider>
           <AuthProvider>
             <DateProvider>
+              {(() => { console.log('App: Rendering DateProvider children'); return null; })()}
               <DynamicBackground />
               <BrowserRouter>
+                {(() => { console.log('App: Rendering BrowserRouter children'); return null; })()}
                 <AppContent />
               </BrowserRouter>
             </DateProvider>

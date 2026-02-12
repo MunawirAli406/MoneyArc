@@ -47,7 +47,7 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
 
     const hasInventory = voucher.rows.some(r => r.inventoryAllocations && r.inventoryAllocations.length > 0);
     const summary = TaxService.calculateVoucherSummary(voucher);
-    const { taxableValue, tax1, tax2, tax3, invoiceValue: totalAmount } = summary;
+    const { taxableValue, cgst, sgst, igst, cess, invoiceValue: totalAmount } = summary;
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
@@ -57,7 +57,7 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                     <div className="flex items-center gap-4">
                         <FileText className="w-6 h-6 text-primary" />
                         <h2 className="text-xl font-black uppercase tracking-tight">{getVoucherTitle(voucher.type)} PREVIEW</h2>
-                        <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 text-[10px] font-black rounded-full uppercase">{voucher.voucherNo}</span>
+                        <span className="px-3 py-1 bg-google-green/10 text-google-green text-[10px] font-black rounded-full uppercase">{voucher.voucherNo}</span>
                     </div>
                     <div className="flex gap-2">
                         <button
@@ -170,28 +170,34 @@ export default function InvoiceModal({ voucher, company, party, onClose }: Invoi
                     <div className="flex justify-end">
                         <div className="w-full max-w-xs space-y-4">
                             {/* Only show Tax Breakdown if it's a Tax Invoice or has Tax */}
-                            {(tax1 > 0 || tax2 > 0 || tax3 > 0) && (
+                            {(cgst > 0 || sgst > 0 || igst > 0 || cess > 0) && (
                                 <>
                                     <div className="flex justify-between text-sm">
                                         <span className="font-bold text-muted-foreground uppercase tracking-widest">{tax.labels.taxable}</span>
                                         <span className="font-black text-foreground">{formatCurrency(taxableValue)}</span>
                                     </div>
-                                    {tax1 > 0 && (
+                                    {igst > 0 && (
                                         <div className="flex justify-between text-sm">
-                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">{tax.labels.tier1 || 'Tax 1'}</span>
-                                            <span className="font-black text-foreground">{formatCurrency(tax1)}</span>
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">IGST</span>
+                                            <span className="font-black text-foreground">{formatCurrency(igst)}</span>
                                         </div>
                                     )}
-                                    {tax2 > 0 && (
+                                    {cgst > 0 && (
                                         <div className="flex justify-between text-sm">
-                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">{tax.labels.tier2 || 'Tax 2'}</span>
-                                            <span className="font-black text-foreground">{formatCurrency(tax2)}</span>
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">CGST</span>
+                                            <span className="font-black text-foreground">{formatCurrency(cgst)}</span>
                                         </div>
                                     )}
-                                    {tax3 > 0 && (
+                                    {sgst > 0 && (
                                         <div className="flex justify-between text-sm">
-                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">{tax.labels.tier3 || 'Tax 3'}</span>
-                                            <span className="font-black text-foreground">{formatCurrency(tax3)}</span>
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">SGST</span>
+                                            <span className="font-black text-foreground">{formatCurrency(sgst)}</span>
+                                        </div>
+                                    )}
+                                    {cess > 0 && (
+                                        <div className="flex justify-between text-sm">
+                                            <span className="font-bold text-muted-foreground uppercase tracking-widest text-[10px]">CESS</span>
+                                            <span className="font-black text-foreground">{formatCurrency(cess)}</span>
                                         </div>
                                     )}
                                 </>

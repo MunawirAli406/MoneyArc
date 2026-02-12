@@ -33,7 +33,7 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
     };
 
     return (
-        <header className="h-20 bg-card/60 dark:bg-card/60 backdrop-blur-xl border-b border-border/50 dark:border-white/5 px-8 flex items-center justify-between transition-all duration-500 sticky top-0 z-40">
+        <header className="h-20 bg-card/40 backdrop-blur-2xl border-b border-white/10 dark:border-white/5 px-8 flex items-center justify-between transition-all duration-500 sticky top-0 z-40 glass-panel !rounded-none !border-t-0 !border-x-0">
             {/* Google Brand Stripe */}
             <div className="absolute top-0 left-0 right-0 h-1 flex z-50">
                 <div className="h-full flex-1 bg-google-blue" />
@@ -222,7 +222,7 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                                                                 "text-[10px] font-black uppercase tracking-tight mb-1",
                                                                 n.type === 'error' ? 'text-rose-500' :
                                                                     n.type === 'warning' ? 'text-amber-500' :
-                                                                        n.type === 'success' ? 'text-emerald-500' : 'text-primary'
+                                                                        n.type === 'success' ? 'text-google-green' : 'text-primary'
                                                             )}>
                                                                 {n.title}
                                                             </p>
@@ -314,7 +314,7 @@ export default function Header({ onToggleGemini, onToggleCalculator, onMenuToggl
                                             </div>
                                         </div>
                                         <div className="flex items-center gap-2 px-3 py-1.5 bg-background/50 rounded-xl border border-border/50">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                            <div className="w-1.5 h-1.5 rounded-full bg-google-green animate-pulse" />
                                             <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Active Session</span>
                                         </div>
                                     </div>

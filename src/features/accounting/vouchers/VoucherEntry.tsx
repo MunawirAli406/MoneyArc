@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Box, Plus, Trash2, FileText, AlertTriangle, Save, Tag, Package, Coins, Mic, MicOff, Sparkles, Shield, Loader2 } from 'lucide-react';
+import { Plus, Trash2, FileText, AlertTriangle, Save, Tag, Package, Coins, Mic, MicOff, Sparkles, Shield, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import clsx from 'clsx';
 import { usePersistence } from '../../../services/persistence/PersistenceContext';
@@ -469,25 +469,26 @@ export default function VoucherEntry() {
                 {/* Actually, replacing the whole block is risky if I don't paste everything. */}
                 {/* I will use multi_replace to target top and bottom separately. */}
                 {/* Header Section */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-5">
-                        <div>
-                            <h1 className="text-4xl font-black text-foreground tracking-tighter uppercase leading-none">Universal Entry</h1>
-                            <p className="text-muted-foreground text-[9px] font-black uppercase tracking-[0.4em] mt-3 flex items-center gap-2 opacity-70">
-                                <Box className="w-3.5 h-3.5" /> {activeCompany?.name} <span className="text-primary font-black">//</span> {voucherType}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-12">
+                    <div>
+                        <h1 className="text-5xl font-black text-foreground tracking-tighter uppercase leading-[0.9] mb-4">Universal Entry</h1>
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-google-blue animate-pulse" />
+                            <p className="text-muted-foreground text-[10px] font-black uppercase tracking-[0.4em] opacity-70">
+                                {activeCompany?.name} <span className="text-primary font-black">//</span> {voucherType}
                             </p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                             onClick={() => navigate('/security/audit')}
-                            className="p-3 bg-muted hover:bg-muted/80 rounded-2xl text-muted-foreground hover:text-primary transition-all shadow-sm border border-border"
-                            title="View Audit Trail"
+                            className="p-4 bg-card/40 backdrop-blur-xl border border-white/10 rounded-2xl text-muted-foreground hover:text-primary transition-all shadow-xl hover:shadow-primary/5"
+                            title="Audit Log"
                         >
-                            <Shield className="w-5 h-5" />
+                            <Shield className="w-6 h-6" />
                         </motion.button>
 
                         <motion.button
@@ -496,24 +497,25 @@ export default function VoucherEntry() {
                             onClick={runSmartCheck}
                             disabled={smartCheckLoading}
                             className={clsx(
-                                "flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg",
-                                smartCheckLoading ? "bg-muted text-muted-foreground animate-pulse" : "bg-google-blue text-white hover:shadow-google-blue/20"
+                                "flex items-center gap-3 px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest transition-all shadow-2xl relative overflow-hidden group",
+                                smartCheckLoading ? "bg-muted text-muted-foreground animate-pulse" : "bg-google-blue text-white hover:shadow-google-blue/40"
                             )}
                         >
-                            {smartCheckLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                            AI Smart Check
+                            <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            {smartCheckLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Sparkles className="w-5 h-5" />}
+                            <span className="relative z-10">AI Smart Check</span>
                         </motion.button>
 
-                        <div className="glass-panel p-2 rounded-2xl flex items-center gap-1 ml-4">
+                        <div className="glass-panel p-1.5 rounded-2xl flex items-center gap-1.5 ml-4 bg-card/60 backdrop-blur-2xl border-white/5 shadow-2xl">
                             {['Payment', 'Receipt', 'Journal', 'Contra', 'Sales', 'Purchase'].map(type => (
                                 <button
                                     key={type}
                                     onClick={() => setVoucherType(type as VoucherType)}
                                     className={clsx(
-                                        "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                                        "px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-500",
                                         voucherType === type
-                                            ? "bg-primary text-primary-foreground shadow-lg"
-                                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                                            ? "bg-primary text-primary-foreground shadow-2xl ring-1 ring-white/20"
+                                            : "text-muted-foreground hover:bg-white/5 hover:text-foreground"
                                     )}
                                 >
                                     {type}
@@ -523,40 +525,42 @@ export default function VoucherEntry() {
                     </div>
                 </div>
 
-                <div className="bg-card rounded-[2.5rem] shadow-2xl border border-border overflow-hidden">
+                <div className="bg-card/40 backdrop-blur-2xl rounded-[3rem] shadow-[0_32px_128px_-32px_rgba(0,0,0,0.5)] border border-white/10 overflow-hidden relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-google-blue/5 opacity-50 pointer-events-none" />
                     {/* Meta Data Bar */}
-                    <div className="px-10 py-8 border-b border-border bg-muted/20">
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-end">
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Vch Number</label>
+                    <div className="px-12 py-10 border-b border-white/10 relative z-10">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-10 items-end">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-1 opacity-60">Vch Reference</label>
                                 <input
                                     type="text"
                                     value={voucherNo}
                                     onChange={(e) => setVoucherNo(e.target.value)}
-                                    className="w-full px-5 py-3.5 bg-background border border-border rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm"
+                                    className="w-full px-6 py-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-black tracking-tight focus:ring-4 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all shadow-inner"
                                 />
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-1 opacity-60">Effective Date</label>
                                 <DatePicker
-                                    label="Effective Date"
                                     value={date}
                                     onChange={setDate}
+                                    className="!bg-black/20 !border-white/5 !rounded-2xl"
                                 />
                             </div>
-                            <div className="space-y-2">
-                                <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Reference / External Doc #</label>
-                                <div className="relative">
+                            <div className="space-y-4">
+                                <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-1 opacity-60">External Proof</label>
+                                <div className="relative group/ext">
                                     <input
                                         type="text"
-                                        className="w-full pl-12 pr-5 py-3.5 bg-background border border-border rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none transition-all shadow-sm"
-                                        placeholder="Order ID / Invoice reference..."
+                                        className="w-full pl-14 pr-6 py-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all shadow-inner"
+                                        placeholder="Order/Invoice Ref..."
                                     />
-                                    <Tag className="w-5 h-5 text-muted-foreground/50 absolute left-4 top-1/2 -translate-y-1/2" />
+                                    <Tag className="w-5 h-5 text-primary/40 absolute left-6 top-1/2 -translate-y-1/2 group-focus-within/ext:text-primary transition-colors" />
                                 </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Currency</label>
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-1 opacity-60">Currency</label>
                                     <Select
                                         value={currency}
                                         onChange={setCurrency}
@@ -566,17 +570,17 @@ export default function VoucherEntry() {
                                             icon: Coins,
                                             description: c.label
                                         }))}
-                                        className="w-full"
+                                        className="w-full !rounded-2xl shadow-inner border-white/5"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <label className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] ml-1">Ex. Rate</label>
+                                <div className="space-y-4">
+                                    <label className="text-[10px] font-black text-primary uppercase tracking-[0.3em] ml-1 opacity-60">Ex. Node Rate</label>
                                     <input
                                         type="number"
                                         step="0.0001"
                                         value={exchangeRate}
                                         onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 1)}
-                                        className="input-premium w-full"
+                                        className="w-full px-6 py-4 bg-black/20 border border-white/5 rounded-2xl text-sm font-mono tracking-widest focus:ring-4 focus:ring-primary/20 focus:border-primary/50 outline-none transition-all shadow-inner"
                                         placeholder="1.0000"
                                     />
                                 </div>
@@ -685,22 +689,30 @@ export default function VoucherEntry() {
                                                 </div>
 
                                                 {/* Inventory Prompt */}
-                                                {isInventoryMode && row.account && !['Cash', 'Bank'].some(k => row.account.includes(k)) && (
-                                                    <button
-                                                        onClick={() => openInventoryAllocation(row.id)}
-                                                        className={clsx(
-                                                            "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider py-0.5 px-2 rounded w-fit transition-all mb-1",
-                                                            row.inventoryAllocations && row.inventoryAllocations.length > 0
-                                                                ? "bg-emerald-500/10 text-emerald-600"
-                                                                : "bg-primary/5 text-primary"
-                                                        )}
-                                                    >
-                                                        <Package className="w-3 h-3" />
-                                                        {row.inventoryAllocations && row.inventoryAllocations.length > 0
-                                                            ? `${row.inventoryAllocations.length} Items`
-                                                            : "Item Alloc"}
-                                                    </button>
-                                                )}
+                                                {(() => {
+                                                    const ledger = ledgers.find(l => l.name === row.account);
+                                                    const isStockRelevant = ledger && ['Sales Accounts', 'Purchase Accounts'].includes(ledger.group);
+
+                                                    if (isInventoryMode && row.account && isStockRelevant) {
+                                                        return (
+                                                            <button
+                                                                onClick={() => openInventoryAllocation(row.id)}
+                                                                className={clsx(
+                                                                    "flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider py-0.5 px-2 rounded w-fit transition-all mb-1",
+                                                                    row.inventoryAllocations && row.inventoryAllocations.length > 0
+                                                                        ? "bg-google-green/10 text-google-green"
+                                                                        : "bg-primary/5 text-primary"
+                                                                )}
+                                                            >
+                                                                <Package className="w-3 h-3" />
+                                                                {row.inventoryAllocations && row.inventoryAllocations.length > 0
+                                                                    ? `${row.inventoryAllocations.length} Items`
+                                                                    : "Item Alloc"}
+                                                            </button>
+                                                        );
+                                                    }
+                                                    return null;
+                                                })()}
                                             </div>
                                         </td>
                                         <td className="py-0.5 px-2 align-top">
@@ -895,7 +907,7 @@ export default function VoucherEntry() {
                             >
                                 <div className="px-10 py-8 border-b border-border bg-muted/20 flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-emerald-500/20 rotate-3">
+                                        <div className="w-12 h-12 bg-google-green rounded-2xl flex items-center justify-center text-white shadow-lg shadow-google-green/20 rotate-3">
                                             <Package className="w-6 h-6" />
                                         </div>
                                         <div>
@@ -906,7 +918,7 @@ export default function VoucherEntry() {
                                     <div className="flex items-center gap-3">
                                         <button
                                             onClick={addInventoryRow}
-                                            className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 text-emerald-600 rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500/20 transition-all border border-emerald-500/20"
+                                            className="flex items-center gap-2 px-6 py-3 bg-google-green/10 text-google-green rounded-2xl font-black text-[10px] uppercase tracking-widest hover:bg-google-green/20 transition-all border border-google-green/20"
                                         >
                                             <Plus className="w-4 h-4" /> Add Item
                                         </button>
@@ -945,7 +957,7 @@ export default function VoucherEntry() {
                                                             {!alloc.itemId && stockItems.length === 0 && (
                                                                 <button
                                                                     onClick={() => setShowQuickItem(true)}
-                                                                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider py-1 px-2 rounded bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-all w-full justify-center"
+                                                                    className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider py-1 px-2 rounded bg-google-green/10 text-google-green hover:bg-google-green/20 transition-all w-full justify-center"
                                                                 >
                                                                     <Plus className="w-3 h-3" /> Create First Item
                                                                 </button>
@@ -953,7 +965,7 @@ export default function VoucherEntry() {
                                                             {!alloc.itemId && stockItems.length > 0 && (
                                                                 <button
                                                                     onClick={() => setShowQuickItem(true)}
-                                                                    className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider py-0.5 px-2 rounded text-emerald-600/70 hover:text-emerald-600 hover:bg-emerald-500/5 transition-all"
+                                                                    className="flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider py-0.5 px-2 rounded text-google-green/70 hover:text-google-green hover:bg-google-green/5 transition-all"
                                                                 >
                                                                     <Plus className="w-3 h-3" /> New Item
                                                                 </button>
@@ -980,7 +992,7 @@ export default function VoucherEntry() {
                                                             type="number"
                                                             value={alloc.quantity || ''}
                                                             onChange={(e) => updateInventoryRow(alloc.id, 'quantity', parseFloat(e.target.value))}
-                                                            className="w-full text-right bg-transparent outline-none font-mono font-bold text-sm focus:text-emerald-500"
+                                                            className="w-full text-right bg-transparent outline-none font-mono font-bold text-sm focus:text-google-green"
                                                             placeholder="0.00"
                                                         />
                                                     </td>
@@ -989,11 +1001,11 @@ export default function VoucherEntry() {
                                                             type="number"
                                                             value={alloc.rate || ''}
                                                             onChange={(e) => updateInventoryRow(alloc.id, 'rate', parseFloat(e.target.value))}
-                                                            className="w-full text-right bg-transparent outline-none font-mono font-bold text-sm focus:text-emerald-500"
+                                                            className="w-full text-right bg-transparent outline-none font-mono font-bold text-sm focus:text-google-green"
                                                             placeholder="0.00"
                                                         />
                                                     </td>
-                                                    <td className="py-4 px-10 text-right font-mono font-black text-sm text-emerald-600">
+                                                    <td className="py-4 px-10 text-right font-mono font-black text-sm text-google-green">
                                                         {formatCurrency(alloc.amount)}
                                                     </td>
                                                     <td className="py-4 px-4">
@@ -1014,7 +1026,7 @@ export default function VoucherEntry() {
                                                             <p className="text-xs font-black uppercase tracking-[0.3em]">No items allocated yet</p>
                                                             <button
                                                                 onClick={addInventoryRow}
-                                                                className="text-[10px] text-emerald-500 font-black uppercase tracking-widest hover:underline"
+                                                                className="text-[10px] text-google-green font-black uppercase tracking-widest hover:underline"
                                                             >
                                                                 Add first item
                                                             </button>
@@ -1035,7 +1047,7 @@ export default function VoucherEntry() {
                                         <div className="w-px h-10 bg-border" />
                                         <div>
                                             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-1">{valuationLabel}</p>
-                                            <p className="text-2xl font-black font-mono text-emerald-600">{formatCurrency(tempAllocations.reduce((sum, a) => sum + a.amount, 0))}</p>
+                                            <p className="text-2xl font-black font-mono text-google-green">{formatCurrency(tempAllocations.reduce((sum, a) => sum + a.amount, 0))}</p>
                                         </div>
                                     </div>
                                     <div className="flex gap-4">
@@ -1047,7 +1059,7 @@ export default function VoucherEntry() {
                                         </button>
                                         <button
                                             onClick={saveAllocation}
-                                            className="px-12 py-3.5 bg-emerald-500 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-emerald-500/20 hover:shadow-emerald-500/40 transition-all active:scale-95"
+                                            className="px-12 py-3.5 bg-google-green text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-xl shadow-google-green/20 hover:shadow-google-green/40 transition-all active:scale-95"
                                         >
                                             Confirm Allocation
                                         </button>

@@ -2,13 +2,56 @@ import { TrendingUp, TrendingDown, Activity, Wallet, Shield, Target, ArrowRight,
 import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { usePersistence } from '../../services/persistence/PersistenceContext';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Voucher } from '../../services/accounting/VoucherService';
 import { ACCT_GROUPS, type Ledger } from '../../services/accounting/ReportService';
 import { GeminiService } from '../../services/ai/GeminiService';
 import { useAuth } from '../auth/AuthContext.provider';
 import { useLocalization } from '../../hooks/useLocalization';
+import { AccountGroupManager } from '../../services/accounting/ReportService';
+
+const WealthPerformanceGauge = ({ value, label, status, color }: { value: number; label: string; status: string; color: string }) => {
+    const strokeWidth = 12;
+    const radius = 60;
+    const circumference = 2 * Math.PI * radius;
+    const offset = circumference - (value / 100) * circumference;
+
+    return (
+        <div className="flex flex-col items-center justify-center text-center group">
+            <div className="relative w-40 h-40 flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-500">
+                <svg className="w-full h-full -rotate-90">
+                    <circle
+                        cx="80" cy="80" r={radius}
+                        fill="transparent"
+                        stroke="currentColor"
+                        strokeWidth={strokeWidth}
+                        className="text-muted/10"
+                    />
+                    <motion.circle
+                        cx="80" cy="80" r={radius}
+                        fill="transparent"
+                        stroke={color}
+                        strokeWidth={strokeWidth}
+                        strokeDasharray={circumference}
+                        initial={{ strokeDashoffset: circumference }}
+                        animate={{ strokeDashoffset: offset }}
+                        transition={{ duration: 1.5, ease: "easeOut" }}
+                        className="drop-shadow-[0_0_4px_currentColor]"
+                    />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <span className="text-3xl font-black tracking-tighter tabular-nums">{value}%</span>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-muted-foreground opacity-60">Success</span>
+                </div>
+            </div>
+            <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-2">{label}</h3>
+            <div className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest ${status === 'Healthy' ? 'bg-google-green/10 text-google-green border border-google-green/20' : 'bg-google-red/10 text-google-red border border-google-red/20'}`}>
+                {status}
+            </div>
+        </div>
+    );
+};
 
 export default function Dashboard() {
     const { provider, activeCompany } = usePersistence();
@@ -40,7 +83,7 @@ export default function Dashboard() {
         return 'Good Evening';
     }, []);
 
-    const fetchAiHeartbeat = async (rev: number, exp: number, vit: any, vList: Voucher[], lList: Ledger[]) => {
+    const fetchAiHeartbeat = useCallback(async (rev: number, exp: number, vit: { netMargin: number }, vList: Voucher[], lList: Ledger[]) => {
         const apiKey = localStorage.getItem('moneyarc_gemini_key') || '';
         if (!apiKey) return;
         setAiLoading(true);
@@ -49,11 +92,11 @@ export default function Dashboard() {
             const prompt = `Provide a one-sentence high-end "Executive Heartbeat" for this dashboard. Stats: Rev ${activeCompany?.symbol}${rev}, Exp ${activeCompany?.symbol}${exp}, Margin ${vit.netMargin}%. One emoji only. Be professional.`;
             const summary = await service.generateInsight(prompt, { vouchers: vList, ledgers: lList, companyName: activeCompany?.name || '', symbol: activeCompany?.symbol || '₹' });
             setAiSummary(summary);
-        } catch (e) {
-            console.error("Heartbeat fetch failed", e);
+        } catch (err) {
+            console.error("Heartbeat fetch failed", err);
             setAiSummary("AI Advisor is currently unavailable.");
         } finally { setAiLoading(false); }
-    };
+    }, [activeCompany?.name, activeCompany?.symbol]);
 
     useEffect(() => {
         const load = async () => {
@@ -111,9 +154,12 @@ export default function Dashboard() {
             const l6 = []; for (let i = 5; i >= 0; i--) l6.push(monthlyData[months[(curM - i + 12) % 12]]);
             setChartData(l6);
 
-            const liqA = ledgers.filter(l => ['Bank Accounts', 'Cash-in-hand', 'Sundry Debtors'].includes(l.group)).reduce((s, l) => s + l.balance, 0);
-            const curL = ledgers.filter(l => ['Sundry Creditors', 'Duties & Taxes', 'Current Liabilities'].includes(l.group)).reduce((s, l) => s + l.balance, 0);
-            const ratio = curL === 0 ? 1 : liqA / curL;
+            const assets = AccountGroupManager.getGroups('ASSETS');
+            const liabs = AccountGroupManager.getGroups('LIABILITIES');
+
+            const liqA = ledgers.filter(l => assets.includes(l.group)).reduce((s, l) => s + (l.type === 'Dr' ? l.balance : -l.balance), 0);
+            const curL = ledgers.filter(l => liabs.includes(l.group)).reduce((s, l) => s + (l.type === 'Cr' ? l.balance : -l.balance), 0);
+            const ratio = curL <= 0 ? 1 : liqA / curL;
             const margin = revenue === 0 ? 0 : (profit / revenue) * 100;
             const vitResult = { liquidRatio: Number(ratio.toFixed(2)), netMargin: Number(margin.toFixed(1)), status: ratio >= 1.2 ? 'Healthy' : 'Warning' };
             setVitals(vitResult);
@@ -130,7 +176,7 @@ export default function Dashboard() {
         };
         window.addEventListener('moneyarc_key_updated', handleKeyUpdate);
         return () => window.removeEventListener('moneyarc_key_updated', handleKeyUpdate);
-    }, [stats, vitals, recentVouchers]);
+    }, [stats, vitals, recentVouchers, fetchAiHeartbeat]);
 
     const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
     const item = { hidden: { y: 20, opacity: 0 }, show: { y: 0, opacity: 1 } };
@@ -171,26 +217,31 @@ export default function Dashboard() {
             {/* Premium Bento Grid Layout */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6 grid-rows-none">
 
-                {/* Main Insight Hub (Center Top) */}
-                <motion.div variants={item} className="lg:col-span-8 glass-panel rounded-[2.5rem] p-8 border-primary/10 shadow-2xl relative overflow-hidden group min-h-[480px]">
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[100px] -mr-32 -mt-32" />
+                {/* AI Executive Pulse Hub */}
+                <motion.div variants={item} className="lg:col-span-8 glass-panel rounded-[2.5rem] p-8 border-primary/10 shadow-xl relative overflow-hidden group min-h-[480px]">
+                    <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -mr-48 -mt-48 transition-all duration-1000 group-hover:bg-primary/10" />
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent-500/5 rounded-full blur-[80px] -ml-24 -mb-24" />
 
-                    <div className="flex justify-between items-start relative z-10 mb-8">
-                        <div>
-                            <h1 className="text-4xl font-black text-foreground tracking-tight uppercase">Growth Trajectory Details</h1>
-                            <p className="text-[10px] uppercase tracking-widest font-black text-muted-foreground opacity-50">6-Month Fiscal Cycle</p>
+                    <div className="flex flex-col md:flex-row justify-between items-start relative z-10 mb-8 gap-6">
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                                <span className="flex h-2 w-2 rounded-full bg-primary animate-pulse shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                                <h1 className="text-4xl font-black text-foreground tracking-tighter uppercase leading-none">Growth Trajectory</h1>
+                            </div>
+                            <p className="text-[10px] uppercase tracking-[0.4em] font-black text-muted-foreground opacity-40 ml-5">Fiscal Intelligence Stream</p>
                         </div>
-                        <div className="flex bg-muted/20 p-1.5 rounded-2xl border border-border/50">
+
+                        <div className="flex bg-muted/20 p-1.5 rounded-2xl border border-border/50 backdrop-blur-sm self-start">
                             {['Sales', 'Purchases'].map((l, i) => (
-                                <div key={l} className="flex items-center gap-2 px-3 py-1.5 transition-all">
-                                    <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-google-blue' : 'bg-google-red'}`} />
-                                    <span className="text-[10px] font-black uppercase tracking-wider">{l}</span>
+                                <div key={l} className="flex items-center gap-2 px-4 py-2 transition-all hover:bg-white/5 rounded-xl">
+                                    <div className={`w-2 h-2 rounded-full ${i === 0 ? 'bg-google-blue' : 'bg-google-red'} shadow-[0_0_8px_currentColor]`} />
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-80">{l}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <div className="h-[340px] relative z-10">
+                    <div className="h-[340px] relative z-10 -mx-4">
                         <ResponsiveContainer width="100%" height="100%">
                             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                 <defs>
@@ -205,7 +256,33 @@ export default function Dashboard() {
                                 </defs>
                                 <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 900, fill: 'currentColor', opacity: 0.5 }} />
                                 <YAxis hide />
-                                <Tooltip contentStyle={{ backgroundColor: 'hsl(var(--background))', borderRadius: '20px', border: '1px solid hsl(var(--border))', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} />
+                                <Tooltip
+                                    content={({ active, payload, label }) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className="glass-panel p-4 rounded-2xl border-primary/20 shadow-xl backdrop-blur-xl ring-1 ring-white/10">
+                                                    <p className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground mb-3 border-b border-border pb-2">{label}</p>
+                                                    <div className="space-y-2">
+                                                        {payload.map((entry: { color?: string; name?: string; value: number }, index: number) => (
+                                                            <div key={index} className="flex items-center justify-between gap-10">
+                                                                <div className="flex items-center gap-2">
+                                                                    <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: entry.color }} />
+                                                                    <span className="text-[10px] font-black uppercase tracking-wider" style={{ color: entry.color }}>
+                                                                        {entry.name}
+                                                                    </span>
+                                                                </div>
+                                                                <span className="text-xs font-black tabular-nums">
+                                                                    {formatCurrency(entry.value)}
+                                                                </span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            );
+                                        }
+                                        return null;
+                                    }}
+                                />
                                 <Area type="monotone" dataKey="sales" stroke="hsl(var(--google-blue))" strokeWidth={4} fillOpacity={1} fill="url(#gradientSales)" />
                                 <Area type="monotone" dataKey="purchases" stroke="hsl(var(--google-red))" strokeWidth={4} fillOpacity={1} fill="url(#gradientPurchases)" />
                             </AreaChart>
@@ -213,58 +290,68 @@ export default function Dashboard() {
                     </div>
                 </motion.div>
 
-                {/* Quick Stats Column */}
-                <div className="lg:col-span-4 flex flex-col gap-6">
-                    {stats.slice(2, 4).map((stat) => (
-                        <motion.div
-                            key={stat.label}
-                            variants={item}
-                            whileHover={{ y: -5 }}
-                            onClick={() => navigate(stat.path)}
-                            className="glass-card flex-1 p-6 rounded-[2rem] border-primary/10 relative overflow-hidden group cursor-pointer"
-                        >
-                            <div className="flex items-center gap-4 mb-4">
-                                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${stat.bg} shadow-inner`}>
-                                    <stat.icon className="w-6 h-6" style={{ color: stat.color }} />
-                                </div>
-                                <div>
-                                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{stat.label}</h3>
-                                    <p className="text-2xl font-black tabular-nums tracking-tighter">
-                                        {stat.label === 'Vouchers' ? stat.value : formatCurrency(Number(stat.value))}
-                                    </p>
-                                </div>
-                                <div className="ml-auto text-right">
-                                    <span className="text-[10px] font-black px-2 py-1 rounded-lg bg-google-green/10 text-google-green border border-google-green/20">
-                                        {stat.change}
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="h-10 w-full opacity-50 group-hover:opacity-100 transition-opacity">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={stat.sparkData}>
-                                        <Area type="monotone" dataKey="v" stroke={stat.color} strokeWidth={2} fill="transparent" />
-                                    </AreaChart>
-                                </ResponsiveContainer>
-                            </div>
-                        </motion.div>
-                    ))}
-                </div>
-
-                {/* Efficiency Gauge (Left Middle) */}
-                <motion.div variants={item} className="lg:col-span-3 glass-panel rounded-[2.5rem] p-8 border-primary/10 flex flex-col items-center justify-center text-center relative max-h-[300px]">
-                    <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-6">Efficiency Vitals</h3>
-                    <div className="relative w-40 h-20 mb-4 overflow-hidden">
-                        <div className="absolute top-0 left-0 w-40 h-40 border-[12px] border-muted/30 rounded-full" />
-                        <motion.div
-                            initial={{ rotate: -90 }}
-                            animate={{ rotate: -90 + (vitals.netMargin * 1.8) }}
-                            className="absolute top-0 left-0 w-40 h-40 border-[12px] border-google-green rounded-full border-b-transparent border-l-transparent transition-all duration-1000"
+                {/* Dynamic Performance Gauges */}
+                <motion.div variants={item} className="lg:col-span-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
+                    <div className="glass-panel rounded-[2.5rem] p-8 border-primary/10 flex items-center justify-center relative overflow-hidden group shadow-xl">
+                        <div className="absolute inset-0 bg-gradient-to-br from-google-green/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <WealthPerformanceGauge
+                            value={vitals.netMargin}
+                            label="Net Margin Score"
+                            status={vitals.status}
+                            color="hsl(var(--google-green))"
                         />
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-xl font-black">{vitals.netMargin}%</div>
                     </div>
-                    <p className="text-[9px] font-black uppercase text-google-green tracking-widest px-4 py-2 bg-google-green/10 rounded-full">
-                        Net Margin Score: {vitals.status}
-                    </p>
+
+                    <div className="glass-panel rounded-[2.5rem] p-8 border-primary/10 flex flex-col justify-center relative overflow-hidden group">
+                        <div className="flex items-center gap-4 mb-6 relative z-10">
+                            <div className="w-12 h-12 rounded-2xl bg-google-blue/10 flex items-center justify-center shadow-inner">
+                                <Wallet className="w-6 h-6 text-google-blue" />
+                            </div>
+                            <div>
+                                <h3 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Liquidity Pool</h3>
+                                <p className="text-2xl font-black tabular-nums tracking-tighter">
+                                    {vitals.liquidRatio}x
+                                </p>
+                            </div>
+                        </div>
+                        <div className="h-2 w-full bg-muted/20 rounded-full overflow-hidden relative z-10">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${Math.min(vitals.liquidRatio * 20, 100)}%` }}
+                                className="h-full bg-google-blue rounded-full shadow-[0_0_12px_rgba(66,133,244,0.5)]"
+                            />
+                        </div>
+                        <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mt-4 opacity-40">Coverage Strength Indicators</p>
+                    </div>
+                </motion.div>
+
+                {/* Cash Position Hub (New Premium Feature) */}
+                <motion.div variants={item} className="lg:col-span-12 glass-panel rounded-[2.5rem] p-8 border-primary/10 flex flex-col md:flex-row items-center gap-12 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-full h-full bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 animate-shimmer pointer-events-none" />
+
+                    <div className="flex-shrink-0">
+                        <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-primary mb-2">Treasury Pulse</h3>
+                        <div className="flex items-baseline gap-2">
+                            <span className="text-5xl font-black tracking-tighter text-foreground tabular-nums">
+                                {formatCurrency(Number(stats[0].value) - Number(stats[1].value))}
+                            </span>
+                            <span className="text-sm font-black uppercase text-muted-foreground opacity-40">Net Position</span>
+                        </div>
+                    </div>
+
+                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-8">
+                        {stats.map((stat, i) => (
+                            <div key={i} className="group cursor-pointer" onClick={() => navigate(stat.path)}>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground block mb-2 opacity-50 group-hover:opacity-100 transition-opacity">{stat.label}</span>
+                                <div className="flex items-baseline gap-2">
+                                    <span className="text-xl font-black tracking-tight group-hover:text-primary transition-colors">
+                                        {stat.label === 'Vouchers' ? stat.value : formatCurrency(Number(stat.value))}
+                                    </span>
+                                    <span className="text-[9px] font-black text-google-green group-hover:translate-x-1 transition-transform">{stat.change}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
                 </motion.div>
 
                 {/* Activity Bento (Right Middle) */}
